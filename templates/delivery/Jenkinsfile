@@ -1,0 +1,29 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: build
+          image: alpine:3
+          command: ['tail', '-f', '/dev/null']
+      """
+    }
+  }
+
+  stages {
+    stage('Testing') {
+      steps {
+        container('build') {
+          sh 'echo "Testing..."'
+          sh 'pwd'
+          sh 'ls -lah'
+          sh 'env'
+        }
+      }
+    }
+  }
+}

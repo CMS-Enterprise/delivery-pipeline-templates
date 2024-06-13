@@ -1,0 +1,43 @@
+name: delivery
+displayName: Delivery Pipeline
+description: Pipeline for building, scanning, and publishing a container image
+type: pipeline-template
+parameters:
+  - name: image
+    displayName: Image
+    description: The fully qualified image name (including the registry).
+    type: string
+    default: "my-app"
+  - name: tag
+    displayName: Image Tag
+    type: string
+    default: "latest"
+  - name: update_latest
+    displayName: Update Latest
+    type: boolean
+    default: false
+  - name: registry
+    displayName: Container Registry
+    type: string
+    default: "docker.io"
+  - name: registry_credentials
+    displayName: Registry Credentials
+    type: credentials
+  - name: build_args
+    displayName: Build Arguments
+    description: "A JSON object of build arguments to pass to the container build process."
+    type: string
+    default: "{}"
+  - name: build_dir
+    displayName: Build Directory
+    type: string
+    default: "."
+  - name: dockerfile
+    displayName: Dockerfile
+    type: string
+    default: "Dockerfile"
+  - name: platform
+    displayName: Platform
+    description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
+    type: string
+    default: "linux/amd64"
