@@ -1,4 +1,9 @@
 pipeline {
+  parameters {
+    string(name: 'image', defaultValue: "${default_image}", description: 'The fully qualified container image name')
+    string(name: 'tag', defaultValue: "${default_tag}", description: 'Container image tag')
+  }
+
   agent {
     kubernetes {
       yaml """
@@ -18,10 +23,8 @@ pipeline {
     stage('Testing') {
       steps {
         container('build') {
-          sh 'echo "Testing..."'
-          sh 'pwd'
-          sh 'ls -lah'
-          sh 'env'
+          sh "echo Image param: ${image}"
+          sh "echo Tag param: ${tag}"
         }
       }
     }
