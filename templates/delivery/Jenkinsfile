@@ -1,7 +1,17 @@
 pipeline {
   parameters {
-    string(name: 'image', defaultValue: "${default_image}", description: 'The fully qualified container image name')
-    string(name: 'tag', defaultValue: "${default_tag}", description: 'Container image tag')
+    string(name: 'git_repository', description: 'The URL of the Git repository to build.')
+    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'git_commit', description: 'The Git commit to build.')
+    string(name: 'environment', description: 'Additional environment variables to pass to the container build process.')
+    string(name: 'image', defaultValue: "${default_image}", description: 'The fully qualified container image name.')
+    string(name: 'tag', defaultValue: "${default_tag}", description: 'Container image tag.')
+    booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
+    string(name: 'build_args', defaultValue: "${default_build_args}", description: 'A JSON object of build arguments to pass to the container build process.')
+    string(name: 'build_dir', defaultValue: "${default_build_dir}", description: 'The directory to use as the build context for the container build.')
+    string(name: 'dockerfile', defaultValue: "${default_dockerfile}", description: 'The path to the Dockerfile to use for the container build.')
+    string(name: 'build_target', defaultValue: "${default_build_target}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
+    string(name: 'platform', defaultValue: "${default_platform}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
   }
 
   agent {
@@ -12,9 +22,16 @@ pipeline {
       spec:
         restartPolicy: Never
         containers:
-        - name: build
+        - name: fetch
           image: alpine:3
           command: ['tail', '-f', '/dev/null']
+        - name: kaniko
+          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+          command: ['tail', '-f', '/dev/null']
+          # volumeMounts:
+          # - mountPath: "/home/jenkins/agent"
+          #   name: "workspace-volume"
+          #   readOnly: false
       """
     }
   }
@@ -22,9 +39,51 @@ pipeline {
   stages {
     stage('Testing') {
       steps {
-        container('build') {
-          sh "echo Image param: ${image}"
-          sh "echo Tag param: ${tag}"
+        container('fetch') {
+          sh 'pwd'
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+          sh 'ls -lah'
+        }
+        container('kaniko') {
+          sh 'pwd'
+          sh 'ls -lah'
+          script {
+            def arguments = [
+              "--context=${params.build_dir}",
+              "--dockerfile=${params.dockerfile}",
+              "--destination=${params.image}:${params.tag}",
+              '--verbosity=info',
+              '--no-push'
+            ]
+
+            if (params.build_target) {
+              arguments.add("--target=${params.build_target}")
+            }
+
+            if (params.platform) {
+              arguments.add("--platform=${params.platform}")
+            }
+
+            if (params.build_args) {
+              def argMap = readJSON text: params.build_args
+              argMap.each { key, value ->
+                arguments.add("--build-arg=${key}='${value}'")
+              }
+            }
+
+            sh "/kaniko/executor ${arguments.join(' ')}"
+          }
         }
       }
     }

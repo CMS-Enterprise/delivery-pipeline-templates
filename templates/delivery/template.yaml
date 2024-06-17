@@ -23,12 +23,17 @@ parameters:
     default: "{}"
   - name: default_build_dir
     displayName: Build Directory
+    description: "The directory to use as the build context for the container build."
     type: string
     default: "."
   - name: default_dockerfile
     displayName: Dockerfile
     type: string
     default: "Dockerfile"
+  - name: default_build_target
+    displayName: Build Target
+    description: "The build target to use when building the container image (for use with multi-stage Dockerfiles)."
+    type: string
   - name: default_platform
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
