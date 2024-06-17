@@ -1,4 +1,4 @@
 version: 1
 type: pipeline-template-catalog
-name: adoPipelinesCatalog
-displayName: CMS ADO Pipeline Catalog
+name: cms-delivery-pipelines
+displayName: CMS Delivery Pipelines
