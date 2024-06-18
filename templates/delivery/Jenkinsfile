@@ -76,7 +76,7 @@ pipeline {
             }
 
             if (params.build_args) {
-              def argMap = readJSON text: params.build_args
+              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
               argMap.each { key, value ->
                 arguments.add("--build-arg=${key}='${value}'")
               }
