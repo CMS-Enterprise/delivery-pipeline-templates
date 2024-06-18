@@ -68,11 +68,13 @@ pipeline {
             ]
 
             if (params.build_target) {
+              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+              echo "default_build_target: ${default_build_target}"
               arguments.add("--target=${params.build_target}")
             }
 
             if (params.platform) {
-              arguments.add("--platform=${params.platform}")
+              arguments.add("--custom-platform=${params.platform}")
             }
 
             if (params.build_args) {
