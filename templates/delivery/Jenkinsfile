@@ -49,7 +49,7 @@ pipeline {
               refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
             ]],
             extensions: [
-              cloneOption(shallow: true),
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
               submodule(recursiveSubmodules: true, shallow: true)
             ]
           )
