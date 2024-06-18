@@ -28,19 +28,14 @@ pipeline {
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
-          # volumeMounts:
-          # - mountPath: "/home/jenkins/agent"
-          #   name: "workspace-volume"
-          #   readOnly: false
       """
     }
   }
 
   stages {
-    stage('Testing') {
+    stage('Build Image') {
       steps {
         container('fetch') {
-          sh 'pwd'
           checkout scmGit(
             branches: [[ name: "${params.git_commit}" ]],
             userRemoteConfigs: [[
@@ -53,11 +48,8 @@ pipeline {
               submodule(recursiveSubmodules: true, shallow: true)
             ]
           )
-          sh 'ls -lah'
         }
         container('kaniko') {
-          sh 'pwd'
-          sh 'ls -lah'
           script {
             def arguments = [
               "--context=${params.build_dir}",
@@ -84,7 +76,13 @@ pipeline {
               }
             }
 
-            sh "/kaniko/executor ${arguments.join(' ')}"
+            if ("${enable_ansi_colors}" == "true") {
+              ansiColor('xterm') {
+                sh "/kaniko/executor ${arguments.join(' ')}"
+              }
+            } else {
+              sh "/kaniko/executor ${arguments.join(' ')}"
+            }
           }
         }
       }
