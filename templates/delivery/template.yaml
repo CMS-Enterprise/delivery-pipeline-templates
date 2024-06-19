@@ -1,5 +1,5 @@
 version: 1
-name: delivery
+name: Delivery Pipeline
 displayName: Delivery Pipeline
 description: Pipeline for building, scanning, and publishing a container image
 type: pipeline-template
