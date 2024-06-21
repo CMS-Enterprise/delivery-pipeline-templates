@@ -16,12 +16,22 @@ To use the Pipeline Templates in this catalog, the [CloudBees Pipeline: Template
 
 ## Add the Pipeline Templates Catalog
 
-From the Jenkins dashboard, select "Pipeline Template Catalog" and then click the "Add catalog" link under that.
+From the Jenkins dashboard, select "Pipeline Template Catalogs" and then click the "Add catalog" link under that.
+
+![The Pipeline Template Catalogs Menu](./static/images/Pipeline%20Template%20Catalogs%20-%20Add.png)
 
 Select the Branch or Tag that you want to utilize. Selecting the `main` branch will give you the latest version of the templates, however it could lead to breaking changes being automatically introduced during a future update. Selecting a "stable" version branch such as `v1` will give you a stable version of the templates that will not introduce breaking changes, but will be updated with bug and security fixes. Selecting a specific version tag such as `v1.0.0` will give you a specific version of the templates that will not be updated.
+
+![New Pipeline Catalog Source Control Options](./static/images/Catalog%20Source%20Control%20Options.png)
 
 Enter the URL of this repository (`https://github.com/CMS-Enterprise/delivery-pipeline-templates.git`) in the "Catalog source code repository location" section, and click Save.
 
 ## Create an Instance of a Pipeline Template
 
-In order to utilize the Pipeline Templates in this catalog, you must create an instance of the template in your Jenkins instance. To do this, click the "New Item" button from the Jenkins dashboard, and select the desired template name:  
+In order to utilize the Pipeline Templates in this catalog, you must create an instance of the template in your Jenkins instance. To do this, click the "New Item" button from the Jenkins dashboard, and select the desired template name: "SAST Scan", "Delivery Pipeline", or "Deployment". Enter a name for the pipeline instance, and click OK.
+
+Once the new Pipeline has been created, you will be prompted to select the parameters for the pipeline. The parameters are specific to each template, and are documented in the README for each template. Specifying parameter values when creating an instance of the template is optional and the specified values only serve as defaults for the parameters when the pipeline is run.
+
+## Pipeline Organization Strategy for Monorepos
+
+If your repository or project contains multiple applications or services, you can organize your Delivery Pipelines in one of two ways: create separate pipelines for each of your projects that have different default parameter values for that specific application, or create a single pipeline with minimal default settings, that can be invoked from multiple application specific pipelines with different parameter values. The former strategy will result in more pipelines appearing in your Jenkins dashboard, but may make it easier to find a specific pipeline run for a particular application.

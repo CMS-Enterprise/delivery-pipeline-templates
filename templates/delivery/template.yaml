@@ -20,16 +20,16 @@ parameters:
     displayName: Build Arguments
     description: "A JSON object of build arguments to pass to the container build process."
     type: string
-    default: "{}"
+    defaultValue: "{}"
   - name: default_build_dir
     displayName: Build Directory
     description: "The directory to use as the build context for the container build."
     type: string
-    default: "."
+    defaultValue: "."
   - name: default_dockerfile
     displayName: Dockerfile
     type: string
-    default: "Dockerfile"
+    defaultValue: "Dockerfile"
   - name: default_build_target
     displayName: Build Target
     description: "The build target to use when building the container image (for use with multi-stage Dockerfiles)."
@@ -38,9 +38,9 @@ parameters:
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
     type: string
-    default: "linux/amd64"
+    defaultValue: "linux/amd64"
   - name: enable_ansi_colors
     displayName: Enable ANSI Colors
-    description: "Enable ANSI colors in the build output (requires AnsiColor plugin)."
+    description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
     type: boolean
-    default: true
+    defaultValue: true
