@@ -1,7 +1,7 @@
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
-    string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.'
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
