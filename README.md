@@ -10,6 +10,14 @@ The following pipeline templates are available in this catalog:
 * [Delivery Pipeline](./templates/delivery/README.md) - Runs container build and scan steps and publishes the resulting container image to the CMS container registry (Artifactory).
 * [Deployment](./templates/deployment/README.md) - Runs steps to deploy the container image to a Kubernetes cluster by updating the image tag in Kubernetes manifests.
 
+# Architecture
+
+The pipeline templates in this catalog are designed to be used by invoking the from another Jenkins Pipeline that will typically be a Multi-Branch Pipeline that runs when the source code of a project changes, and/or can run with different configurations for different branches.
+
+![](./static/images/Jenkins%20Delivery%20Pipelines%20-%20Architecture.png)
+
+![](./static/images/Jenkins%20Delivery%20Pipelines%20-%20Sequence.png)
+
 # Usage
 
 To use the Pipeline Templates in this catalog, the [CloudBees Pipeline: Templates](https://docs.cloudbees.com/plugins/ci/cloudbees-workflow-template) plugin must be installed and enabled. To make the Pipeline Templates available to your Jenkins instance, perform the following steps:
