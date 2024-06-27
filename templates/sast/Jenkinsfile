@@ -7,6 +7,7 @@ pipeline {
     string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
+    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The path to the source code to scan.')
   }
 
   agent {
@@ -53,6 +54,7 @@ pipeline {
                   '-Dsonar.login=$SONAR_TOKEN',
                   "-Dsonar.host.url=${params.sonarqube_url}",
                   "-Dsonar.projectKey=${params.sonarqube_project_key}",
+                  "-Dsonar.sources=${params.source_path}",
                   "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
                   "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
                   "-Dsonar.qualitygate.wait=true"
