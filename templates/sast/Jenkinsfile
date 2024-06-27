@@ -1,0 +1,115 @@
+def containerListYaml() {
+  def containerListYaml = reindent(10, """
+    - name: fetch
+      image: artifactory.cloud.cms.gov/docker/alpine:3
+      command: ['tail', '-f', '/dev/null']
+    - name: sonarqube
+      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
+      command: ['tail', '-f', '/dev/null']""");
+
+  if (params.pre_scan_build_command) {
+    containerListYaml += reindent(10, """
+      - name: pre-scan
+        image: ${params.pre_scan_build_image}
+        command: ['tail', '-f', '/dev/null']""");
+  }
+
+  return containerListYaml
+}
+
+def reindent(spaces, str) {
+  def lines = str.split('\n')
+  // Ignoring blank lines, determine the minimum number of leading spaces
+  def indents = lines.findAll { it.trim() }.collect { (it =~ /^( *)/)[0][0].size() }
+  def minIndent = indents[0]
+  for (indent in indents) {
+    if (indent < minIndent) {
+      minIndent = indent
+    }
+  }
+
+  return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
+}
+
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
+    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'git_branch', defaultValue: "", description: 'The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch).')
+    string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
+    string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
+    string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
+    string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
+    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan.')
+    string(name: 'pre_scan_build_command', defaultValue: "${default_pre_scan_build_command ?: ''}", description: 'A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled.')
+    string(name: 'pre_scan_build_image', defaultValue: "${default_pre_scan_build_image}", description: 'The container image to use when running the pre-scan build command.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+        containers:${containerListYaml()}"""
+    }
+  }
+
+  stages {
+    stage("Fetch") {
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+        }
+      }
+    }
+    stage("Pre-Scan") {
+      when {
+        expression { params.pre_scan_build_command }
+      }
+      steps {
+        container('pre-scan') {
+          sh params.pre_scan_build_command
+        }
+      }
+    }
+    stage("Scan Source") {
+      steps {
+        container('sonarqube') {
+          withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
+            script {
+              def args = [
+                '-Dsonar.login=$SONAR_TOKEN',
+                "-Dsonar.host.url=${params.sonarqube_url}",
+                "-Dsonar.projectKey=${params.sonarqube_project_key}",
+                "-Dsonar.sources=${params.source_path}",
+                "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
+                "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
+                "-Dsonar.qualitygate.wait=true"
+              ]
+              if (params.sonarqube_additional_arguments) {
+                def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
+                // Add all the items in argArray to the args list
+                args.addAll(argArray)
+              }
+              sh "sonar-scanner ${args.join(' ')}"
+            }
+          }
+        }
+      }
+    }
+  }
+}

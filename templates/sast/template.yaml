@@ -1,0 +1,36 @@
+version: 1
+name: SAST Pipeline
+displayName: SAST Pipeline
+description: Pipeline for scanning a source code for potential security and other defects.
+type: pipeline-template
+parameters:
+  - name: sonarqube_token
+    displayName: SonarQube Token
+    type: credentials
+  - name: default_sonarqube_url
+    displayName: SonarQube URL
+    type: string
+    defaultValue: "https://sonarqube.cloud.cms.gov"
+  - name: default_sonarqube_project_key
+    displayName: SonarQube Project Key
+    type: string
+  - name: default_sonarqube_additional_arguments
+    displayName: SonarQube Additional Arguments
+    description: "A JSON serialized array of additional arguments to pass to the SonarQube scanner."
+    type: string
+    defaultValue: "[]"
+  - name: default_source_path
+    displayName: Source Path
+    description: "The relative path of the source code to scan."
+    type: string
+    defaultValue: "."
+  - name: default_pre_scan_build_command
+    displayName: Pre-Scan Build Command
+    description: "A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled."
+    type: string
+    defaultValue: ""
+  - name: default_pre_scan_build_image
+    displayName: Pre-Scan Build Image
+    description: "The container image to use when running the pre-scan build command."
+    type: string
+    defaultValue: "artifactory.cloud.cms.gov/docker/alpine:3"
