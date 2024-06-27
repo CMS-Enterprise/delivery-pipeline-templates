@@ -50,6 +50,7 @@ pipeline {
             withEnv(["SONAR_TOKEN=${TOKEN}"]) {
               script {
                 def args = [
+                  '-Dsonar.login=$SONAR_TOKEN',
                   "-Dsonar.host.url=${params.sonarqube_url}",
                   "-Dsonar.projectKey=${params.sonarqube_project_key}",
                   "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
