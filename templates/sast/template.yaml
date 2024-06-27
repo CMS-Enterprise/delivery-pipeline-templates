@@ -1,0 +1,16 @@
+version: 1
+name: SAST Pipeline
+displayName: SAST Pipeline
+description: Pipeline for scanning a source code for potential security and other defects.
+type: pipeline-template
+parameters:
+  - name: sonarqube_token
+    displayName: SonarQube Token
+    type: credentials
+  - name: default_sonarqube_url
+    displayName: SonarQube URL
+    type: string
+    defaultValue: "https://sonarqube.cloud.cms.gov"
+  - name: default_sonarqube_project_key
+    displayName: SonarQube Project Key
+    type: string
