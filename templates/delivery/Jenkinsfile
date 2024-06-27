@@ -42,6 +42,9 @@ pipeline {
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"    
+        - name: clamav
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          command: ['tail', '-f', '/dev/null']
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
@@ -150,6 +153,13 @@ pipeline {
             }
           }
         }
+
+        container('clamav') {
+          script {
+            sh "freshclam"
+          }
+        }
+
       }
     }
   }
