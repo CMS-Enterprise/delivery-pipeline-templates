@@ -14,3 +14,7 @@ parameters:
   - name: default_sonarqube_project_key
     displayName: SonarQube Project Key
     type: string
+  - name: default_source_path
+    displayName: Source Path
+    type: string
+    defaultValue: "."
