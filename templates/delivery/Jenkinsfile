@@ -28,6 +28,9 @@ pipeline {
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
+        - name: clamav
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -86,6 +89,13 @@ pipeline {
             }
           }
         }
+
+        container('clamav') {
+          script {
+            sh "freshclam"
+          }
+        }
+
       }
     }
   }
