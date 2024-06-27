@@ -1,0 +1,68 @@
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
+    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'git_branch', defaultValue: "", description: 'The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch).')
+    string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
+    string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
+    string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: fetch
+            image: artifactory.cloud.cms.gov/docker/alpine:3
+            command: ['tail', '-f', '/dev/null']
+          - name: sonarqube
+            image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
+            command: ['tail', '-f', '/dev/null']
+      """
+    }
+  }
+
+  stages {
+    stage("Scan Source") {
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+        }
+
+        container('sonarqube') {
+          withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'TOKEN')]) {
+            withEnv(["SONAR_TOKEN=${TOKEN}"]) {
+              script {
+                def args = [
+                  '-Dsonar.login=$SONAR_TOKEN',
+                  "-Dsonar.host.url=${params.sonarqube_url}",
+                  "-Dsonar.projectKey=${params.sonarqube_project_key}",
+                  "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
+                  "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
+                  "-Dsonar.qualitygate.wait=true"
+                ]
+                sh "sonar-scanner ${args.join(' ')}"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
