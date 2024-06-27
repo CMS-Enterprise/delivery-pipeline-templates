@@ -12,7 +12,6 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
-
   }
 
   agent {
@@ -24,7 +23,7 @@ pipeline {
         restartPolicy: Never
         containers:
         - name: fetch
-          image: alpine:3
+          image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug

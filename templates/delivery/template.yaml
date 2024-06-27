@@ -1,7 +1,7 @@
 version: 1
 name: Delivery Pipeline
 displayName: Delivery Pipeline
-description: Pipeline for building, scanning, and publishing a container image
+description: Pipeline for building, scanning, and publishing a container image.
 type: pipeline-template
 parameters:
   - name: default_image
