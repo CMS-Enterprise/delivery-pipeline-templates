@@ -7,7 +7,7 @@ def containerListYaml() {
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
       command: ['tail', '-f', '/dev/null']""");
 
-  if (params.pre_scan_build_image) {
+  if (params.pre_scan_build_command) {
     containerListYaml += reindent(10, """
       - name: pre-scan
         image: ${params.pre_scan_build_image}
