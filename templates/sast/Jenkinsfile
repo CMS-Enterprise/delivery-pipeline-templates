@@ -1,3 +1,29 @@
+def containerListYaml() {
+  def containerListYaml = reindent(10, """
+    - name: fetch
+      image: artifactory.cloud.cms.gov/docker/alpine:3
+      command: ['tail', '-f', '/dev/null']
+    - name: sonarqube
+      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:6
+      command: ['tail', '-f', '/dev/null']""");
+
+  if (params.pre_scan_build_image) {
+    containerListYaml += reindent(10, """
+      - name: pre-scan
+        image: ${params.pre_scan_build_image}
+        command: ['tail', '-f', '/dev/null']""");
+  }
+
+  return containerListYaml
+}
+
+def reindent(spaces, str) {
+  def lines = str.split('\n')
+  // Ignoring blank lines, determine the minimum number of leading spaces
+  def minIndent = lines.findAll { it.trim() }.collect { (it =~ /^( *)/)[0][0].size() }.min()
+  return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
+}
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -7,7 +33,10 @@ pipeline {
     string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
-    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The path to the source code to scan.')
+    string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'Additional arguments to pass to the SonarQube scanner.')
+    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan.')
+    string(name: 'pre_scan_build_command', defaultValue: "${default_pre_scan_build_command ?: ''}", description: 'A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled.')
+    string(name: 'pre_scan_build_image', defaultValue: "${default_pre_scan_build_image}", description: 'The container image to use when running the pre-scan build command.')
   }
 
   agent {
@@ -17,18 +46,21 @@ pipeline {
       kind: Pod
       spec:
         restartPolicy: Never
-        containers:
-          - name: fetch
-            image: artifactory.cloud.cms.gov/docker/alpine:3
-            command: ['tail', '-f', '/dev/null']
-          - name: sonarqube
-            image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
-            command: ['tail', '-f', '/dev/null']
-      """
+        containers:${containerListYaml()}"""
     }
   }
 
   stages {
+    stage("Pre-Scan") {
+      when {
+        expression { params.pre_scan_build_command }
+      }
+      steps {
+        container('pre-scan') {
+          sh params.pre_scan_build_command
+        }
+      }
+    }
     stage("Scan Source") {
       steps {
         container('fetch') {
@@ -58,6 +90,11 @@ pipeline {
                 "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
                 "-Dsonar.qualitygate.wait=true"
               ]
+              if (params.sonarqube_additional_arguments) {
+                def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
+                // Add all the items in argArray to the args list
+                args.addAll(argArray)
+              }
               sh "sonar-scanner ${args.join(' ')}"
             }
           }
