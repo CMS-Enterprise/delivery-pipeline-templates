@@ -16,5 +16,16 @@ parameters:
     type: string
   - name: default_source_path
     displayName: Source Path
+    description: "The relative path of the source code to scan."
     type: string
     defaultValue: "."
+  - name: default_pre_scan_build_command
+    displayName: Pre-Scan Build Command
+    description: "A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled."
+    type: string
+    defaultValue: ""
+  - name: default_pre_scan_build_image
+    displayName: Pre-Scan Build Image
+    description: "The container image to use when running the pre-scan build command."
+    type: string
+    defaultValue: "artifactory.cloud.cms.gov/docker/alpine:3"
