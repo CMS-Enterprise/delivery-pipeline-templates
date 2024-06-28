@@ -58,17 +58,7 @@ pipeline {
   }
 
   stages {
-    stage("Pre-Scan") {
-      when {
-        expression { params.pre_scan_build_command }
-      }
-      steps {
-        container('pre-scan') {
-          sh params.pre_scan_build_command
-        }
-      }
-    }
-    stage("Scan Source") {
+    stage("Fetch") {
       steps {
         container('fetch') {
           checkout scmGit(
@@ -84,7 +74,20 @@ pipeline {
             ]
           )
         }
-
+      }
+    }
+    stage("Pre-Scan") {
+      when {
+        expression { params.pre_scan_build_command }
+      }
+      steps {
+        container('pre-scan') {
+          sh params.pre_scan_build_command
+        }
+      }
+    }
+    stage("Scan Source") {
+      steps {
         container('sonarqube') {
           withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
             script {
