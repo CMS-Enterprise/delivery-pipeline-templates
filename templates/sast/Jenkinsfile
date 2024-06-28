@@ -47,20 +47,18 @@ pipeline {
         }
 
         container('sonarqube') {
-          withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'TOKEN')]) {
-            withEnv(["SONAR_TOKEN=${TOKEN}"]) {
-              script {
-                def args = [
-                  '-Dsonar.login=$SONAR_TOKEN',
-                  "-Dsonar.host.url=${params.sonarqube_url}",
-                  "-Dsonar.projectKey=${params.sonarqube_project_key}",
-                  "-Dsonar.sources=${params.source_path}",
-                  "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
-                  "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
-                  "-Dsonar.qualitygate.wait=true"
-                ]
-                sh "sonar-scanner ${args.join(' ')}"
-              }
+          withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
+            script {
+              def args = [
+                '-Dsonar.login=$SONAR_TOKEN',
+                "-Dsonar.host.url=${params.sonarqube_url}",
+                "-Dsonar.projectKey=${params.sonarqube_project_key}",
+                "-Dsonar.sources=${params.source_path}",
+                "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
+                "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
+                "-Dsonar.qualitygate.wait=true"
+              ]
+              sh "sonar-scanner ${args.join(' ')}"
             }
           }
         }
