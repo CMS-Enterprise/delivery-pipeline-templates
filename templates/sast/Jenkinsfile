@@ -20,8 +20,14 @@ def containerListYaml() {
 def reindent(spaces, str) {
   def lines = str.split('\n')
   // Ignoring blank lines, determine the minimum number of leading spaces
-  // note, I would prefer to use the built in Groovy .min() function, but it is not whitelisted by default
-  def minIndent = lines.findAll { it.trim() }.collect { (it =~ /^( *)/)[0][0].size() }.stream().reduce({ a, b -> a < b ? a : b }).get()
+  def indents = lines.findAll { it.trim() }.collect { (it =~ /^( *)/)[0][0].size() }
+  def minIndent = indents[0]
+  for (indent in indents) {
+    if (indent < minIndent) {
+      minIndent = indent
+    }
+  }
+
   return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
 }
 
