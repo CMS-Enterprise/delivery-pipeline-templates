@@ -1,3 +1,22 @@
+def containerListYaml() {
+  def containerListYaml = reindent(10, """
+    - name: fetch
+      image: artifactory.cloud.cms.gov/docker/alpine:3
+      command: ['tail', '-f', '/dev/null']
+    - name: kaniko
+      image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+      command: ['tail', '-f', '/dev/null']
+
+  if (params.pre_delivery_build_command) {
+    containerListYaml += reindent(10, """
+      - name: pre-delivery
+        image: ${params.pre_delivery_build_image}
+        command: ['tail', '-f', '/dev/null']""");
+  }
+
+  return containerListYaml
+}
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -12,6 +31,8 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
+    string(name: 'pre_delivery_build_command', defaultValue: "${default_pre_delivery_build_command ?: ''}", description: 'A command to run before delivering the source code. Useful if the Dockerfile assumes build artifacts are already available.')
+    string(name: 'pre_delivery_build_image', defaultValue: "${default_pre_delivery_build_image}", description: 'The container image to use when running the pre-Delivery build command.')
   }
 
   agent {
@@ -19,23 +40,23 @@ pipeline {
       yaml """
       apiVersion: v1
       kind: Pod
-      metadata:
-        annotations:
-          com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
-        containers:
-        - name: fetch
-          image: artifactory.cloud.cms.gov/docker/alpine:3
-          command: ['tail', '-f', '/dev/null']
-        - name: kaniko
-          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
-          command: ['tail', '-f', '/dev/null']
-      """
+        containers:${containerListYaml()}"""
     }
   }
 
   stages {
+    stage("Pre-Delivery") {
+      when {
+        expression { params.pre_delivery_build_command }
+      }
+      steps {
+        container('pre-delivery') {
+          sh params.pre_delivery_build_command
+        }
+      }
+    }
     stage('Build Image') {
       steps {
         container('fetch') {
