@@ -20,9 +20,6 @@ pipeline {
       yaml """
       apiVersion: v1
       kind: Pod
-      metadata:
-        annotations:
-          com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
         containers:
