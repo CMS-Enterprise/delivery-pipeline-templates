@@ -26,7 +26,7 @@ pipeline {
         //   command: ['tail', '-f', '/dev/null']
         - name: deploy
           image: artifactory.cloud.cms.gov/batcave-docker/devops-pipelines/pipeline-tools/deploy:v0.1.0
-          command: ['tail', '-f', '/dev/null']
+          command: ['tail', '-f', '/dev/null']          
       """
     }
   }
