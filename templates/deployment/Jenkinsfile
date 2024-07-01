@@ -1,0 +1,80 @@
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout the Kubernetes manifests.')    
+    string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
+    string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
+    string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
+    string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: fetch
+          image: artifactory.cloud.cms.gov/docker/alpine:3
+          command: ['tail', '-f', '/dev/null']        
+        - name: kubectl
+          image: bitnami/kubectl:latest
+          command: ['tail', '-f', '/dev/null']
+        // - name: git
+        //   image: alpine/git
+        //   command: ['tail', '-f', '/dev/null']
+      """
+    }
+  }
+
+  // stages {
+  //   stage('Clone Manifests') {
+  //     steps {
+  //       container('git') {
+  //         script {
+  //           git(
+  //             url: params.manifest_repo_url,
+  //             credentialsId: params.git_credential,
+  //             branch: 'main'
+  //           )
+  //         }
+  //       }
+  //     }
+  //   }
+
+  stages {
+    stage('Clone Manifests') {
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+        }
+
+    stage('Apply Manifests') {
+      steps {
+        container('kubectl') {
+          script {
+            dir(params.environment_path) {
+              sh 'kubectl apply -k .'
+            }
+          }
+        }
+      }
+    }
+  }
+}
