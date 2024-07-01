@@ -79,7 +79,9 @@ pipeline {
             }
 
             if (params.copy_artifacts) {
+              echo "copy_artifacts found!"
               copyArtifacts projectName: params.copy_artifacts, filter: '**/target/*.jar'
+              echo "copy_artifacts done!"
             }
 
             if ("${enable_ansi_colors}" == "true") {
