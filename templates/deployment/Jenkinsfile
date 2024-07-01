@@ -20,9 +20,6 @@ pipeline {
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
-          command: ['tail', '-f', '/dev/null'] 
-        - name: kubectl
-          image: bitnami/kubectl:latest
           command: ['tail', '-f', '/dev/null']
         - name: git
           image: alpine/git
