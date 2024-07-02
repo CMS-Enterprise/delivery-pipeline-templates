@@ -5,6 +5,7 @@ pipeline {
     string(name: 'registry_path', description: 'The URL of the Docker registry to use when creating the Kubernetes secret.')
     string(name: 'generic_key', description: 'The key to use when creating a generic secret.')
 
+    string(name: 'jenkins_controller_name', defaultValue: "${default_controller_name}", description: 'The Kubernetes Namespace where the Secret will be created is based on the name of the Jenkins Controller.')
     credentials(name: 'jenkins_credential_id', description: 'The ID of the Jenkins credentials to use when creating the Kubernetes secret.')
   }
 
@@ -28,15 +29,16 @@ spec:
       steps {
         container('kubectl') {
           script {
-            def controllerName = env.JOB_NAME.split('/')[0]
-            echo "Jenkins Controller Name: ${controllerName}"
-            sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n cbc-\"${controllerName}\""
+            echo "Attempting to delete secret \"${params.secret_name}\" in namespace cbc-\"${params.jenkins_controller_name}\""
+            sh "kubectl version"
+            sh "kubectl config get-contexts"
+            sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n cbc-\"${params.jenkins_controller_name}\""
 
             switch (params.secret_type) {
               case 'generic':
                 withCredentials([string(credentialsId: "${params.jenkins_credential_id}", variable: 'SECRET')]) {
                   sh """
-                  kubectl create secret generic "${params.jenkins_credential_id}" -n cbc-"${controllerName}" \
+                  kubectl create secret generic "${params.jenkins_credential_id}" -n cbc-"${params.jenkins_controller_name}" \
                     --from-literal="${params.generic_key}=\$SECRET" \
                   """
                 }
@@ -44,7 +46,7 @@ spec:
               case 'docker-registry':
                 withCredentials([usernamePassword(credentialsId: "${params.jenkins_credential_id}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                   sh """
-                  kubectl create secret docker-registry "${params.secret_name}" -n cbc-"${controllerName}" \
+                  kubectl create secret docker-registry "${params.secret_name}" -n cbc-"${params.jenkins_controller_name}" \
                     --docker-server="${params.registry_path}" \
                     --docker-username="\$USER" \
                     --docker-password="\$PASS"
