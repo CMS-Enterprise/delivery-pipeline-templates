@@ -70,7 +70,7 @@ pipeline {
             echo "[LOG] Target Environment -> ${params.environment_path}"
             cd ${params.environment_path}
             kustomize edit set image ${params.target_service}=${params.image}
-            cd -
+            cd ..
             git diff
             if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
                 echo "[WARN] No changes made to manifest"
