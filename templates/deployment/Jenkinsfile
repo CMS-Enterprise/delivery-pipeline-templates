@@ -72,6 +72,7 @@ pipeline {
             kustomize edit set image ${params.target_service}=${params.image}
             cd ..
             ls -tlr *
+            git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
             git status
             git diff
             if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
