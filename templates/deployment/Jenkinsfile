@@ -71,6 +71,7 @@ pipeline {
             cd ${params.environment_path}
             kustomize edit set image ${params.target_service}=${params.image}
             cd ..
+            ls -tlr *
             git status
             git diff
             if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
