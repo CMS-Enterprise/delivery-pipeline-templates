@@ -1,0 +1,10 @@
+version: 1
+name: Jenkins Secret Provisioner
+displayName: Jenkins Secret Provisioner
+description: Pipeline for provisioning Kubernetes Secrets for use by other Jenkins pipelines.
+type: pipeline-template
+parameters:
+  - name: default_controller_name
+    displayName: Jenkins Controller Name
+    description: The Kubernetes Namespace where the Secret will be created is based on the name of the Jenkins Controller.
+    type: string
