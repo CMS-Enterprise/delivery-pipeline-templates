@@ -6,7 +6,7 @@ pipeline {
     string(name: 'image_registry', description: 'the image registry URL for authentication')
     string(name: 'image_registry_user', description: 'the image registry username for authentication')
     string(name: 'image_registry_token', description: 'the image registry token for authentication')
-    boolParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
+    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
 
