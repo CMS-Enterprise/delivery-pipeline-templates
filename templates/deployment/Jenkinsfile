@@ -66,7 +66,7 @@ pipeline {
             sh """
               kustomize version
               uname -a
-              apt-get git
+              yum install git
               echo "[LOG] Target Service -> ${params.target_service}"
               echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
               echo "[LOG] Target Image -> ${params.image}"
