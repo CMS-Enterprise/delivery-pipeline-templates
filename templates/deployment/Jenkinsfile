@@ -66,8 +66,7 @@ pipeline {
             sh """
               cat /etc/os-release
               apk add --update --no-cache curl tar gzip
-              export KUSTOMIZE_VERSION=4.5.7
-              curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+              curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz"
     | tar xz -C /usr/local/bin
               kustomize version
               echo "[LOG] Target Service -> ${params.target_service}"
