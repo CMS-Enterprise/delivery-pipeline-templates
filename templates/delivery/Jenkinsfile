@@ -79,7 +79,7 @@ pipeline {
             }
 
             if (params.copy_artifacts) {
-              copyArtifacts projectName: params.copy_artifacts, filter: '**/target/*.jar'
+              copyArtifacts projectName: params.copy_artifacts, filter: '**/target/*.jar', selector: upstream()
             }
 
             if ("${enable_ansi_colors}" == "true") {
