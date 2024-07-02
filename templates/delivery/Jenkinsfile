@@ -89,7 +89,11 @@ pipeline {
             }
           }
         }
+      }
+    }
 
+    stage('Malware Scan') {
+      steps {
         container('clamav') {
           script {
             sh "freshclam"
@@ -98,7 +102,6 @@ pipeline {
             sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
           }
         }
-
       }
     }
   }
