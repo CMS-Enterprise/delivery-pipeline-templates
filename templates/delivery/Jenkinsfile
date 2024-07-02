@@ -34,8 +34,8 @@ pipeline {
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
           resources:
-          limits:
-            memory: "${params.kaniko_memory_limit}"
+            limits:
+              memory: "${params.kaniko_memory_limit}"
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
