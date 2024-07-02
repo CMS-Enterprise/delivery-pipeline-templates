@@ -3,9 +3,7 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
-    string(name: 'image_registry', description: 'the image registry URL for authentication')
-    string(name: 'image_registry_user', description: 'the image registry username for authentication')
-    string(name: 'image_registry_token', description: 'the image registry token for authentication')
+    string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
     booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
@@ -111,6 +109,8 @@ pipeline {
               echo 'image_push_enabled is set to false, skipping the image push step'
               return
             }
+            sh 'mkdir -p /root/.docker'
+            sh 'echo ${params.image_registry_auth_json} > /root/.docker/config.json'
             sh 'crane --version'
             sh 'pwd && ls -laH'
             sh "crane push ./image.tar ${params.image}:${params.tag}"
