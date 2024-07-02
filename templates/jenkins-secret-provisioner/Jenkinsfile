@@ -20,6 +20,8 @@ spec:
   - name: kubectl
     image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
     command: ['tail', '-f', '/dev/null']
+  securityContext:
+    runAsUser: 1001
 """
     }
   }
@@ -29,16 +31,17 @@ spec:
       steps {
         container('kubectl') {
           script {
-            echo "Attempting to delete secret \"${params.secret_name}\" in namespace cbc-\"${params.jenkins_controller_name}\""
+            sh "which kubectl"
+            echo "Attempting to delete secret \"${params.secret_name}\" in namespace \"cbc-${params.jenkins_controller_name}\""
             sh "kubectl version"
             sh "kubectl config get-contexts"
-            sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n cbc-\"${params.jenkins_controller_name}\""
+            sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n \"cbc-${params.jenkins_controller_name}\""
 
             switch (params.secret_type) {
               case 'generic':
                 withCredentials([string(credentialsId: "${params.jenkins_credential_id}", variable: 'SECRET')]) {
                   sh """
-                  kubectl create secret generic "${params.jenkins_credential_id}" -n cbc-"${params.jenkins_controller_name}" \
+                  kubectl create secret generic "${params.jenkins_credential_id}" -n "cbc-${params.jenkins_controller_name}" \
                     --from-literal="${params.generic_key}=\$SECRET" \
                   """
                 }
