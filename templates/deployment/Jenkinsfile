@@ -23,7 +23,10 @@ pipeline {
           command: ['tail', '-f', '/dev/null']
         - name: git
           image: alpine/git
-          command: ['tail', '-f', '/dev/null']          
+          command: ['tail', '-f', '/dev/null']
+        - name: kustomize
+          image: line/kubectl-kustomize
+          command: ['tail', '-f', '/dev/null']         
 #        - name: deploy
 #          image: artifactory.cloud.cms.gov/batcave-docker/devops-pipelines/pipeline-tools/deploy:v0.1.0
 #          command: ['tail', '-f', '/dev/null']          
@@ -73,7 +76,7 @@ pipeline {
 
     stage('Push Manifests') {
       steps {
-        container('deploy') {
+        container('kustomize') {
           script {
             sh """
               kustomize version
