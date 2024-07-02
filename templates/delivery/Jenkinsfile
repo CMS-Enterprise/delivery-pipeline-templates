@@ -40,7 +40,7 @@ pipeline {
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
         - name: crane
-          image: gcr.io/go-containerregistry/crane:latest
+          image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
       """
     }
