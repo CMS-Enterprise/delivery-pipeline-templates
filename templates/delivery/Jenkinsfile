@@ -95,7 +95,7 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
-            if ("${enable_ansi_colors}" == "true") {
+            if ("${enable_ansi_colors}" == 'true') {
               ansiColor('xterm') {
                 sh "/kaniko/executor ${arguments.join(' ')}"
               }
@@ -111,12 +111,12 @@ pipeline {
               echo 'image_push_enabled is set to false, skipping the image push step'
               return
             }
-            sh "crane --version"
-            sh "pwd && ls -laH"
+            sh 'crane --version'
+            sh 'pwd && ls -laH'
             sh "crane push ./image.tar ${params.image}:${params.tag}"
+          }
         }
       }
-
     }
   }
 }
