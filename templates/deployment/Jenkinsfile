@@ -67,12 +67,12 @@ pipeline {
             echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
             echo "[LOG] Target Image -> ${params.image}"
             echo "[LOG] Checkout manifest repository"
-            // git clone -q --depth 1 "${params.git_repository}" \${TEMP_MANIFEST_DIR}
-            // cd \${TEMP_MANIFEST_DIR}
-            // export MANIFEST_ROOT=\$(pwd)
-            // git config --global user.email "devops-pipeline-user@cms.hhs.gov"
-            // git config --global user.name "pipeline-user"
-            // git status
+            # git clone -q --depth 1 "${params.git_repository}" \${TEMP_MANIFEST_DIR}
+            # cd \${TEMP_MANIFEST_DIR}
+            # export MANIFEST_ROOT=\$(pwd)
+            # git config --global user.email "devops-pipeline-user@cms.hhs.gov"
+            # git config --global user.name "pipeline-user"
+            # git status
             pwd; ls-tlr
             echo "[LOG] Target Environment -> ${params.environment_path}"
             cd ${params.environment_path}
