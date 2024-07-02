@@ -73,8 +73,9 @@ pipeline {
             # git config --global user.email "devops-pipeline-user@cms.hhs.gov"
             # git config --global user.name "pipeline-user"
             # git status
-            pwd; ls-tlr
             echo "[LOG] Target Environment -> ${params.environment_path}"
+            pwd
+            ls
             cd ${params.environment_path}
             kustomize edit set image ${params.target_service}=${params.image}
             cd \${MANIFEST_ROOT}
