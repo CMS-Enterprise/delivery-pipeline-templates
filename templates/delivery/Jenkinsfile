@@ -146,7 +146,7 @@ pipeline {
               return
             }
             sh 'mkdir -p /root/.docker'
-            sh 'echo ${params.image_registry_auth_json} > /root/.docker/config.json'
+            sh "echo '${params.image_registry_auth_json}' > /root/.docker/config.json"
             sh 'crane --version'
             sh 'pwd && ls -laH'
             sh "crane push ./image.tar ${params.image}:${params.tag}"
