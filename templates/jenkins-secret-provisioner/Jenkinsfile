@@ -1,0 +1,65 @@
+pipeline {
+  parameters {
+    string(name: 'secret_name', description: 'The name of the Kubernetes secret to create.')
+    choice(name: 'secret_type', choices: ['generic', 'docker-registry'], description: 'The type of Kubernetes Secret to create.')
+    string(name: 'registry_path', description: 'The URL of the Docker registry to use when creating the Kubernetes secret.')
+    string(name: 'generic_key', description: 'The key to use when creating a generic secret.')
+
+    credentials(name: 'jenkins_credential_id', description: 'The ID of the Jenkins credentials to use when creating the Kubernetes secret.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-role
+  restartPolicy: Never
+  containers:
+  - name: kubectl
+    image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
+    command: ['tail', '-f', '/dev/null']
+  securityContext:
+    runAsUser: 1001
+"""
+    }
+  }
+
+  stages {
+    stage('Create or Replace Secret') {
+      steps {
+        container('kubectl') {
+          script {
+            def controllerName = env.JOB_NAME.split('/')[0]
+            echo "Jenkins Controller Name: ${controllerName}"
+            sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n cbc-\"${controllerName}\""
+
+            switch (params.secret_type) {
+              case 'generic':
+                withCredentials([string(credentialsId: "${params.jenkins_credential_id}", variable: 'SECRET')]) {
+                  sh """
+                  kubectl create secret generic "${params.jenkins_credential_id}" -n cbc-"${controllerName}" \
+                    --from-literal="${params.generic_key}=\$SECRET" \
+                  """
+                }
+                break
+              case 'docker-registry':
+                withCredentials([usernamePassword(credentialsId: "${params.jenkins_credential_id}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                  sh """
+                  kubectl create secret docker-registry "${params.secret_name}" -n cbc-"${controllerName}" \
+                    --docker-server="${params.registry_path}" \
+                    --docker-username="\$USER" \
+                    --docker-password="\$PASS"
+                  """
+                }
+                break
+              default:
+                error("Invalid secret type: ${params.secret_type}")
+            }
+          }
+        }
+      }
+    }
+  }
+}
