@@ -66,15 +66,9 @@ pipeline {
             sh """
               kustomize version
               uname -a
-              which yum
-              wget https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.31.8.tar.gz
-              tar -zxf git-2.31.8.tar.gz
-              cd git-2.31.8
-              make configure
-              ./configure --prefix=/usr
-              make all doc info
-              sudo make install install-doc install-html install-info
-              which git
+              sudo yum update -y
+              sudo yum install git -y
+              git -version
               echo "[LOG] Target Service -> ${params.target_service}"
               echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
               echo "[LOG] Target Image -> ${params.image}"
