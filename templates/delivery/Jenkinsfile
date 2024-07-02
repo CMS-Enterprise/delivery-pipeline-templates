@@ -102,7 +102,11 @@ pipeline {
             }
           }
         }
+      }
+    }
 
+    stage('Image Publish') {
+      steps {
         container('crane') {
           script {
             if (!params.image_push_enabled) {
