@@ -61,9 +61,11 @@ pipeline {
 
     stage('Push Manifests') {
       steps {
-        container('kustomize') {
+        container('fetch') {
           script {
             sh """
+              cat /etc/os-release
+              apt-get kustomize
               kustomize version
               echo "[LOG] Target Service -> ${params.target_service}"
               echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
