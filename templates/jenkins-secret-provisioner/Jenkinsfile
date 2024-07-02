@@ -14,14 +14,11 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-  serviceAccountName: jenkins-role
   restartPolicy: Never
   containers:
   - name: kubectl
     image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
     command: ['tail', '-f', '/dev/null']
-  securityContext:
-    runAsUser: 1001
 """
     }
   }
