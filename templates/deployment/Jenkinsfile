@@ -1,6 +1,7 @@
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout.')
     string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
     string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
@@ -42,37 +43,21 @@ pipeline {
     stage('Clone Manifests') {
       steps {
         container('fetch') {
-          script {
-            checkout scmGit(
-              branches: [[ name: "kustomize" ]],
-              userRemoteConfigs: [[
-                url: "${params.git_repository}",
-                credentialsId: "${params.git_credential}",
-                refspec: "+refs/heads/kustomize:refs/remotes/origin/kustomize"
-              ]],
-              extensions: [
-                cloneOption(shallow: true, honorRefspec: true, noTags: true),
-                submodule(recursiveSubmodules: true, shallow: true)
-              ]
-            )
-          }
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
         }
       }
-    }
-
-    // stage('Update Manifests') {
-    //   steps {
-    //     container('kubectl') {
-    //       script {
-    //         dir(params.environment_path) {
-    //           sh """
-    //             kustomize edit set image ${params.target_service}=${params.image}
-    //           """
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
+    }   
 
     stage('Push Manifests') {
       steps {
@@ -108,17 +93,5 @@ pipeline {
         }
       }
     }
-
-//     stage('Apply Manifests') {
-//       steps {
-//         container('kubectl') {
-//           script {
-//             dir(params.environment_path) {
-//               sh 'kubectl apply -k .'
-//             }
-//           }
-//         }
-//       }
-//     }
   }
 }
