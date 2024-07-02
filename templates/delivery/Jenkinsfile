@@ -3,10 +3,11 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    booleanParam(name: 'image_push_enabled', defaultValue: "${default_image_push_enabled ?: false}", description: 'Enable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
 
-    booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
+    booleanParam(name: 'update_latest', defaultValue: "${default_update_latest ?: false}", description: 'When true, update the latest tag to point to the newly built image.')
     string(name: 'build_args', defaultValue: "${default_build_args ?: '{}'}", description: 'A JSON object of build arguments to pass to the container build process.')
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
     string(name: 'dockerfile', defaultValue: "${default_dockerfile ?: 'Dockerfile'}", description: 'The path to the Dockerfile to use for the container build.')
@@ -42,6 +43,9 @@ pipeline {
             limits:
               memory: "2Gi"
               cpu: "1000m"          
+        - name: crane
+          image: gcr.io/go-containerregistry/crane/debug:latest
+          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -107,6 +111,33 @@ pipeline {
                 }
               } else {
                 sh "/kaniko/executor ${arguments.join(' ')}"
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Image Publish') {
+      steps {
+        container('crane') {
+          script {
+            if (!params.image_push_enabled) {
+              echo 'image_push_enabled is set to false, skipping the image push step'
+              return
+            }
+
+            // Authentication by copying a docker config JSON to config directory
+            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+              echo 'export image registry auth json to /root/.docker/config.json'
+              sh 'mkdir -p /root/.docker'
+              sh 'mv "$AUTH_JSON_FILE" /root/.docker/config.json'
+              sh 'crane version'
+              sh 'pwd && ls -laH'
+              sh "crane push ./image.tar ${params.image}:${params.tag}"
+
+              if (params.update_latest) {
+                sh "crane push ./image.tar ${params.image}:latest"
               }
             }
           }
