@@ -68,8 +68,9 @@ pipeline {
             echo "[LOG] Target Image -> ${params.image}"
             echo "[LOG] Checkout manifest repository"
             echo "[LOG] Target Environment -> ${params.environment_path}"
-            #cd ${params.environment_path}
-            kustomize edit set image ${params.target_service}=${params.image} -f ${params.environment_path}/kustomization.yaml
+            cd ${params.environment_path}
+            kustomize edit set image ${params.target_service}=${params.image}
+            cd -
             git diff
             if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
                 echo "[WARN] No changes made to manifest"
