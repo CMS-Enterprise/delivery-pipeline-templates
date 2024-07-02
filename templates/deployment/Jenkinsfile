@@ -66,6 +66,7 @@ pipeline {
             sh """
               kustomize version
               uname -a
+              which yum
               wget https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.31.8.tar.gz
               tar -zxf git-2.31.8.tar.gz
               cd git-2.31.8
