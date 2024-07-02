@@ -65,7 +65,7 @@ pipeline {
           script {
             sh """
               kustomize version
-              cat /etc/os-release/
+              uname -a
               apt-get git
               echo "[LOG] Target Service -> ${params.target_service}"
               echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
