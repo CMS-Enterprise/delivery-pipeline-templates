@@ -74,9 +74,9 @@ pipeline {
             # git config --global user.name "pipeline-user"
             # git status
             echo "[LOG] Target Environment -> ${params.environment_path}"
-            pwd
-            ls
             cd ${params.environment_path}
+            pwd
+            ls -altr
             kustomize edit set image ${params.target_service}=${params.image}
             cd \${MANIFEST_ROOT}
             
