@@ -34,6 +34,11 @@ parameters:
     displayName: Build Target
     description: "The build target to use when building the container image (for use with multi-stage Dockerfiles)."
     type: string
+  - name: default_kaniko_memory_limit
+    displayName: Kaniko Memory Limit
+    description: "Kaniko memory limit input for those larger builds."
+    defaultValue: "1Gi"
+    type: string
   - name: default_platform
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."

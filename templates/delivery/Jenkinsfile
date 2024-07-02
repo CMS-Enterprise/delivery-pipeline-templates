@@ -13,6 +13,7 @@ pipeline {
     string(name: 'copy_artifacts', defaultValue: "", description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
+    string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: "Kaniko memory limit input for those larger builds.")
   }
 
   agent {
@@ -20,6 +21,9 @@ pipeline {
       yaml """
       apiVersion: v1
       kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
         containers:
@@ -29,6 +33,17 @@ pipeline {
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
+          resources:
+            limits:
+              memory: "${params.kaniko_memory_limit}"
+        - name: clamav
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          command: ['tail', '-f', '/dev/null']
+          resources:
+            limits:
+              memory: "5Gi"
+            requests:
+              memory: "3Gi"
       """
     }
   }
@@ -89,6 +104,15 @@ pipeline {
             } else {
               sh "/kaniko/executor ${arguments.join(' ')}"
             }
+          }
+        }
+
+        container('clamav') {
+          script {
+            sh "freshclam"
+            sh "touch virus-report.clamav.txt"
+            sh "pwd && ls -laH"
+            sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
           }
         }
       }
