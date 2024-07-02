@@ -20,3 +20,7 @@ When creating a Docker Registry Secret, it is assumed that the credential provid
 ## Creating a Generic Secret
 
 When creating a Generic Secret, the generic_key parameter should be set to the key that the secret value should be associated with in the Secret. Secrets with multiple key-value pairs are not supported.
+
+## Jenkins Configuration
+
+In order for a Jenkins pipeline to be able to managed Kubernetes Secrets, the Kubernetes ServiceAccount that the Jenkins pipeline runs as needs to be granted the requisite permissions. To request that the ServiceAccount be granted the necessary permissions, file a CMS Cloud Support Access Request and include the name of your Jenkins Controller and the permissions your ServiceAccount will need (i.e. Create and Delete Secrets).
