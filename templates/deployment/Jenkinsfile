@@ -75,6 +75,7 @@ pipeline {
             # git status
             echo "[LOG] Target Environment -> ${params.environment_path}"
             cd ${params.environment_path}
+            cd ..
             pwd
             ls -altr
             kustomize edit set image ${params.target_service}=${params.image}
