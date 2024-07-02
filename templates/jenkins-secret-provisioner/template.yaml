@@ -1,0 +1,5 @@
+version: 1
+name: Jenkins Secret Provisioner
+displayName: Jenkins Secret Provisioner
+description: Pipeline for provisioning Kubernetes Secrets for use by other Jenkins pipelines.
+type: pipeline-template
