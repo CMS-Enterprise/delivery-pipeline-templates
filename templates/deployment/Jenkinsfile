@@ -1,0 +1,130 @@
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout.')
+    string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
+    string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
+    string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
+    string(name: 'image', description: 'The fully qualified container image name (including the registry).')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: fetch
+          image: artifactory.cloud.cms.gov/docker/alpine:3
+          command: ['tail', '-f', '/dev/null']
+        - name: git
+          image: alpine/git
+          command: ['tail', '-f', '/dev/null']
+        - name: kustomize
+          image: bitnami/kubectl:latest
+          command: ['tail', '-f', '/dev/null']         
+#        - name: deploy
+#          image: artifactory.cloud.cms.gov/batcave-docker/devops-pipelines/pipeline-tools/deploy:v0.1.0
+#          command: ['tail', '-f', '/dev/null']          
+      """
+    }
+  }
+
+  environment {
+    TEMP_MANIFEST_DIR = 'manifest-repo'
+  }
+
+  stages {
+    stage('Clone Manifests') {
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+        }
+        container('fetch') {
+        script {
+          sh """
+            cat /etc/os-release
+            apk add --update --no-cache curl tar gzip git
+            curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz" | tar xz -C /usr/local/bin
+            kustomize version
+            echo "[LOG] Target Service -> ${params.target_service}"
+            echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
+            echo "[LOG] Target Image -> ${params.image}"
+            echo "[LOG] Checkout manifest repository"
+            echo "[LOG] Target Environment -> ${params.environment_path}"
+            cd ${params.environment_path}
+            kustomize edit set image ${params.target_service}=${params.image}
+            cd ..
+            ls -tlr *
+            git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
+            git config --global user.email "srikanthreddy.kumbala1@cms.hhs.gov"
+            git config --global user.name "kdoi"
+            git status
+            git diff
+            if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                echo "[WARN] No changes made to manifest"
+                exit 0
+            fi
+            git commit -am "pipeline update service ${params.target_service} to ${params.image}"
+            git push origin kustomize
+          """
+        }
+      }
+    }
+  }   
+
+    // stage('Push Manifests') {
+    //   steps {
+    //     container('fetch') {
+    //       script {
+    //         sh """
+    //           cat /etc/os-release
+    //           apk add --update --no-cache curl tar gzip git
+    //           curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz" | tar xz -C /usr/local/bin
+    //           kustomize version
+    //           echo "[LOG] Target Service -> ${params.target_service}"
+    //           echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
+    //           echo "[LOG] Target Image -> ${params.image}"
+    //           echo "[LOG] Checkout manifest repository"
+    //           git clone -q --depth 1 "${params.git_repository}" \${TEMP_MANIFEST_DIR}
+    //           cd \${TEMP_MANIFEST_DIR}
+    //           export MANIFEST_ROOT=\$(pwd)
+    //           git config --global user.email "devops-pipeline-user@cms.hhs.gov"
+    //           git config --global user.name "pipeline-user"
+    //           git status
+              
+    //           echo "[LOG] Target Environment -> ${params.environment_path}"
+    //           cd ${params.environment_path}
+    //           kustomize edit set image ${params.target_service}=${params.image}
+    //           cd \${MANIFEST_ROOT}
+              
+    //           git diff
+    //           if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+    //              echo "[WARN] No changes made to manifest"
+    //              exit 0
+    //           fi
+    //           git commit -am "pipeline update service ${params.target_service} to ${params.image}"
+    //           git push origin kustomize
+    //         """
+    //       }
+    //     }
+    //   }
+    // }
+  }
+}
