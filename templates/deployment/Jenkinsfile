@@ -69,7 +69,9 @@ pipeline {
             echo "[LOG] Checkout manifest repository"
             echo "[LOG] Target Environment -> ${params.environment_path}"
             cd ${params.environment_path}
+            cat kustomization.yaml
             kustomize edit set image ${params.target_service}=${params.image}
+            cat kustomization.yaml
             cd ..
             ls -tlr *
             git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
@@ -83,7 +85,7 @@ pipeline {
             fi
             git show-ref
             git commit -am "pipeline update service ${params.target_service} to ${params.image}"
-            git push -uf origin kustomize
+            git push  origin kustomize
           """
         }
       }
