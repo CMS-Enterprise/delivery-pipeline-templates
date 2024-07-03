@@ -52,7 +52,7 @@ pipeline {
          withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
           script {
             def fullImage = "${params.image_registry}:${params.tag}"
-            sh """
+            sh '''
               apk add --update --no-cache curl tar gzip git
               curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
               kustomize version
@@ -78,7 +78,7 @@ pipeline {
               git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
               git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
               git push origin kustomize
-            """
+            '''.stripIndent()
           }
         }
       }
