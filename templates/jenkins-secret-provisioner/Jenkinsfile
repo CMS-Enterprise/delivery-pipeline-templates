@@ -1,12 +1,12 @@
 pipeline {
   parameters {
-    string(name: 'secret_name', description: 'The name of the Kubernetes secret to create.')
-    choice(name: 'secret_type', choices: ['generic', 'docker-registry'], description: 'The type of Kubernetes Secret to create.')
-    string(name: 'registry_path', description: 'The URL of the Docker registry to use when creating the Kubernetes secret.')
-    string(name: 'generic_key', description: 'The key to use when creating a generic secret.')
+    string(name: 'secret_name', defaultValue: "${default_secret_name}", description: 'The name of the Kubernetes secret to create.')
+    string(name: 'secret_type', defaultValue: "${default_secret_type}", description: 'The type of Kubernetes Secret to create (generic or docker-registry).')
+    string(name: 'registry_path', defaultValue: "${default_registry_path}", description: 'The URL of the Docker registry to use when creating the Kubernetes secret.')
+    string(name: 'generic_key', defaultValue: "${default_generic_key}", description: 'The key to use when creating a generic secret.')
 
-    credentials(name: 'jenkins_credential_id', description: 'The ID of the Jenkins credentials to use when creating the Kubernetes secret.')
     string(name: 'jenkins_controller_name', defaultValue: "${default_controller_name}", description: 'The Kubernetes Namespace where the Secret will be created is based on the name of the Jenkins Controller.')
+    credentials(name: 'jenkins_credential_id', defaultValue: "${default_jenkins_credential_id}", description: 'The ID of the Jenkins credentials to use when creating the Kubernetes secret.')
   }
 
   agent {
