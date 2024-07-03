@@ -83,11 +83,9 @@ pipeline {
                   exit 0
               fi
               git show-ref
-              # Print the current branch
-              git branch --show-current             
-              # Check if kustomize branch exists
-              git branch -a | grep remotes/origin/kustomize
-              git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
+              # Check if kustomize branch exists, if not create it
+              git branch -a | grep remotes/origin/kustomize || git checkout -b kustomize              
+              git commit -am "pipeline update service ${params.target_service}"
               git push origin kustomize
             """
           }
