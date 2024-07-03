@@ -83,6 +83,7 @@ pipeline {
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}",
               '--cache-copy-layers',
+              '--skip-unused-stages',
               '--no-push',
               '--no-push-cache',
               '--tar-path=./image.tar'
