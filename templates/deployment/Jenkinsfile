@@ -55,6 +55,7 @@ pipeline {
           )
         }
         container('fetch') {
+         withCredentials([usernamePassword(credentialsId: params.git_credential, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
           script {
             def fullImage = "${params.image_registry}:${params.tag}"
             sh """
@@ -86,6 +87,7 @@ pipeline {
               # Check if kustomize branch exists, if not create it
               git branch -a | grep remotes/origin/kustomize || git checkout -b kustomize              
               git commit -am "pipeline update service ${params.target_service}"
+              git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
               git push origin kustomize
             """
           }
@@ -93,4 +95,5 @@ pipeline {
       }
     }
   }
+}
 }
