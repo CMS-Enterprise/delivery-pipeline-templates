@@ -45,7 +45,7 @@ pipeline {
             branches: [[ name: "${params.git_commit}" ]],
             userRemoteConfigs: [[
               url: "${params.git_repository}",
-              credentialsId: "${params.git_credential}",
+              credentialsId: "${params.git_credentials}",
               refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
             ]],
             extensions: [
