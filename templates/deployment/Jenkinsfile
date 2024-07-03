@@ -5,7 +5,8 @@ pipeline {
     string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
     string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
-    string(name: 'image', description: 'The fully qualified container image name (including the registry).')
+    string(name: 'image_registry', description: 'The fully qualified container image repository URL (excluding the tag).')
+    string(name: 'tag', description: 'The tag of the container image.')
   }
 
   agent {
@@ -22,15 +23,6 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-        - name: git
-          image: alpine/git
-          command: ['tail', '-f', '/dev/null']
-        - name: kustomize
-          image: bitnami/kubectl:latest
-          command: ['tail', '-f', '/dev/null']         
-#        - name: deploy
-#          image: artifactory.cloud.cms.gov/batcave-docker/devops-pipelines/pipeline-tools/deploy:v0.1.0
-#          command: ['tail', '-f', '/dev/null']          
       """
     }
   }
@@ -40,7 +32,7 @@ pipeline {
   }
 
   stages {
-    stage('Clone Manifests') {
+    stage('kustomize') {
       steps {
         container('fetch') {
           checkout scmGit(
@@ -57,74 +49,40 @@ pipeline {
           )
         }
         container('fetch') {
-        script {
-          sh """
-            cat /etc/os-release
-            apk add --update --no-cache curl tar gzip git
-            curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz" | tar xz -C /usr/local/bin
-            kustomize version
-            echo "[LOG] Target Service -> ${params.target_service}"
-            echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
-            echo "[LOG] Target Image -> ${params.image}"
-            echo "[LOG] Checkout manifest repository"
-            echo "[LOG] Target Environment -> ${params.environment_path}"
-            cd ${params.environment_path}
-            kustomize edit set image ${params.target_service}=${params.image}
-            cd ..
-            ls -tlr *
-            git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
-            git config --global user.email "srikanthreddy.kumbala1@cms.hhs.gov"
-            git config --global user.name "kdoi"
-            git status
-            git diff
-            if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
-                echo "[WARN] No changes made to manifest"
-                exit 0
-            fi
-            git commit -am "pipeline update service ${params.target_service} to ${params.image}"
-            git push origin kustomize
-          """
+         withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+          script {
+            def fullImage = "${params.image_registry}:${params.tag}"
+            sh """
+              apk add --update --no-cache curl tar gzip git
+              curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
+              kustomize version
+              echo "[LOG] Target Service -> ${params.target_service}"
+              echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
+              echo "[LOG] Target Image -> ${fullImage}"
+              echo "[LOG] Checkout manifest repository"
+              echo "[LOG] Target Environment -> ${params.environment_path}"
+              cd ${params.environment_path}
+              kustomize edit set image ${params.target_service}=${fullImage}
+              git config --global --add safe.directory "${WORKSPACE}"
+              git config --global user.email srikanthreddy.kumbala1@cms.hhs.gov
+              git config --global user.name 'kdoi'
+              git status
+              git diff
+              if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                  echo '[WARN] No changes made to manifest'
+                  exit 0
+              fi
+              git show-ref
+              # Check if kustomize branch exists, if not create it
+              git branch -a | grep remotes/origin/kustomize || git checkout -b kustomize              
+              git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
+              git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
+              git push origin kustomize
+            """
+          }
         }
       }
     }
-  }   
-
-    // stage('Push Manifests') {
-    //   steps {
-    //     container('fetch') {
-    //       script {
-    //         sh """
-    //           cat /etc/os-release
-    //           apk add --update --no-cache curl tar gzip git
-    //           curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz" | tar xz -C /usr/local/bin
-    //           kustomize version
-    //           echo "[LOG] Target Service -> ${params.target_service}"
-    //           echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
-    //           echo "[LOG] Target Image -> ${params.image}"
-    //           echo "[LOG] Checkout manifest repository"
-    //           git clone -q --depth 1 "${params.git_repository}" \${TEMP_MANIFEST_DIR}
-    //           cd \${TEMP_MANIFEST_DIR}
-    //           export MANIFEST_ROOT=\$(pwd)
-    //           git config --global user.email "devops-pipeline-user@cms.hhs.gov"
-    //           git config --global user.name "pipeline-user"
-    //           git status
-              
-    //           echo "[LOG] Target Environment -> ${params.environment_path}"
-    //           cd ${params.environment_path}
-    //           kustomize edit set image ${params.target_service}=${params.image}
-    //           cd \${MANIFEST_ROOT}
-              
-    //           git diff
-    //           if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
-    //              echo "[WARN] No changes made to manifest"
-    //              exit 0
-    //           fi
-    //           git commit -am "pipeline update service ${params.target_service} to ${params.image}"
-    //           git push origin kustomize
-    //         """
-    //       }
-    //     }
-    //   }
-    // }
   }
+}
 }
