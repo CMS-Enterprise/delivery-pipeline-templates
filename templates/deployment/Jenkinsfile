@@ -83,7 +83,7 @@ pipeline {
             fi
             git show-ref
             git commit -am "pipeline update service ${params.target_service} to ${params.image}"
-            git push -f origin kustomize
+            git push -uf origin kustomize
           """
         }
       }
