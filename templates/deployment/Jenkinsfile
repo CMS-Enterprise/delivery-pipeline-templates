@@ -55,7 +55,7 @@ pipeline {
           )
         }
         container('fetch') {
-         withCredentials([usernamePassword(credentialsId: params.git_credential, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+         withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
           script {
             def fullImage = "${params.image_registry}:${params.tag}"
             sh """
