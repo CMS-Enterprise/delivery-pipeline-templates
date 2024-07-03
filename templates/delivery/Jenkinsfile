@@ -84,7 +84,6 @@ pipeline {
               "--cache-repo=${params.image}",
               '--cache-copy-layers',
               '--skip-unused-stages',
-              '--snapshot-mode=redo',
               '--no-push',
               '--no-push-cache',
               '--tar-path=./image.tar'
