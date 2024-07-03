@@ -3,7 +3,7 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout.')
     string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
-    string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
+    string(name: 'environment_path', defaultValue: 'dev', description: 'Path to the environment directory in the manifest repository.')
     string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
     string(name: 'image_registry', description: 'The fully qualified container image repository URL (excluding the tag).')
     string(name: 'tag', description: 'The tag of the container image.')
