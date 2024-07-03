@@ -84,7 +84,7 @@ pipeline {
               fi
               git show-ref
               # Print the current branch
-              echo "Current branch: \$(git rev-parse --abbrev-ref HEAD)"              
+              echo "Current branch: \$(git branch --show-current)"              
               # Check if kustomize branch exists
               git branch -a | grep remotes/origin/kustomize
               git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
