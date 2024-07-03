@@ -146,8 +146,9 @@ pipeline {
               return
             }
             echo 'export image registry auth json to /root/.docker/config.json'
+            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
             sh 'mkdir -p /root/.docker'
-            writeFile file: '/root/.docker/config.json', text: "${params.image_registry_auth_json}"
+            sh 'mv docker-config.json /root/.docker/config.json'
             sh 'crane version'
             sh 'pwd && ls -laH'
             sh "crane push ./image.tar ${params.image}:${params.tag}"
