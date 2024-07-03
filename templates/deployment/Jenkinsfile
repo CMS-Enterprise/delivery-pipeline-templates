@@ -23,12 +23,6 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-        - name: git
-          image: alpine/git
-          command: ['tail', '-f', '/dev/null']
-        - name: kustomize
-          image: bitnami/kubectl:latest
-          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -38,7 +32,7 @@ pipeline {
   }
 
   stages {
-    stage('Clone Manifests') {
+    stage('kustomize') {
       steps {
         container('fetch') {
           checkout scmGit(
@@ -59,7 +53,6 @@ pipeline {
           script {
             def fullImage = "${params.image_registry}:${params.tag}"
             sh """
-              cat /etc/os-release
               apk add --update --no-cache curl tar gzip git
               curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
               kustomize version
@@ -69,11 +62,7 @@ pipeline {
               echo "[LOG] Checkout manifest repository"
               echo "[LOG] Target Environment -> ${params.environment_path}"
               cd ${params.environment_path}
-              cat kustomization.yaml
               kustomize edit set image ${params.target_service}=${fullImage}
-              cat kustomization.yaml
-              cd ..
-              ls -tlr *
               git config --global --add safe.directory "${WORKSPACE}"
               git config --global user.email srikanthreddy.kumbala1@cms.hhs.gov
               git config --global user.name "kdoi"
@@ -86,7 +75,7 @@ pipeline {
               git show-ref
               # Check if kustomize branch exists, if not create it
               git branch -a | grep remotes/origin/kustomize || git checkout -b kustomize              
-              git commit -am "pipeline update service ${params.target_service}"
+              git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
               git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
               git push origin kustomize
             """
