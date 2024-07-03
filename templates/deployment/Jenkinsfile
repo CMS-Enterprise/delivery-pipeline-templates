@@ -5,6 +5,7 @@ pipeline {
     string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'environment_path', defaultValue: 'environments/dev', description: 'Path to the environment directory in the manifest repository.')
     string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
+    string(name: 'image_registry', description: 'The fully qualified container image repository URL (excluding the tag).')
     string(name: 'tag', description: 'The tag of the container image.')
   }
 
@@ -55,7 +56,7 @@ pipeline {
         }
         container('fetch') {
           script {
-            def fullImage = "${params.git_repository}:${params.tag}"
+            def fullImage = "${params.image_registry}:${params.tag}"
             sh """
               cat /etc/os-release
               apk add --update --no-cache curl tar gzip git
