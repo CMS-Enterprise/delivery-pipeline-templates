@@ -74,7 +74,7 @@ pipeline {
               cat kustomization.yaml
               cd ..
               ls -tlr *
-              git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
+              #git config --global --add safe.directory /home/jenkins/agent/workspace/Deployment
               git config --global user.email srikanthreddy.kumbala1@cms.hhs.gov
               git config --global user.name "kdoi"
               git status
