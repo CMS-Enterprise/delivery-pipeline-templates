@@ -81,6 +81,7 @@ pipeline {
                 echo "[WARN] No changes made to manifest"
                 exit 0
             fi
+            git show-ref
             git commit -am "pipeline update service ${params.target_service} to ${params.image}"
             git push -f origin kustomize
           """
