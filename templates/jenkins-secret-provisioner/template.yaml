@@ -8,3 +8,26 @@ parameters:
     displayName: Jenkins Controller Name
     description: The Kubernetes Namespace where the Secret will be created is based on the name of the Jenkins Controller.
     type: string
+  - name: default_jenkins_credential_id
+    displayName: Jenkins Credential ID
+    description: The Jenkins Credential ID to use for the Secret.
+    type: credentials
+  - name: default_secret_name
+    displayName: Secret Name
+    description: The name of the Kubernetes Secret to create.
+    type: string
+  - name: default_secret_type
+    displayName: Secret Type
+    description: The type of Kubernetes Secret to create.
+    type: string
+    defaultValue: "generic"
+  - name: default_registry_path
+    displayName: Registry Path
+    description: The URL of the Docker registry to use when creating the Kubernetes secret.
+    type: string
+    defaultValue: "docker.io"
+  - name: default_generic_key
+    displayName: Generic Key
+    description: The key to use when creating a generic Kubernetes Secret.
+    type: string
+    defaultValue: ""
