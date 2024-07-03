@@ -63,7 +63,7 @@ pipeline {
               echo '[LOG] Target Environment -> ${params.environment_path}'
               cd ${params.environment_path}
               kustomize edit set image ${params.target_service}=${fullImage}
-              git config --global --add safe.directory '${WORKSPACE}'
+              git config --global --add safe.directory "${WORKSPACE}"ß
               git config --global user.email srikanthreddy.kumbala1@cms.hhs.gov
               git config --global user.name 'kdoi'
               git status
