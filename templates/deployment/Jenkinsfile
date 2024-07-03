@@ -82,7 +82,7 @@ pipeline {
                 exit 0
             fi
             git commit -am "pipeline update service ${params.target_service} to ${params.image}"
-            git push origin kustomize
+            git push -f origin kustomize
           """
         }
       }
