@@ -100,8 +100,8 @@ pipeline {
                 """,
                 returnStdout: true
               )
-              def projectSettings = new groovy.json.JsonSlurper().parseText(projectSettingsJson)
-              def defaultBranch = projectSettings.settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
+              def defaultBranch =
+                new groovy.json.JsonSlurper().parseText(projectSettingsJson).settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
               def args = [
                 '-Dsonar.login=$SONAR_TOKEN',
                 "-Dsonar.host.url=${params.sonarqube_url}",
