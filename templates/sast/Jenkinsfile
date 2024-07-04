@@ -91,15 +91,31 @@ pipeline {
         container('sonarqube') {
           withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
             script {
+              def project_settings_url = "${params.sonarqube_url}/api/settings/values?component=${params.sonarqube_project_key}"
+              def projectSettingsJson = sh(
+                script: """
+                  curl --location '${project_settings_url}&keys=sonar.projectCreation.mainBranchName' \
+                    --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
+                    --no-progress-meter -f
+                """,
+                returnStdout: true
+              )
+              def defaultBranch =
+                new groovy.json.JsonSlurper().parseText(projectSettingsJson).settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
               def args = [
                 '-Dsonar.login=$SONAR_TOKEN',
                 "-Dsonar.host.url=${params.sonarqube_url}",
                 "-Dsonar.projectKey=${params.sonarqube_project_key}",
                 "-Dsonar.sources=${params.source_path}",
-                "-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}",
-                "-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}",
                 "-Dsonar.qualitygate.wait=true"
               ]
+              if (params.git_branch == defaultBranch) {
+                args.add("-Dsonar.branch.name=${params.git_branch}")
+              } else {
+                args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
+                args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
+              }
+
               if (params.sonarqube_additional_arguments) {
                 def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
                 // Add all the items in argArray to the args list
