@@ -92,11 +92,14 @@ pipeline {
           withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
             script {
               def project_settings_url = "${params.sonarqube_url}/api/settings/values?component=${params.sonarqube_project_key}"
-              def projectSettingsJson = sh """
-                curl --location '${project_settings_url}&keys=sonar.projectCreation.mainBranchName' \
-                  --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
-                  --no-progress-meter -f
-              """
+              def projectSettingsJson = sh(
+                script: """
+                  curl --location '${project_settings_url}&keys=sonar.projectCreation.mainBranchName' \
+                    --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
+                    --no-progress-meter -f
+                """,
+                returnStdout: true
+              )
               def projectSettings = new groovy.json.JsonSlurper().parseText(projectSettingsJson)
               def defaultBranch = projectSettings.settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
               def args = [
