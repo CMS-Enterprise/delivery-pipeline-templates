@@ -69,7 +69,6 @@ pipeline {
                     echo '[WARN] No changes made to manifest'
                     exit 0
                 fi
-                git show-ref
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
                 git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
                 git push origin ${params.git_branch}
