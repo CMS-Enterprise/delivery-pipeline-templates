@@ -9,6 +9,10 @@ parameters:
     description: The fully qualified container image name (including the registry).
     type: string
     defaultValue: "docker.io/my-app"
+  - name: default_tag
+    displayName: Image Tag
+    type: string
+    defaultValue: ""    
   - name: git_repository
     displayName: Manifest Repository URL
     description: URL of the Git repository containing Kubernetes manifests.
@@ -17,17 +21,22 @@ parameters:
     displayName: Git Credential
     description: Jenkins credential ID for accessing the Git repository.
     type: credentials
-  - name: environment_path
-    displayName: Environment Path
+  - name: git_user_email
+    displayName: Git User Email
+    description: The email address to use for git commits.
+    type: string
+  - name: git_branch
+    displayName: Git Branch
+    description: The branch name to checkout.
+    type: string
+    defaultValue: "main"
+  - name: default_environment_path
+    displayName: Default Environment Path
     description: Path to the environment directory in the manifest repository.
     type: string
-    defaultValue: "environments/dev"
-  - name: target_service
-    displayName: Target Service
+    defaultValue: "dev"
+  - name: default_target_service
+    displayName: Default Target Service
     description: The name of the service to update.
     type: string
     defaultValue: "my-service"
-  - name: image
-    displayName: Image
-    description: The fully qualified container image name (including the registry).
-    type: string

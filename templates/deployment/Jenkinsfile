@@ -1,12 +1,13 @@
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
-    string(name: 'git_commit', description: 'The commit hash or branch name to checkout.')
-    string(name: 'git_credential', description: 'Jenkins credential ID for accessing the Git repository.')
-    string(name: 'environment_path', defaultValue: 'dev', description: 'Path to the environment directory in the manifest repository.')
-    string(name: 'target_service', defaultValue: 'my-service', description: 'The name of the service to update.')
-    string(name: 'image_registry', description: 'The fully qualified container image repository URL (excluding the tag).')
-    string(name: 'tag', description: 'The tag of the container image.')
+    string(name: 'git_branch', defaultValue: 'main', description: 'The branch name to checkout.')
+    string(name: 'git_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
+    string(name: 'git_user_email', description: 'The email address to use for git commits.')
+    string(name: 'environment_path', defaultValue: "${default_environment_path}", description: 'Path to the environment directory in the manifest repository.')
+    string(name: 'target_service', defaultValue: "${default_target_service}", description: 'The name of the service to update.')
+    string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
+    string(name: 'tag', defaultValue: "${default_tag ?: ''}", description: 'Container image tag.')
   }
 
   agent {
@@ -36,49 +37,44 @@ pipeline {
       steps {
         container('fetch') {
           checkout scmGit(
-            branches: [[ name: "${params.git_commit}" ]],
+            branches: [[ name: "${params.git_branch}" ]],
             userRemoteConfigs: [[
               url: "${params.git_repository}",
-              credentialsId: "${params.git_credentials}",
-              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
-            ]],
-            extensions: [
-              cloneOption(shallow: true, honorRefspec: true, noTags: true),
-              submodule(recursiveSubmodules: true, shallow: true)
-            ]
+              credentialsId: "${params.git_credentials}"
+            ]]
           )
         }
         container('fetch') {
-         withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-          script {
-            def fullImage = "${params.image_registry}:${params.tag}"
-            sh """
-              apk add --update --no-cache curl tar gzip git
-              curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
-              kustomize version
-              echo "[LOG] Target Service -> ${params.target_service}"
-              echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
-              echo "[LOG] Target Image -> ${fullImage}"
-              echo "[LOG] Checkout manifest repository"
-              echo "[LOG] Target Environment -> ${params.environment_path}"
-              cd ${params.environment_path}
-              kustomize edit set image ${params.target_service}=${fullImage}
-              git config --global --add safe.directory "${WORKSPACE}"
-              git config --global user.email srikanthreddy.kumbala1@cms.hhs.gov
-              git config --global user.name 'kdoi'
-              git status
-              git diff
-              if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
-                  echo '[WARN] No changes made to manifest'
-                  exit 0
-              fi
-              git show-ref
-              # Check if kustomize branch exists, if not create it
-              git branch -a | grep remotes/origin/kustomize || git checkout -b kustomize              
-              git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
-              git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
-              git push origin kustomize
-            """
+          withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+            script {
+              def fullImage = "${params.image}:${params.tag}"
+              sh """
+                set -e
+                apk add --update --no-cache curl tar gzip git
+                curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
+                kustomize version
+                echo "[LOG] Target Service -> ${params.target_service}"
+                echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
+                echo "[LOG] Target Image -> ${fullImage}"
+                echo "[LOG] Checkout manifest repository"
+                echo "[LOG] Target Environment -> ${params.environment_path}"
+                cd ${params.environment_path}
+                kustomize edit set image ${params.target_service}=${fullImage}
+                git config --global --add safe.directory "${WORKSPACE}"
+                git config --global user.email ${params.git_user_email}
+                git config --global user.name '${GIT_USERNAME}'
+                git status
+                git diff
+                if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                    echo '[WARN] No changes made to manifest'
+                    exit 0
+                fi
+                git show-ref
+                git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
+                git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
+                git push origin ${params.git_branch}
+              """
+            }
           }
         }
       }
