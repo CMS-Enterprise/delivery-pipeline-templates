@@ -21,6 +21,10 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | git_credentials      | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository        |                  |
 | git_commit           | X        |          | The commit hash or branch name to checkout when building the container image.   |                  |
 | log_level            | X        |          | The log level to use for the container build process.                           | info             |
+| kaniko_memory_limit            | X        |    X     | Kaniko memory limit input for those larger builds.                           | 1Gi             |
+| copy_artifacts_job_name         |  X     |        | The Jenkins job name from which to copy artifacts.                           |              |
+| copy_artifacts_build_number         | X       |        | The Jenkins job build number from which to copy artifacts.                           |              |
+| copy_artifacts_filter         |     X   |        |  A string expression to filter artifact names.                           |              |
 
 # Usage
 
@@ -30,70 +34,30 @@ The Delivery Pipeline is intended to be invoked dynamically from another Pipelin
 
 ```groovy
 pipeline {
-  agent {
-    // The Pod specification here is specific to the project being build and
-    // does not affect the Delivery Pipeline.
-    kubernetes {
-      yaml """
-      apiVersion: v1
-      kind: Pod
-      spec:
-        restartPolicy: Never
-        containers:
-        - name: build
-          image: docker/node:18
-          command: ['tail', '-f', '/dev/null']
-      """
-    }
-  }
-
   stages {
-    // These steps are just examples and would be specific to the project
-    stage('Build') {
-      steps {
-        container('build') {
-          dir('node-server') {
-            sh 'npm ci'
-          }
-        }
-      }
-    }
-
-    stage ('Test') {
-      parallel {
-        stage('Unit Test') {
-          steps {
-            container('build') {
-              dir('node-server') {
-                sh 'npm run test:unit'
-              }
-            }
-          }
-        }
-        stage('Lint') {
-          steps {
-            container('build') {
-              dir('node-server') {
-                sh 'npm run lint'
-              }
-            }
-          }
-        }
-      }
-    }
+    // Stages and steps that are specific to the project should be specified
+    // before the Delivery stage
 
     stage('Delivery') {
       steps {
-        // The job name here corresponds to the name assigned to the instance of the Delivery Pipeline created in Jenkins from the Delivery Pipeline Template.
-        build(job: 'Node Server Delivery', wait: true, propagate: true, parameters: [
+        // The job name here corresponds to the name assigned to the instance of the Delivery
+        // Pipeline created in Jenkins from the Delivery Pipeline Template.
+        build(job: 'App Delivery', wait: true, propagate: true, parameters: [
           string(name: 'tag', value: "${GIT_COMMIT[0..7]}"),
           
-          // These parameters leverage the conifugration of the Multi-Branch
+          // These parameters leverage the configuration of the Multi-Branch
           // Pipeline so that the Delivery Pipeline runs for the same commit
           // that the project-specific pipeline is running for.
           string(name: 'git_repository', value: "${scm.userRemoteConfigs[0].url}"),
           string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_commit', value: "${GIT_COMMIT}"),
+          
+          // These parameters may be specified here, or as defaults when an instance of the
+          // SAST Pipeline is created in the Jenkins dashboard
+          
+          string(name: 'image', value: "docker.io/your-account/your-app"),
+          // buid_args specified here corresond to ARG statements in your Dockerfile
+          string(name: 'build_args', value: "{ \"BUILD_REVISION\": \"${GIT_COMMIT}\" }"),
         ])
       }
     }

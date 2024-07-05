@@ -35,6 +35,7 @@ pipeline {
         // Pipeline created in Jenkins from the Deployment Pipeline Template.
         build(job: 'K8s Deployment', wait: true, propagate: true, parameters: [
           string(name: 'git_repository', value: "${scm.userRemoteConfigs[0].url}"),
+
           string(name: 'git_branch', value: "main"),
           string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_user_email', value: "your-email@example.com"),

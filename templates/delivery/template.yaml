@@ -16,6 +16,9 @@ parameters:
   - name: registry_credentials
     displayName: Registry Credentials
     type: credentials
+  - name: image_registry_auth_json
+    displayName: Image Registry Auth JSON
+    type: credentials
   - name: default_build_args
     displayName: Build Arguments
     description: "A JSON object of build arguments to pass to the container build process."
@@ -34,13 +37,28 @@ parameters:
     displayName: Build Target
     description: "The build target to use when building the container image (for use with multi-stage Dockerfiles)."
     type: string
+  - name: default_kaniko_memory_limit
+    displayName: Kaniko Memory Limit
+    description: "Kaniko memory limit input for those larger builds."
+    defaultValue: "1Gi"
+    type: string
   - name: default_platform
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
     type: string
     defaultValue: "linux/amd64"
+  - name: copy_artifacts
+    displayName: Copy Artifacts Job Name
+    description: "The Jenkins job name from which to copy artifacts."
+    type: string
+    defaultValue: ""
   - name: enable_ansi_colors
     displayName: Enable ANSI Colors
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
+    type: boolean
+    defaultValue: true
+  - name: enable_cache
+    displayName: Enable Kaniko Cache
+    description: "Enable Kaniko image build cache."
     type: boolean
     defaultValue: true

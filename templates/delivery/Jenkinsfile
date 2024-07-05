@@ -3,8 +3,11 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
+    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
+
     booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
     string(name: 'build_args', defaultValue: "${default_build_args ?: '{}'}", description: 'A JSON object of build arguments to pass to the container build process.')
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
@@ -12,6 +15,14 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
+    
+    string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
+    string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, number of the Jenkins build job from which to copy build artifacts that may be required by the Dockerfile.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, A string expression to filter artifact filenames to copy build artifacts that may be required by the Dockerfile.')
+    
+    string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: 'Kaniko memory limit input for those larger builds.')
+
+    booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
   }
 
   agent {
@@ -32,12 +43,19 @@ pipeline {
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
           resources:
-            requests:
-              memory: "1Gi"
-              cpu: "500m"
             limits:
-              memory: "2Gi"
-              cpu: "1000m"          
+              memory: "${params.kaniko_memory_limit}"
+        - name: clamav
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          command: ['tail', '-f', '/dev/null']
+          resources:
+            limits:
+              memory: "5Gi"
+            requests:
+              memory: "3Gi"
+        - name: crane
+          image: gcr.io/go-containerregistry/crane/debug:latest
+          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -66,6 +84,12 @@ pipeline {
               "--dockerfile=${params.dockerfile}",
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
+              "--cache=${enable_cache}",
+              "--cache-repo=${params.image}",
+              '--cache-copy-layers',
+              '--skip-unused-stages',
+              '--use-new-run',
+              '--no-push-cache',
               '--no-push',
               '--tar-path=./image.tar'
             ]
@@ -87,13 +111,54 @@ pipeline {
               }
             }
 
-            if ("${enable_ansi_colors}" == "true") {
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+            }
+
+            if ("${enable_ansi_colors}" == 'true') {
               ansiColor('xterm') {
                 sh "/kaniko/executor ${arguments.join(' ')}"
               }
             } else {
               sh "/kaniko/executor ${arguments.join(' ')}"
             }
+          }
+        }
+      }
+    }
+
+    stage('Malware Scan') {
+      steps {
+        container('clamav') {
+          script {
+            if (!params.clamscan_enabled) {
+              echo 'clamscan_enabled is set to false, skipping the image antivirus scan with ClamAV step'
+              return
+            }
+            sh "freshclam"
+            sh "touch virus-report.clamav.txt"
+            sh "pwd && ls -laH"
+            sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
+          }
+        }
+      }
+    }
+
+    stage('Image Publish') {
+      steps {
+        container('crane') {
+          script {
+            if (!params.image_push_enabled) {
+              echo 'image_push_enabled is set to false, skipping the image push step'
+              return
+            }
+            echo 'export image registry auth json to /root/.docker/config.json'
+            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+            sh 'mkdir -p /root/.docker'
+            sh 'mv docker-config.json /root/.docker/config.json'
+            sh 'crane version'
+            sh 'pwd && ls -laH'
+            sh "crane push ./image.tar ${params.image}:${params.tag}"
           }
         }
       }
