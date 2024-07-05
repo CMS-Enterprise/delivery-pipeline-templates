@@ -61,7 +61,7 @@ pipeline {
                 cd ${params.environment_path}
                 kustomize edit set image ${params.target_service}=${fullImage}
                 git config --global --add safe.directory "${WORKSPACE}"
-                git config --global user.email ${params.git_user_email}
+                git config --global user.email '${params.git_user_email}'
                 git config --global user.name '${GIT_USERNAME}'
                 git status
                 git diff
