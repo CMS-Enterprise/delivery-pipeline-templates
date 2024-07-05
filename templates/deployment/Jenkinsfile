@@ -1,7 +1,7 @@
 pipeline {
   parameters {
-    string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
-    string(name: 'git_branch', description: 'The branch name to checkout.')
+    string(name: 'git_manifest_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
+    string(name: 'git_manifest_branch', description: 'The branch name to checkout.')
     string(name: 'git_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'git_user_email', description: 'The email address to use for git commits.')
     string(name: 'environment_path', defaultValue: "${default_environment_path}", description: 'Path to the environment directory in the manifest repository.')
@@ -37,9 +37,9 @@ pipeline {
       steps {
         container('fetch') {
           checkout scmGit(
-            branches: [[ name: "${params.git_branch}" ]],
+            branches: [[ name: "${params.git_manifest_branch}" ]],
             userRemoteConfigs: [[
-              url: "${params.git_repository}",
+              url: "${params.git_manifest_repository}",
               credentialsId: "${params.git_credentials}"
             ]]
           )
@@ -54,7 +54,7 @@ pipeline {
                 curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
                 kustomize version
                 echo "[LOG] Target Service -> ${params.target_service}"
-                echo "[LOG] Target Manifest Repo -> ${params.git_repository}"
+                echo "[LOG] Target Manifest Repo -> ${params.git_manifest_repository}"
                 echo "[LOG] Target Image -> ${fullImage}"
                 echo "[LOG] Checkout manifest repository"
                 echo "[LOG] Target Environment -> ${params.environment_path}"
@@ -70,8 +70,8 @@ pipeline {
                     exit 0
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
-                git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}
-                git push origin HEAD:'${params.git_branch}'
+                git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_manifest_repository.replace('https://', '')}
+                git push origin HEAD:'${params.git_manifest_branch}'
               """
             }
           }
