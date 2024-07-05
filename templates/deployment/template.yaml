@@ -29,7 +29,7 @@ parameters:
     displayName: Git Branch
     description: The branch name to checkout.
     type: string
-    defaultValue: "main"
+    defaultValue: ""
   - name: default_environment_path
     displayName: Default Environment Path
     description: Path to the environment directory in the manifest repository.

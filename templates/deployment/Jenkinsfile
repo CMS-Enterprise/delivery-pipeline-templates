@@ -1,7 +1,7 @@
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
-    string(name: 'git_branch', defaultValue: 'main', description: 'The branch name to checkout.')
+    string(name: 'git_branch', description: 'The branch name to checkout.')
     string(name: 'git_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'git_user_email', description: 'The email address to use for git commits.')
     string(name: 'environment_path', defaultValue: "${default_environment_path}", description: 'Path to the environment directory in the manifest repository.')
@@ -69,7 +69,6 @@ pipeline {
                     echo '[WARN] No changes made to manifest'
                     exit 0
                 fi
-                git show-ref
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
                 git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
                 git push origin ${params.git_branch}
