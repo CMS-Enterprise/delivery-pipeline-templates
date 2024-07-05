@@ -71,7 +71,7 @@ pipeline {
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
                 git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@${params.git_repository.replace('https://', '')}              
-                git push origin 'HEAD:${params.git_branch}'
+                git push origin HEAD:'${params.git_branch}'
               """
             }
           }
