@@ -8,8 +8,8 @@ The Deployment Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc
 
 | Parameter Name       | Pipeline | Template | Description                                                                 | Default Value          |
 |----------------------|----------|----------|-----------------------------------------------------------------------------|------------------------|
-| git_repository       | X        | X        | The URL of the Git repository containing Kubernetes manifests.              |                        |
-| git_branch           | X        | X        | The branch name to checkout.                                                | main                   |
+| git_manifest_repository       | X        | X        | The URL of the Git repository containing Kubernetes manifests.              |                        |
+| git_manifest_branch           | X        | X        | The branch name to checkout.                                                | main                   |
 | git_credentials      | X        | X        | Jenkins credential ID for accessing the Git repository.                     |                        |
 | git_user_email       | X        | X        | The email address to use for git commits.                                   |                        |
 | environment_path     | X        | X        | Path to the environment directory in the manifest repository.               | ${default_environment_path} |
@@ -34,8 +34,8 @@ pipeline {
         // The job name here corresponds to the name assigned to the instance of the Deployment
         // Pipeline created in Jenkins from the Deployment Pipeline Template.
         build(job: 'K8s Deployment', wait: true, propagate: true, parameters: [
-          string(name: 'git_repository', value: "${scm.userRemoteConfigs[0].url}"),
-          string(name: 'git_branch', value: "main"),
+          string(name: 'git_manifest_repository', value: "${scm.userRemoteConfigs[0].url}"),
+          string(name: 'git_manifest_branch', value: "main"),
           string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_user_email', value: "your-email@example.com"),
           string(name: 'environment_path', value: 'dev'),
