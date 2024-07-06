@@ -86,8 +86,6 @@ pipeline {
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}",
-              '--cache-copy-layers',
-              '--skip-unused-stages',
               '--use-new-run',
               '--no-push-cache',
               '--no-push',
