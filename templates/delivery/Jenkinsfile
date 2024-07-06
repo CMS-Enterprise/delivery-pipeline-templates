@@ -86,6 +86,7 @@ pipeline {
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}",
+              '--compressed-caching=false',
               '--use-new-run',
               '--no-push-cache',
               '--no-push',
