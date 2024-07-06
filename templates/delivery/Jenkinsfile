@@ -23,8 +23,6 @@ pipeline {
     string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: 'Kaniko memory limit input for those larger builds.')
 
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
-
-    choice(name: 'ARCHITECTURE_FILTER', choices: ['all', 'amd64', 'arm64', 's390x', 'ppc64le'], description: 'The architecture to build the container image for.')
   }
 
   agent {
@@ -63,96 +61,65 @@ pipeline {
   }
 
   stages {
-    stage('Build Image(s)') {
-      matrix {
-        when {
-          anyOf {
-            expression {
-              params.ARCHITECTURE_FILTER == 'all'
-            }
-            expression {
-              params.ARCHITECTURE_FILTER == env.ARCHITECTURE
-            }
-          }
+    stage('Build Image') {
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
         }
-        axes {
-          axis {
-            name 'ARCHITECTURE'
-            values 'amd64', 'arm64', 's390x', 'ppc64le'
-          }
-        }
-        excludes {
-          exclude {
-            axis {
-              name 'ARCHITECTURE'
-              notValues 'windows', 'macos'
+        container('kaniko') {
+          script {
+            def arguments = [
+              "--context=${params.build_dir}",
+              "--dockerfile=${params.dockerfile}",
+              "--destination=${params.image}:${params.tag}",
+              "--verbosity=${params.log_level}",
+              "--cache=${enable_cache}",
+              "--cache-repo=${params.image}",
+              "--compressed-caching=${enable_compressed_caching}",
+              '--use-new-run',
+              '--no-push-cache',
+              '--no-push',
+              '--tar-path=./image.tar'
+            ]
+
+            if (params.build_target) {
+              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+              echo "default_build_target: ${default_build_target}"
+              arguments.add("--target=${params.build_target}")
             }
-          }
-        }
-        stages {
-          stage('Build') {
-            steps {
-              echo "Building ${ARCHITECTURE}"
-              container('fetch') {
-                checkout scmGit(
-                  branches: [[ name: "${params.git_commit}" ]],
-                  userRemoteConfigs: [[
-                    url: "${params.git_repository}",
-                    credentialsId: "${params.git_credentials}",
-                    refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
-                  ]],
-                  extensions: [
-                    cloneOption(shallow: true, honorRefspec: true, noTags: true),
-                    submodule(recursiveSubmodules: true, shallow: true)
-                  ]
-                )
+
+            if (params.platform) {
+              arguments.add("--custom-platform=${params.platform}")
+            }
+
+            if (params.build_args) {
+              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+              argMap.each { key, value ->
+                arguments.add("--build-arg=${key}='${value}'")
               }
-              container('kaniko') {
-                script {
-                  def arguments = [
-                    "--context=${params.build_dir}",
-                    "--dockerfile=${params.dockerfile}",
-                    "--destination=${params.image}:${params.tag}",
-                    "--verbosity=${params.log_level}",
-                    "--cache=${enable_cache}",
-                    "--cache-repo=${params.image}",
-                    "--compressed-caching=${enable_compressed_caching}",
-                    '--use-new-run',
-                    '--no-push-cache',
-                    '--no-push',
-                    '--tar-path=./image.tar'
-                  ]
+            }
 
-                  if (params.build_target) {
-                    echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-                    echo "default_build_target: ${default_build_target}"
-                    arguments.add("--target=${params.build_target}")
-                  }
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+            }
 
-                  if (params.platform) {
-                    arguments.add("--custom-platform=${params.platform}")
-                  }
-
-                  if (params.build_args) {
-                    def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-                    argMap.each { key, value ->
-                      arguments.add("--build-arg=${key}='${value}'")
-                    }
-                  }
-
-                  if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
-                    copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
-                  }
-
-                  if ("${enable_ansi_colors}" == 'true') {
-                    ansiColor('xterm') {
-                      sh "/kaniko/executor ${arguments.join(' ')}"
-                    }
-                  } else {
-                    sh "/kaniko/executor ${arguments.join(' ')}"
-                  }
-                }
+            if ("${enable_ansi_colors}" == 'true') {
+              ansiColor('xterm') {
+                sh "/kaniko/executor ${arguments.join(' ')}"
               }
+            } else {
+              sh "/kaniko/executor ${arguments.join(' ')}"
             }
           }
         }
