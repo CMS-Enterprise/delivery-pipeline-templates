@@ -87,7 +87,6 @@ pipeline {
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}",
               '--compressed-caching=false',
-              '--snapshot-mode=redo',
               '--single-snapshot',
               '--use-new-run',
               '--no-push-cache',
