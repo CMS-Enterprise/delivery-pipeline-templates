@@ -86,6 +86,9 @@ pipeline {
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}",
+              '--compressed-caching=false',
+              '--use-new-run',
+              '--cleanup',
               '--no-push-cache',
               '--no-push',
               '--tar-path=./image.tar'
