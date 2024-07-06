@@ -85,11 +85,7 @@ pipeline {
           exclude {
             axis {
               name 'ARCHITECTURE'
-              notValues 'windows'
-            }
-            axis {
-              name 'ARCHITECTURE'
-              notValues 'macos'
+              notValues 'windows', 'macos'
             }
           }
         }
