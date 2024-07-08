@@ -62,6 +62,7 @@ pipeline {
                 echo "[LOG] Target Image -> ${fullImage}"
                 echo "[LOG] Checkout manifest repository"
                 echo "[LOG] Target Environment -> ${params.environment_path}"
+                ls -tlr *
                 cd ${params.environment_path}
                 kustomize edit set image ${params.target_service}=${fullImage}
                 git config --global --add safe.directory "${WORKSPACE}"
