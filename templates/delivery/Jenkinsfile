@@ -59,6 +59,7 @@ pipeline {
               "--dockerfile=${params.dockerfile}",
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
+              "--cache=${enable_cache}",
               '--no-push',
               '--tar-path=./image.tar'
             ]
