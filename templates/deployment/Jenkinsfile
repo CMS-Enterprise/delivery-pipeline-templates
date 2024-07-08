@@ -39,7 +39,7 @@ pipeline {
           checkout scmGit(
             branches: [[ name: "${params.git_manifest_branch}" ]],
             userRemoteConfigs: [[
-              url: "git@github.com:${params.git_manifest_repository}.git",
+              url: "git@${params.git_repository.replace('https://', '').replace('http://', '')}",
               credentialsId: "${params.git_credentials}"
             ]]
           )
