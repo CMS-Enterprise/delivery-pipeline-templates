@@ -45,7 +45,7 @@ pipeline {
           )
         }
         container('fetch') {
-          withCredentials([usernamePassword(credentialsId: params.git_credentials, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+          withCredentials([sshUserPrivateKey(credentialsId: params.git_credentials, keyFileVariable: 'SSH_KEY')]) {
             script {
               def fullImage = "${params.image}:${params.tag}"
               sh """
@@ -70,8 +70,8 @@ pipeline {
                     exit 0
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
-                git remote set-url origin git@${params.git_repository.replace('https://', '').replace('http://', '')}
-                GIT_SSH_COMMAND="ssh -i $(pwd)/.ssh/id_rsa -o IdentitiesOnly=yes"
+                git remote set-url origin "git@${params.git_repository.replace('https://', '').replace('http://', '')}"
+                GIT_SSH_COMMAND="ssh -i ${SSH_KEY}"
                 git push origin HEAD:'${params.git_manifest_branch}'
               """
             }
