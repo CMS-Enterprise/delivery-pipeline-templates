@@ -36,10 +36,11 @@ pipeline {
     stage('kustomize') {
       steps {
         container('fetch') {
+          def sshRepoUrl = params.git_manifest_repository.replace('https://github.com/', 'git@github.com:').replace('.git', '') + '.git'
           checkout scmGit(
             branches: [[ name: "${params.git_manifest_branch}" ]],
             userRemoteConfigs: [[
-              url: "git@${params.git_repository.replace('https://', '').replace('http://', '')}",
+              url: "${sshRepoUrl}",
               credentialsId: "${params.git_credentials}"
             ]]
           )
