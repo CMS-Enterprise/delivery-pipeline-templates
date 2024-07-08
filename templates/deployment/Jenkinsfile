@@ -49,7 +49,7 @@ pipeline {
           }
         }
         container('fetch') {
-          withCredentials([sshUserPrivateKey(credentialsId: params.git_credentials_id, keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+          withCredentials([sshUserPrivateKey(credentialsId: params.git_credentials, keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
             script {
               def fullImage = "${params.image}:${params.tag}"
               sh """
