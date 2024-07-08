@@ -72,3 +72,24 @@ Instances of these Pipeline Templates are not intended to be run manually (altho
 If your project contains multiple applications or services, you can organize your Delivery Pipelines in one of two ways: create separate pipelines for each of your projects that have different default parameter values for that specific application, or create a single pipeline with minimal default settings, that can be invoked from multiple application specific pipelines with different parameter values. The former strategy will result in more pipelines appearing in your Jenkins dashboard, but may make it easier to find a specific pipeline run for a particular application.
 
 For example, if you use a single Delivery pipeline to build the container image for multiple applications, passing the different image name and other parameters from the triggering Jenkins files, this build history for the shared Delivery pipeline will include a mix of pipeline runs for both applications. This can make it more difficult to determine when one application or another is having pipeline failures.
+
+## Dockerfile Considerations and Use of Copy Artifact
+
+Typically, the Dockerfile for an application is self-contained and should build and package the software. For some ADOs, the Dockerfile may simply assume that build artifacts have already been compiled and try to copy them in. For this scenario, the following should be added to the project Jenkinsfile so the artifacts will be archived and relevant data on the artifacts passed into the delivery pipeline:
+
+1.
+options {
+  copyArtifactPermission('*');
+}
+
+2.
+add to the build stage commands:
+archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+
+3.
+add to parameters passed into delivery stage:
+string(name: 'copy_artifacts_job_name', value: "${env.JOB_NAME}"),
+string(name: 'copy_artifacts_build_number', value: "${env.BUILD_NUMBER}"),
+string(name: 'copy_artifacts_filter', value: '**/target/*.jar')
+
+NOTE: The file filter of '**/target/*.jar' is only applicable for Maven projects; this will vary by tech stack.
