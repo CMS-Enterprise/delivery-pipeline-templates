@@ -62,8 +62,3 @@ parameters:
     description: "Enable Kaniko image build cache."
     type: boolean
     defaultValue: true
-  - name: enable_compressed_caching
-    displayName: Enable Kaniko Compressed Caching
-    description: "Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds)."
-    type: boolean
-    defaultValue: false
