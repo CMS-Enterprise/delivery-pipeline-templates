@@ -36,14 +36,16 @@ pipeline {
     stage('kustomize') {
       steps {
         container('fetch') {
-          def sshRepoUrl = params.git_manifest_repository.replace('https://github.com/', 'git@github.com:').replace('.git', '') + '.git'
-          checkout scmGit(
-            branches: [[ name: "${params.git_manifest_branch}" ]],
-            userRemoteConfigs: [[
-              url: "${sshRepoUrl}",
-              credentialsId: "${params.git_credentials}"
-            ]]
-          )
+          script {
+            def sshRepoUrl = params.git_manifest_repository.replace('https://github.com/', 'git@github.com:').replace('.git', '') + '.git'
+            checkout scmGit(
+              branches: [[ name: "${params.git_manifest_branch}" ]],
+              userRemoteConfigs: [[
+                url: "${sshRepoUrl}",
+                credentialsId: "${params.git_credentials}"
+              ]]
+            )
+          }
         }
         container('fetch') {
           withCredentials([sshUserPrivateKey(credentialsId: params.git_credentials, keyFileVariable: 'SSH_KEY')]) {
