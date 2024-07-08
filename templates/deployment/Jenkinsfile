@@ -54,7 +54,7 @@ pipeline {
               def fullImage = "${params.image}:${params.tag}"
               sh """
                 set -e
-                apk add --update --no-cache curl tar gzip git
+                apk add --update --no-cache curl tar gzip git openssh
                 curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
                 kustomize version
                 echo "[LOG] Target Service -> ${params.target_service}"
@@ -62,7 +62,6 @@ pipeline {
                 echo "[LOG] Target Image -> ${fullImage}"
                 echo "[LOG] Checkout manifest repository"
                 echo "[LOG] Target Environment -> ${params.environment_path}"
-                ls -tlr *
                 cd ${params.environment_path}
                 kustomize edit set image ${params.target_service}=${fullImage}
                 git config --global --add safe.directory "${WORKSPACE}"
