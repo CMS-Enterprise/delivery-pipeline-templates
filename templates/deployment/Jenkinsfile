@@ -3,6 +3,7 @@ pipeline {
     string(name: 'git_manifest_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
     string(name: 'git_manifest_branch', description: 'The branch name to checkout.')
     string(name: 'git_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
+    string(name: 'git_user_name', description: 'user name to use for git commits.')
     string(name: 'git_user_email', description: 'The email address to use for git commits.')
     string(name: 'environment_path', defaultValue: "${default_environment_path}", description: 'Path to the environment directory in the manifest repository.')
     string(name: 'target_service', defaultValue: "${default_target_service}", description: 'The name of the service to update.')
@@ -65,7 +66,7 @@ pipeline {
                 kustomize edit set image ${params.target_service}=${fullImage}
                 git config --global --add safe.directory "${WORKSPACE}"
                 git config --global user.email '${params.git_user_email}'
-                git config --global user.name '${GIT_USERNAME}'
+                git config --global user.name '${params.git_user_name}'
                 git status
                 git diff
                 if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
