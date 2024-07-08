@@ -54,7 +54,7 @@ pipeline {
               def fullImage = "${params.image}:${params.tag}"
               sh """
                 set -e
-                apk add --update --no-cache curl tar gzip git
+                apk add --update --no-cache curl tar gzip git openssh
                 curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
                 kustomize version
                 echo "[LOG] Target Service -> ${params.target_service}"
