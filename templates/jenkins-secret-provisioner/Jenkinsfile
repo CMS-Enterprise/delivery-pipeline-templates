@@ -31,10 +31,6 @@ pipeline {
       steps {
         container('kubectl') {
           script {
-            sh "which kubectl"
-            echo "Attempting to delete secret \"${params.secret_name}\" in namespace \"cbc-${params.jenkins_controller_name}\""
-            sh "kubectl version"
-            sh "kubectl config get-contexts"
             sh "kubectl delete secret \"${params.secret_name}\" --ignore-not-found -n \"cbc-${params.jenkins_controller_name}\""
 
             switch (params.secret_type) {
