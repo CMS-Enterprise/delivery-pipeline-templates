@@ -28,16 +28,18 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+          - name: cache
+            mountPath: /cache
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
           volumeMounts:
-            - name: kaniko-cache
-              mountPath: /kaniko/cache
+          - name: cache
+            mountPath: /cache
         volumes:
-        - name: kaniko-cache
-          persistentVolumeClaim:
-            claimName: kaniko-cache-claim
+        - name: cache
+          emptyDir: {}
       """
     }
   }
@@ -68,7 +70,7 @@ pipeline {
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
               "--compressed-caching=${enable_compressed_caching}",
-              '--cache-dir=/kaniko/cache',
+              '--cache-dir=/cache',
               '--skip-push-permission-check',
               '--skip-tls-verify',
               '--insecure',
