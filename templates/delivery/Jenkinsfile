@@ -10,6 +10,9 @@ pipeline {
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
     string(name: 'dockerfile', defaultValue: "${default_dockerfile ?: 'Dockerfile'}", description: 'The path to the Dockerfile to use for the container build.')
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
+    string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
+    string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
   }
@@ -78,6 +81,10 @@ pipeline {
               argMap.each { key, value ->
                 arguments.add("--build-arg=${key}='${value}'")
               }
+            }
+
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
             if ("${enable_ansi_colors}" == "true") {
