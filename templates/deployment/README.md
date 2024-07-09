@@ -10,7 +10,7 @@ The Deployment Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc
 |----------------------|----------|----------|-----------------------------------------------------------------------------|------------------------|
 | git_manifest_repository       | X        | X        | The URL of the Git repository containing Kubernetes manifests.              |                        |
 | git_manifest_branch           | X        | X        | The branch name to checkout.                                                | main                   |
-| git_credentials      | X        | X        | Jenkins credential ID for accessing the Git repository.                     |                        |
+| git_manifest_credentials      | X        | X        | Jenkins credential ID for accessing the Git repository.                     |                        |
 | git_user_email       | X        | X        | The email address to use for git commits.                                   |                        |
 | environment_path     | X        | X        | Path to the environment directory in the manifest repository.               | ${default_environment_path} |
 | target_service       | X        | X        | The name of the service to update.                                          | ${default_target_service}    |
@@ -36,7 +36,7 @@ pipeline {
         build(job: 'K8s Deployment', wait: true, propagate: true, parameters: [
           string(name: 'git_manifest_repository', value: "${scm.userRemoteConfigs[0].url}"),
           string(name: 'git_manifest_branch', value: "main"),
-          string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
+          string(name: 'git_manifest_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_user_email', value: "your-email@example.com"),
           string(name: 'environment_path', value: 'dev'),
           string(name: 'target_service', value: 'my-service'),

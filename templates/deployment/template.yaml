@@ -13,19 +13,19 @@ parameters:
     displayName: Image Tag
     type: string
     defaultValue: ""    
-  - name: git_repository
+  - name: git_manifest_repository
     displayName: Manifest Repository URL
     description: URL of the Git repository containing Kubernetes manifests.
     type: string
-  - name: git_credential
+  - name: git_manifest_credentials
     displayName: Git Credential
-    description: Jenkins credential ID for accessing the Git repository.
+    description: Jenkins credential ID for accessing the Git manifest repository.
     type: credentials
   - name: git_user_email
     displayName: Git User Email
     description: The email address to use for git commits.
     type: string
-  - name: git_branch
+  - name: git_manifest_branch
     displayName: Git Branch
     description: The branch name to checkout.
     type: string
