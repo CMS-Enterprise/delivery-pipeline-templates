@@ -48,6 +48,9 @@ pipeline {
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"
+          volumeMounts:
+            - name: kaniko-cache
+              mountPath: /kaniko/cache
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -59,6 +62,10 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
+        volumes:
+        - name: kaniko-cache
+          persistentVolumeClaim:
+            claimName: kaniko-cache-claim
       """
     }
   }
@@ -88,10 +95,11 @@ pipeline {
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
-              "--cache-repo=${params.image}/cache",
-              "--cache-dir=${env.PWD}/cache",
-              '--skip-push-permission-check',
               "--compressed-caching=${enable_compressed_caching}",
+              '--cache-dir=/kaniko/cache',
+              '--skip-push-permission-check',
+              '--skip-tls-verify',
+              '--insecure',
               '--no-push',
               '--tar-path=./image.tar'
             ]
