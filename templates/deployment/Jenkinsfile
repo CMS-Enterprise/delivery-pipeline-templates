@@ -76,7 +76,7 @@ pipeline {
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${fullImage}"
                 git remote set-url origin "git@github.com:${params.git_manifest_repository.replace('https://github.com/', '').replace('.git', '')}.git"
-                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY}" git push origin HEAD:'${params.git_manifest_branch}'
+                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i \"${SSH_PRIVATE_KEY}\"" git push origin HEAD:'${params.git_manifest_branch}'
               """
             }
           }
