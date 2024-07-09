@@ -2,7 +2,7 @@ pipeline {
   parameters {
     string(name: 'git_manifest_repository', description: 'The URL of the Git repository containing Kubernetes manifests.')
     string(name: 'git_manifest_branch', description: 'The branch name to checkout.')
-    string(name: 'git_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
+    string(name: 'git_manifest_credentials', description: 'Jenkins credential ID for accessing the Git repository.')
     string(name: 'git_user_name', description: 'user name to use for git commits.')
     string(name: 'git_user_email', description: 'The email address to use for git commits.')
     string(name: 'environment_path', defaultValue: "${default_environment_path}", description: 'Path to the environment directory in the manifest repository.')
@@ -29,10 +29,6 @@ pipeline {
     }
   }
 
-  environment {
-    TEMP_MANIFEST_DIR = 'manifest-repo'
-  }
-
   stages {
     stage('kustomize') {
       steps {
@@ -43,13 +39,13 @@ pipeline {
               branches: [[ name: "${params.git_manifest_branch}" ]],
               userRemoteConfigs: [[
                 url: "${sshRepoUrl}",
-                credentialsId: "${params.git_credentials}"
+                credentialsId: "${params.git_manifest_credentials}"
               ]]
             )
           }
         }
         container('fetch') {
-          withCredentials([sshUserPrivateKey(credentialsId: params.git_credentials, keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+          withCredentials([sshUserPrivateKey(credentialsId: params.git_manifest_credentials, keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
             script {
               def fullImage = "${params.image}:${params.tag}"
               sh """
