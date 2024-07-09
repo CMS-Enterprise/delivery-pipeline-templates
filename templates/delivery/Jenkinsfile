@@ -45,6 +45,7 @@ pipeline {
           volumeMounts:
           - name: cache
             mountPath: /cache
+            readOnly: false
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
@@ -54,6 +55,7 @@ pipeline {
           volumeMounts:
           - name: cache
             mountPath: /cache
+            readOnly: false
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -97,6 +99,7 @@ pipeline {
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
+              "--cache-repo=${params.image}-cache",
               "--compressed-caching=${enable_compressed_caching}",
               '--cache-dir=/cache',
               '--skip-push-permission-check',
