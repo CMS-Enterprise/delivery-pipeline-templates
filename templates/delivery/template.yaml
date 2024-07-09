@@ -38,7 +38,7 @@ parameters:
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
     type: string
-    defaultValue: "linux/amd64"
+    defaultValue: "linux/amd64"  
   - name: enable_ansi_colors
     displayName: Enable ANSI Colors
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
