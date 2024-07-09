@@ -63,7 +63,7 @@ pipeline {
 
 ## Dockerfile Considerations and Use of Copy Artifact
 
-Typically, the Dockerfile for an application is self-contained and should build and package the software. For some ADOs, the Dockerfile may simply assume that build artifacts have already been compiled and try to copy them in. For this scenario, the following should be added to the project Jenkinsfile so the artifacts will be archived and relevant data on the artifacts passed into the delivery pipeline:
+Typically, the Dockerfile for an ADO is self-contained and should build and package the software. For some ADOs, the Dockerfile may simply assume that build artifacts have already been compiled and try to copy them in. For this scenario, the following should be added to the project Jenkinsfile so the artifacts will be archived and relevant data on the artifacts passed into the delivery pipeline:
 
 1. Add to the pipeline Jenkinsfile, between 'agent' and 'stages':
 ```
