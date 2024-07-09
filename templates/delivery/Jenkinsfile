@@ -60,6 +60,7 @@ pipeline {
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
+              "--cache-repo=${params.image}/cache",
               '--cache-dir=/cache',
               '--skip-push-permission-check',
               "--compressed-caching=${enable_compressed_caching}",
