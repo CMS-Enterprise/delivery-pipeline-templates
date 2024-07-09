@@ -77,19 +77,22 @@ For example, if you use a single Delivery pipeline to build the container image 
 
 Typically, the Dockerfile for an application is self-contained and should build and package the software. For some ADOs, the Dockerfile may simply assume that build artifacts have already been compiled and try to copy them in. For this scenario, the following should be added to the project Jenkinsfile so the artifacts will be archived and relevant data on the artifacts passed into the delivery pipeline:
 
-1.
+1. Add to the pipeline Jenkinsfile, between 'agent' and 'stages':
+```
 options {
   copyArtifactPermission('*');
 }
+```
 
-2.
-add to the build stage commands:
+2. Add to the build stage commands:
+```
 archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+```
 
-3.
-add to parameters passed into delivery stage:
+3. Add to parameters passed into delivery stage:
+```
 string(name: 'copy_artifacts_job_name', value: "${env.JOB_NAME}"),
 string(name: 'copy_artifacts_build_number', value: "${env.BUILD_NUMBER}"),
 string(name: 'copy_artifacts_filter', value: '**/target/*.jar')
-
+```
 NOTE: The file filter of '**/target/*.jar' is only applicable for Maven projects; this will vary by tech stack.
