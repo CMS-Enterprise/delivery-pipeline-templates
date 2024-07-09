@@ -88,8 +88,9 @@ pipeline {
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
-              "--cache-repo=${params.image}/cache",
+              "--cache-repo=${params.image}",
               '--skip-push-permission-check',
+              "--compressed-caching=${enable_compressed_caching}",
               '--no-push',
               '--tar-path=./image.tar'
             ]
