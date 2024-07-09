@@ -61,7 +61,7 @@ pipeline {
               "--verbosity=${params.log_level}",
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}/cache",
-              '--cache-dir=/cache',
+              "--cache-dir=${env.PWD}/cache",
               '--skip-push-permission-check',
               "--compressed-caching=${enable_compressed_caching}",
               '--no-push',
