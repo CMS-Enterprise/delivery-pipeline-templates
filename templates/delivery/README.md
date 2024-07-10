@@ -25,8 +25,8 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | copy_artifacts_job_name     | X        |          | The Jenkins job name from which to copy artifacts.                                                                                             |                  |
 | copy_artifacts_build_number | X        |          | The Jenkins job build number from which to copy artifacts.                                                                                     |                  |
 | copy_artifacts_filter       | X        |          | A string expression to filter artifact names.                                                                                                  |                  |
-| enable_cache                |          | X        | Enable Kaniko image build cache.                                                                                                               | true             |
-| enable_compressed_caching   |          | X        | Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds). | false            |
+| enable_cache                | X        |          | Enable Kaniko image build cache.                                                                                                               | false            |
+| enable_compressed_caching   | X        |          | Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds). | false            |
 
 # Usage
 

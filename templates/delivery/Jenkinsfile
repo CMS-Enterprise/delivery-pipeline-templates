@@ -18,6 +18,8 @@ pipeline {
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: 'Kaniko memory limit input for those larger builds.')
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
+    booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
+    booleanParam(name: 'enable_compressed_caching', defaultValue: false, description: 'Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds).')
   }
 
   agent {
@@ -30,9 +32,6 @@ pipeline {
           com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
-        volumes:
-          - name: cache
-            emptyDir: {}
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
@@ -40,9 +39,6 @@ pipeline {
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-            - name: cache
-              mountPath: ./cache
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"
@@ -115,6 +111,15 @@ pipeline {
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+            }
+
+            if (params.enable_cache) {
+              arguments.add("--cache=${params.enable_cache}")
+              arguments.add("--cache-repo=${params.image}/cache")
+            }
+
+            if (params.enable_compressed_caching) {
+              arguments.add("--compressed-caching=${params.enable_compressed_caching}")
             }
 
             // Authentication by copying a docker config JSON to config directory
