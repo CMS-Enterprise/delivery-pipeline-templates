@@ -12,6 +12,8 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
+    booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
+    booleanParam(name: 'enable_compressed_caching', defaultValue: false, description: 'Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds).')
   }
 
   agent {
@@ -59,11 +61,6 @@ pipeline {
               "--dockerfile=${params.dockerfile}",
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
-              "--cache=${enable_cache}",
-              "--cache-repo=${params.image}",
-              "--compressed-caching=${enable_compressed_caching}",
-              '--use-new-run',
-              '--no-push-cache',
               '--no-push',
               '--tar-path=./image.tar'
             ]
@@ -83,6 +80,15 @@ pipeline {
               argMap.each { key, value ->
                 arguments.add("--build-arg=${key}='${value}'")
               }
+            }
+
+            if (params.enable_cache) {
+              arguments.add("--cache=${params.enable_cache}")
+              arguments.add("--cache-repo=${params.image}/cache")
+            }
+
+            if (params.enable_compressed_caching) {
+              arguments.add("--compressed-caching=${params.enable_compressed_caching}")
             }
 
             if ("${enable_ansi_colors}" == "true") {
