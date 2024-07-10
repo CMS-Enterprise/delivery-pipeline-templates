@@ -16,14 +16,6 @@ parameters:
   - name: registry_credentials
     displayName: Registry Credentials
     type: credentials
-  - name: image_registry_auth_json
-    displayName: Image Registry Auth JSON
-    type: credentials
-  - name: image_push_enabled
-    displayName: Enable Image Push
-    description: "Optionally, enable image push to the container registry (requires credentials)."
-    type: boolean
-    defaultValue: false
   - name: default_build_args
     displayName: Build Arguments
     description: "A JSON object of build arguments to pass to the container build process."
