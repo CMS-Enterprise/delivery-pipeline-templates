@@ -85,7 +85,6 @@ pipeline {
                 git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
                 git remote set-url origin "${git_manifest_repository}"
                 ${gitPushCommand}
-                ls -tlr /tmp/secretFiles/*
               """
             }
           }
