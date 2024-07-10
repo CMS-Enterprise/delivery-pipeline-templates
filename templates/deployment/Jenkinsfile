@@ -45,7 +45,7 @@ pipeline {
           script {
             def fullImage = "${params.image}:${params.tag}"
             def isHttps = git_manifest_repository.startsWith('https://')
-            def gitPushCommand
+            def gitPushCommand = ""
 
             if (isHttps) {
                 withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -55,7 +55,7 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
                     sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
                     def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'"
-                    gitPushCommand = "GIT_SSH_COMMAND="${sshCommand}" git push origin HEAD:${params.git_manifest_branch}"
+                    gitPushCommand = "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
                 }
             }
 
