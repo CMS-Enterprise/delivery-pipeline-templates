@@ -45,7 +45,6 @@ pipeline {
           script {
             def fullImage = "${params.image}:${params.tag}"
             def isHttps = git_manifest_repository.startsWith('https://')
-            def gitCloneCommand
             def gitPushCommand
 
             if (isHttps) {
