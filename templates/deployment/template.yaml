@@ -4,15 +4,6 @@ displayName: Deployment Pipeline - Kustomize Update
 description: Pipeline for updating Kubernetes manifests using Kustomize.
 type: pipeline-template
 parameters:
-  - name: default_image
-    displayName: Image
-    description: The fully qualified container image name (including the registry).
-    type: string
-    defaultValue: "docker.io/my-app"
-  - name: default_tag
-    displayName: Image Tag
-    type: string
-    defaultValue: ""    
   - name: git_manifest_repository
     displayName: Manifest Repository URL
     description: URL of the Git repository containing Kubernetes manifests.
@@ -21,15 +12,24 @@ parameters:
     displayName: Git Credential
     description: Jenkins credential ID for accessing the Git manifest repository.
     type: credentials
-  - name: git_user_email
-    displayName: Git User Email
-    description: The email address to use for git commits.
-    type: string
-  - name: git_manifest_branch
+  - name: default_git_manifest_branch
     displayName: Git Branch
     description: The branch name to checkout.
     type: string
     defaultValue: ""
+  - name: default_git_author_name
+    displayName: Git Author Name
+    description: The name to use as the author of git commits.
+    type: string
+    defaultValue: "Deployment Pipeline"
+  - name: default_git_author_email
+    displayName: Git Author Email
+    description: The email address to use for the author of git commits.
+    type: string
+  - name: default_image
+    displayName: Image
+    description: The fully qualified container image name (including the registry).
+    type: string
   - name: default_environment_path
     displayName: Default Environment Path
     description: Path to the environment directory in the manifest repository.
@@ -39,4 +39,3 @@ parameters:
     displayName: Default Target Service
     description: The name of the service to update.
     type: string
-    defaultValue: "my-service"
