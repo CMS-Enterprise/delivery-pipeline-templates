@@ -4,6 +4,7 @@ pipeline {
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
     string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
+    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
     booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
@@ -87,7 +88,7 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
-            if ("${image_push_enabled}" == "false") {
+            if ("${params.image_push_enabled}" == "false") {
               echo 'image_push_enabled is set to false, skipping the image push step'
               arguments.add("--no-push")
             } else {
