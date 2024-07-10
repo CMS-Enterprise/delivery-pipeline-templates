@@ -3,8 +3,11 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
+    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
+
     booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
     string(name: 'build_args', defaultValue: "${default_build_args ?: '{}'}", description: 'A JSON object of build arguments to pass to the container build process.')
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
@@ -41,6 +44,9 @@ pipeline {
             limits:
               memory: "2Gi"
               cpu: "1000m"          
+        - name: crane
+          image: gcr.io/go-containerregistry/crane/debug:latest
+          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -94,6 +100,12 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
+            // Authentication by copying a docker config JSON to config directory
+            echo 'export image registry auth json to /kaniko/.docker/config.json'
+            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+            sh 'mkdir -p /kaniko/.docker'
+            sh 'mv docker-config.json /kaniko/.docker/config.json'
+
             if ("${enable_ansi_colors}" == "true") {
               ansiColor('xterm') {
                 sh "/kaniko/executor ${arguments.join(' ')}"
@@ -101,6 +113,26 @@ pipeline {
             } else {
               sh "/kaniko/executor ${arguments.join(' ')}"
             }
+          }
+        }
+      }
+    }
+
+    stage('Image Publish') {
+      steps {
+        container('crane') {
+          script {
+            if ("${params.image_push_enabled}" == "false") {
+              echo 'image_push_enabled is set to false, skipping the image push step'
+              return
+            }
+            echo 'export image registry auth json to /root/.docker/config.json'
+            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+            sh 'mkdir -p /root/.docker'
+            sh 'mv docker-config.json /root/.docker/config.json'
+            sh 'crane version'
+            sh 'pwd && ls -laH'
+            sh "crane push ./image.tar ${params.image}:${params.tag}"
           }
         }
       }
