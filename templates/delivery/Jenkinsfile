@@ -28,10 +28,6 @@ pipeline {
           com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
-        volumes:
-          - name: docker-config
-            configMap:
-              name: docker-config
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
