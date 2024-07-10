@@ -42,37 +42,47 @@ pipeline {
           }
         }
         container('fetch') {
-          // TODO: support non-ssh git credentials
-          withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
-            script {
-              def fullImage = "${params.image}:${params.tag}"
-              sh """
-                set -e
-                apk add --update --no-cache curl tar gzip git openssh
-                curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
-                kustomize version
-                echo "[LOG] Target Service -> ${params.target_service}"
-                echo "[LOG] Target Manifest Repo -> ${git_manifest_repository}"
-                echo "[LOG] Target Image -> ${fullImage}"
-                echo "[LOG] Checkout manifest repository"
-                echo "[LOG] Target Environment -> ${params.environment_path}"
-                cd "${params.environment_path}"
-                kustomize edit set image ${params.target_service}=${fullImage}
-                git config --global --add safe.directory "${WORKSPACE}"
-                git config --global user.email '${params.git_author_email}'
-                git config --global user.name '${params.git_author_name}'
-                git status
-                git diff
-                if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
-                    echo '[WARN] No changes made to manifest'
-                    exit 0
-                fi
-                git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
-                git remote set-url origin "${git_manifest_repository}"
-                echo "SSH Private Key: ${SSH_PRIVATE_KEY}"
-                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'" git push origin HEAD:${params.git_manifest_branch}
-              """
+          script {
+            def fullImage = "${params.image}:${params.tag}"
+            def isHttps = git_manifest_repository.startsWith('https://')
+            def gitCloneCommand
+            def gitPushCommand
+
+            if (isHttps) {
+                withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                    gitPushCommand = "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}"
+                }
+            } else {
+                withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+                    gitPushCommand = "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'\" git push origin HEAD:${params.git_manifest_branch}"
+                }
             }
+
+            sh """
+              set -e
+              apk add --update --no-cache curl tar gzip git openssh
+              curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
+              kustomize version
+              echo "[LOG] Target Service -> ${params.target_service}"
+              echo "[LOG] Target Manifest Repo -> ${git_manifest_repository}"
+              echo "[LOG] Target Image -> ${fullImage}"
+              echo "[LOG] Checkout manifest repository"
+              echo "[LOG] Target Environment -> ${params.environment_path}"
+              cd "${params.environment_path}"
+              kustomize edit set image ${params.target_service}=${fullImage}
+              git config --global --add safe.directory "${WORKSPACE}"
+              git config --global user.email '${params.git_author_email}'
+              git config --global user.name '${params.git_author_name}'
+              git status
+              git diff
+              if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                  echo '[WARN] No changes made to manifest'
+                  exit 0
+              fi
+              git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
+              git remote set-url origin "${git_manifest_repository}"
+              ${gitPushCommand}
+            """
           }
         }
       }
