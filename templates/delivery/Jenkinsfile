@@ -34,42 +34,26 @@ pipeline {
           - name: cache
             emptyDir: {}
           - name: docker-config
-            secret:
-              secretName: docker-config
+            configMap:
+              name: docker-config
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-            - name: cache
-              mountPath: /cache
-              readOnly: false
-            - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
           volumeMounts:
             - name: cache
-              mountPath: /cache
-              readOnly: false
+              mountPath: /cache/
             - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
+              mountPath: /kaniko/.docker/
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-            - name: cache
-              mountPath: /cache
-              readOnly: false
-            - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
           resources:
             limits:
               memory: "5Gi"
@@ -78,13 +62,6 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-            - name: cache
-              mountPath: /cache
-              readOnly: false
-            - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
       """
     }
   }
@@ -116,7 +93,7 @@ pipeline {
               "--cache=${enable_cache}",
               "--cache-repo=${params.image}/cache",
               "--compressed-caching=${enable_compressed_caching}",
-              '--cache-dir=/cache',
+              '--cache-dir=/cache/',
               '--skip-push-permission-check',
               '--skip-tls-verify',
               '--insecure',
