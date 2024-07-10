@@ -30,23 +30,18 @@ pipeline {
         restartPolicy: Never
         volumes:
           - name: docker-config
-            secret:
-              secretName: docker-config
+            configMap:
+              name: docker-config
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-            - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
           volumeMounts:
             - name: docker-config
-              mountPath: /kaniko/.docker
-              readOnly: false
+              mountPath: /kaniko/.docker/
       """
     }
   }
@@ -99,7 +94,7 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
-            if ("${image_push_enabled}" == false) {
+            if ("${image_push_enabled}" == "false") {
               echo 'image_push_enabled is set to false, skipping the image push step'
               arguments.add("--no-push")
             } else {
