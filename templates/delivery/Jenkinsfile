@@ -83,13 +83,6 @@ pipeline {
               "--dockerfile=${params.dockerfile}",
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
-              "--cache=${enable_cache}",
-              "--cache-repo=${params.image}/cache",
-              "--compressed-caching=${enable_compressed_caching}",
-              '--cache-dir=./cache',
-              '--skip-push-permission-check',
-              '--skip-tls-verify',
-              '--insecure',
               '--no-push',
               '--tar-path=./image.tar'
             ]
