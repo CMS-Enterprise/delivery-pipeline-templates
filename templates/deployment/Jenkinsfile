@@ -54,7 +54,7 @@ pipeline {
             } else {
                 withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
                     sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
-                    gitPushCommand = """GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=no -i {SSH_PRIVATE_KEY}' git push origin HEAD:${params.git_manifest_branch}"""
+                    gitPushCommand = """GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'" git push origin HEAD:${params.git_manifest_branch}"""
                 }
             }
 
