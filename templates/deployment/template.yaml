@@ -21,6 +21,7 @@ parameters:
     displayName: Git Author Name
     description: The name to use as the author of git commits.
     type: string
+    defaultValue: "Deployment Pipeline"
   - name: default_git_author_email
     displayName: Git Author Email
     description: The email address to use for the author of git commits.
