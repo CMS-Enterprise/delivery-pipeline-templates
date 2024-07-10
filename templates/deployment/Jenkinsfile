@@ -56,7 +56,7 @@ pipeline {
                     def sshKeyFile = "${SSH_PRIVATE_KEY}"
                     sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
                     sh "chmod 600 ${sshKeyFile}"
-                    gitPushCommand = "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -i '${sshKeyFile}'\" git push origin HEAD:${params.git_manifest_branch}"
+                    gitPushCommand = "GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i '${sshKeyFile}'" git push origin HEAD:${params.git_manifest_branch}"
                 }
             }
 
