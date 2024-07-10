@@ -3,6 +3,7 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
     booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
@@ -27,13 +28,25 @@ pipeline {
           com.cloudbees.sidecar-injector/inject: no
       spec:
         restartPolicy: Never
+        volumes:
+          - name: docker-config
+            secret:
+              secretName: docker-config
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+            - name: docker-config
+              mountPath: /kaniko/.docker
+              readOnly: false
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
           command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+            - name: docker-config
+              mountPath: /kaniko/.docker
+              readOnly: false
       """
     }
   }
@@ -62,7 +75,6 @@ pipeline {
               "--dockerfile=${params.dockerfile}",
               "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
-              '--no-push',
               '--tar-path=./image.tar'
             ]
 
@@ -85,6 +97,16 @@ pipeline {
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+            }
+
+            if ("${image_push_enabled}" == false) {
+              echo 'image_push_enabled is set to false, skipping the image push step'
+              arguments.add("--no-push")
+            } else {
+              echo 'export image registry auth json to /kaniko/.docker/config.json'
+              writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+              sh 'mkdir -p /kaniko/.docker'
+              sh 'mv docker-config.json /kaniko/.docker/config.json'
             }
 
             if ("${enable_ansi_colors}" == "true") {
