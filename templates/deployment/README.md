@@ -11,8 +11,8 @@ The Deployment Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc
 | git_manifest_repository  |          | X        | The URL of the Git repository containing Kubernetes manifests.     |                     |
 | git_manifest_credentials |          | X        | Jenkins credential ID for accessing the Git repository.            |                     |
 | git_manifest_branch      | X        | X        | The branch name to checkout.                                       | main                |
-| git_user_name            | X        | X        | The name to use as the author of git commits.                      | Deployment Pipeline |
-| git_user_email           | X        | X        | The email address to use as the author of git commits.             |                     |
+| git_author_name          | X        | X        | The name to use as the author of git commits.                      | Deployment Pipeline |
+| git_author_email         | X        | X        | The email address to use as the author of git commits.             |                     |
 | environment_path         | X        | X        | Path to the environment directory in the manifest repository.      | dev                 |
 | target_service           | X        | X        | The name of the service to update.                                 |                     |
 | image                    | X        | X        | The fully qualified container image name (including the registry). |                     |
