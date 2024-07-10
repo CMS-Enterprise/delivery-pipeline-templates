@@ -69,7 +69,8 @@ pipeline {
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
                 git remote set-url origin "${git_manifest_repository}"
-                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i \"${SSH_PRIVATE_KEY}\"" git push origin HEAD:${params.git_manifest_branch}
+                echo "SSH Private Key: ${SSH_PRIVATE_KEY}"
+                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'" git push origin HEAD:${params.git_manifest_branch}
               """
             }
           }
