@@ -93,6 +93,12 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
+            // Authentication by copying a docker config JSON to config directory
+            echo 'export image registry auth json to /root/.docker/config.json'
+            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+            sh 'mkdir -p /root/.docker'
+            sh 'mv docker-config.json /root/.docker/config.json'
+
             if ("${enable_ansi_colors}" == "true") {
               ansiColor('xterm') {
                 sh "/kaniko/executor ${arguments.join(' ')}"
