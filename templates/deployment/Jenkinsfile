@@ -1,0 +1,81 @@
+pipeline {
+  parameters {
+    string(name: 'git_manifest_branch', defaultValue: "${default_git_manifest_branch ?: 'main'}", description: 'The branch name to checkout.')
+    string(name: 'git_author_name', defaultValue: "${default_git_author_name ?: 'Deployment Pipeline'}", description: 'The name to use as the author of git commits.')
+    string(name: 'git_author_email', defaultValue: "${default_git_author_email ?: ''}", description: 'The email address to use for the author of git commits.')
+    string(name: 'environment_path', defaultValue: "${default_environment_path ?: 'dev'}", description: 'Path to the environment directory in the manifest repository.')
+    string(name: 'target_service', defaultValue: "${default_target_service ?: ''}", description: 'The name of the service to update.')
+    string(name: 'image', defaultValue: "${default_image ?: ''}", description: 'The fully qualified container image name.')
+    string(name: 'tag', description: 'Container image tag.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: fetch
+          image: artifactory.cloud.cms.gov/docker/alpine:3
+          command: ['tail', '-f', '/dev/null']
+      """
+    }
+  }
+
+  stages {
+    stage('kustomize') {
+      steps {
+        container('fetch') {
+          script {
+            checkout scmGit(
+              branches: [[ name: "${params.git_manifest_branch}" ]],
+              userRemoteConfigs: [[
+                url: "${git_manifest_repository}",
+                credentialsId: "${git_manifest_credentials}"
+              ]]
+            )
+          }
+        }
+        container('fetch') {
+          // TODO: support non-ssh git credentials
+          withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+            script {
+              def fullImage = "${params.image}:${params.tag}"
+              sh """
+                set -e
+                apk add --update --no-cache curl tar gzip git openssh
+                curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
+                kustomize version
+                echo "[LOG] Target Service -> ${params.target_service}"
+                echo "[LOG] Target Manifest Repo -> ${git_manifest_repository}"
+                echo "[LOG] Target Image -> ${fullImage}"
+                echo "[LOG] Checkout manifest repository"
+                echo "[LOG] Target Environment -> ${params.environment_path}"
+                cd "${params.environment_path}"
+                kustomize edit set image ${params.target_service}=${fullImage}
+                git config --global --add safe.directory "${WORKSPACE}"
+                git config --global user.email '${params.git_author_email}'
+                git config --global user.name '${params.git_author_name}'
+                git status
+                git diff
+                if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                    echo '[WARN] No changes made to manifest'
+                    exit 0
+                fi
+                git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
+                git remote set-url origin "${git_manifest_repository}"
+                echo "SSH Private Key: ${SSH_PRIVATE_KEY}"
+                GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'" git push origin HEAD:${params.git_manifest_branch}
+              """
+            }
+          }
+        }
+      }
+    }
+  }
+}
