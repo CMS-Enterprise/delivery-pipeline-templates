@@ -14,7 +14,6 @@ pipeline {
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
-    booleanParam(name: 'enable_compressed_caching', defaultValue: false, description: 'Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds).')
   }
 
   agent {
@@ -86,13 +85,10 @@ pipeline {
             if (params.enable_cache) {
               arguments.add("--cache=${params.enable_cache}")
               arguments.add("--cache-repo=${params.image}-cache")
+              arguments.add("--compressed-caching=false")
               arguments.add("--cache-dir=/kaniko/cache")
               arguments.add("--cache-run-layers")
               arguments.add("--cache-copy-layers")
-            }
-
-            if (params.enable_compressed_caching) {
-              arguments.add("--compressed-caching=${params.enable_compressed_caching}")
             }
 
             // Authentication by copying a docker config JSON to config directory
