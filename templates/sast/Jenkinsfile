@@ -6,12 +6,6 @@ def containerListYaml() {
     - name: sonarqube
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
       command: ['tail', '-f', '/dev/null']""");
-
-  if (params.pre_scan_build_command) {
-    containerListYaml += reindent(10, """
-      - name: pre-scan
-        image: ${params.pre_scan_build_image}
-        command: ['tail', '-f', '/dev/null']""");
   }
 
   return containerListYaml
@@ -42,8 +36,9 @@ pipeline {
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
     string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan.')
-    string(name: 'pre_scan_build_command', defaultValue: "${default_pre_scan_build_command ?: ''}", description: 'A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled.')
-    string(name: 'pre_scan_build_image', defaultValue: "${default_pre_scan_build_image}", description: 'The container image to use when running the pre-scan build command.')
+    string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
+    string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
   }
 
   agent {
@@ -73,16 +68,6 @@ pipeline {
               submodule(recursiveSubmodules: true, shallow: true)
             ]
           )
-        }
-      }
-    }
-    stage("Pre-Scan") {
-      when {
-        expression { params.pre_scan_build_command }
-      }
-      steps {
-        container('pre-scan') {
-          sh params.pre_scan_build_command
         }
       }
     }
@@ -116,6 +101,9 @@ pipeline {
                 args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
               }
 
+              if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+                copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+              }
               if (params.sonarqube_additional_arguments) {
                 def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
                 // Add all the items in argArray to the args list
