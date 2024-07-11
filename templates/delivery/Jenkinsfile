@@ -3,8 +3,6 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
-    string(name: 'image_registry_auth_json', defaultValue: "{}" ,description: 'plain text JSON that can be used as docker config for authentication')
-    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
 
@@ -44,9 +42,6 @@ pipeline {
             limits:
               memory: "2Gi"
               cpu: "1000m"          
-        - name: crane
-          image: gcr.io/go-containerregistry/crane/debug:latest
-          command: ['tail', '-f', '/dev/null']
       """
     }
   }
@@ -102,7 +97,8 @@ pipeline {
 
             // Authentication by copying a docker config JSON to config directory
             echo 'export image registry auth json to /kaniko/.docker/config.json'
-            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
+            sh 'touch docker-config.json'
+            sh "cat ${image_registry_auth_json} > docker-config.json"
             sh 'mkdir -p /kaniko/.docker'
             sh 'mv docker-config.json /kaniko/.docker/config.json'
 
@@ -113,26 +109,6 @@ pipeline {
             } else {
               sh "/kaniko/executor ${arguments.join(' ')}"
             }
-          }
-        }
-      }
-    }
-
-    stage('Image Publish') {
-      steps {
-        container('crane') {
-          script {
-            if ("${params.image_push_enabled}" == "false") {
-              echo 'image_push_enabled is set to false, skipping the image push step'
-              return
-            }
-            echo 'export image registry auth json to /root/.docker/config.json'
-            writeFile file: 'docker-config.json', text: "${params.image_registry_auth_json}"
-            sh 'mkdir -p /root/.docker'
-            sh 'mv docker-config.json /root/.docker/config.json'
-            sh 'crane version'
-            sh 'pwd && ls -laH'
-            sh "crane push ./image.tar ${params.image}:${params.tag}"
           }
         }
       }
