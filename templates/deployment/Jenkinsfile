@@ -45,22 +45,6 @@ pipeline {
             script {
               def fullImage = "${params.image}:${params.tag}"
               def isHttps = git_manifest_repository.startsWith('https://')
-              def gitPushCommand = ""
-
-              if (isHttps) {
-                  withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                      gitPushCommand = "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}"
-                  }
-              } else {
-                  withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
-                      sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
-                      sh 'ls -ltr "${WORKSPACE}"'
-                      sh "chmod 600 ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Ensure correct permissions
-                      sh "ls -l ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Verify the existence and permissions of the key file
-                      def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${WORKSPACE}/${SSH_PRIVATE_KEY}'"
-                      gitPushCommand = "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
-                  }
-              }
 
               sh """
                 set -e
@@ -85,8 +69,21 @@ pipeline {
                 fi
                 git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
                 git remote set-url origin "${git_manifest_repository}"
-                ${gitPushCommand}
               """
+              if (isHttps) {
+                withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                  sh "git push https://\${GIT_USERNAME}:\${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}"
+                }
+              } else {
+                withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+                  sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
+                  sh 'ls -ltr "${WORKSPACE}"'
+                  sh "chmod 600 ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Ensure correct permissions
+                  sh "ls -l ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Verify the existence and permissions of the key file
+                  def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${WORKSPACE}/${SSH_PRIVATE_KEY}'"
+                  sh "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
+                }
+              }
             }
           }
         }
