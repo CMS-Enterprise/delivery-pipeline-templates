@@ -42,8 +42,6 @@ pipeline {
           }
         }
         container('fetch') {
-          // TODO: support non-ssh git credentials
-          withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
             script {
               def fullImage = "${params.image}:${params.tag}"
               def isHttps = git_manifest_repository.startsWith('https://')
