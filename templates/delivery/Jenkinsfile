@@ -99,7 +99,7 @@ pipeline {
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
               echo 'export image registry auth json to /kaniko/.docker/config.json'
               sh 'mkdir -p /kaniko/.docker'
-              sh "mv ${AUTH_JSON_FILE} /kaniko/.docker/config.json"
+              sh "mv '${AUTH_JSON_FILE}' /kaniko/.docker/config.json"
             }
 
             if ("${enable_ansi_colors}" == "true") {
