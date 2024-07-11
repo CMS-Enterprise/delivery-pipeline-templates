@@ -120,6 +120,9 @@ pipeline {
             sh 'crane version'
             sh 'pwd && ls -laH'
             sh "crane push ./image.tar ${params.image}:${params.tag}"
+            if (params.update_latest) {
+              sh "crane push ./image.tar ${params.image}:latest"
+            }
           }
         }
       }
