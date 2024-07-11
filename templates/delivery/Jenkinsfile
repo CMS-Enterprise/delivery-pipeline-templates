@@ -21,7 +21,6 @@ pipeline {
     string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: 'Kaniko memory limit input for those larger builds.')
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
-    booleanParam(name: 'enable_compressed_caching', defaultValue: false, description: 'Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds).')
   }
 
   agent {
@@ -111,13 +110,10 @@ pipeline {
             if (params.enable_cache) {
               arguments.add("--cache=${params.enable_cache}")
               arguments.add("--cache-repo=${params.image}-cache")
+              arguments.add("--compressed-caching=false")
               arguments.add("--cache-dir=/kaniko/cache")
               arguments.add("--cache-run-layers")
               arguments.add("--cache-copy-layers")
-            }
-
-            if (params.enable_compressed_caching) {
-              arguments.add("--compressed-caching=${params.enable_compressed_caching}")
             }
 
             // Authentication by copying a docker config JSON to config directory
