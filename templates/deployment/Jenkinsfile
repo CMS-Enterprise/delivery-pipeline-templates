@@ -78,9 +78,7 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
                   sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
                   sh 'ls -ltr "${WORKSPACE}"'
-                  sh "chmod 600 ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Ensure correct permissions
-                  sh "ls -l ${WORKSPACE}/${SSH_PRIVATE_KEY}" // Verify the existence and permissions of the key file
-                  def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${WORKSPACE}/${SSH_PRIVATE_KEY}'"
+                  def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'"
                   sh "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
                 }
               }
