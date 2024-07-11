@@ -16,6 +16,9 @@ parameters:
   - name: registry_credentials
     displayName: Registry Credentials
     type: credentials
+  - name: image_registry_auth_json
+    displayName: JSON File Docker Config for Authentication (Secret File)
+    type: credentials
   - name: default_build_args
     displayName: Build Arguments
     description: "A JSON object of build arguments to pass to the container build process."
