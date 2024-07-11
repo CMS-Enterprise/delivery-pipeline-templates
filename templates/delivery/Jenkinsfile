@@ -110,7 +110,10 @@ pipeline {
 
             if (params.enable_cache) {
               arguments.add("--cache=${params.enable_cache}")
-              arguments.add("--cache-repo=${params.image}/cache")
+              arguments.add("--cache-repo=${params.image}-cache")
+              arguments.add("--cache-dir=/kaniko/cache")
+              arguments.add("--cache-run-layers")
+              arguments.add("--cache-copy-layers")
             }
 
             if (params.enable_compressed_caching) {
