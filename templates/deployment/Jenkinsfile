@@ -72,13 +72,21 @@ pipeline {
               """
               if (isHttps) {
                 withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                  sh "git push https://\${GIT_USERNAME}:\${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}"
+                  sh """
+                    set +x
+                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}
+                    set -x
+                  """
                 }
               } else {
                 withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
-                  sh 'echo "SSH Private Key: ${SSH_PRIVATE_KEY}"'
-                  def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'"
-                  sh "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
+                  sh """
+                    set +x
+                    echo "SSH Private Key: ${SSH_PRIVATE_KEY}"
+                    def sshCommand = "ssh -o StrictHostKeyChecking=no -i '${SSH_PRIVATE_KEY}'"
+                    GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}
+                    set -x
+                  """
                 }
               }
             }
