@@ -5,6 +5,7 @@ pipeline {
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
+
     booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
     string(name: 'build_args', defaultValue: "${default_build_args ?: '{}'}", description: 'A JSON object of build arguments to pass to the container build process.')
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
@@ -94,12 +95,19 @@ pipeline {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
-            if ("${enable_ansi_colors}" == "true") {
-              ansiColor('xterm') {
+            // Authentication by copying a docker config JSON to config directory
+            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+              echo 'export image registry auth json to /kaniko/.docker/config.json'
+              sh 'mkdir -p /kaniko/.docker'
+              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
+
+              if ("${enable_ansi_colors}" == "true") {
+                ansiColor('xterm') {
+                  sh "/kaniko/executor ${arguments.join(' ')}"
+                }
+              } else {
                 sh "/kaniko/executor ${arguments.join(' ')}"
               }
-            } else {
-              sh "/kaniko/executor ${arguments.join(' ')}"
             }
           }
         }

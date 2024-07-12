@@ -13,8 +13,8 @@ parameters:
     displayName: Image Tag
     type: string
     defaultValue: "latest"
-  - name: registry_credentials
-    displayName: Registry Credentials
+  - name: image_registry_auth_json
+    displayName: JSON File Docker Config for Authentication (Secret File)
     type: credentials
   - name: default_build_args
     displayName: Build Arguments
