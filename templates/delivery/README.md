@@ -21,8 +21,7 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | git_credentials           | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                                                                       |                  |
 | git_commit                | X        |          | The commit hash or branch name to checkout when building the container image.                                                                  |                  |
 | log_level                 | X        |          | The log level to use for the container build process.                                                                                          | info             |
-| enable_cache              |          | X        | Enable Kaniko image build cache.                                                                                                               | true             |
-| enable_compressed_caching |          | X        | Enable Kaniko tar compression for cached layers. Note: This decreases build runtimes but increases memory usage (especially for large builds). | false            |
+| enable_cache              | X        | X        | Enable Kaniko image build cache.                                                                                                               | false            |
 
 # Usage
 
