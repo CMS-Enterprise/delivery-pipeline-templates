@@ -6,7 +6,6 @@ def containerListYaml() {
     - name: sonarqube
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
       command: ['tail', '-f', '/dev/null']""");
-  }
 
   return containerListYaml
 }
