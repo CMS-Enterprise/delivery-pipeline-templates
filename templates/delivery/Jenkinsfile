@@ -13,7 +13,7 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
-    booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
+    booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
   }
 
   agent {

@@ -44,3 +44,8 @@ parameters:
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
     type: boolean
     defaultValue: true
+  - name: default_enable_cache
+    displayName: Enable Image Build Caching
+    description: "Enable Kaniko image build cache."
+    type: boolean
+    defaultValue: false
