@@ -155,20 +155,24 @@ pipeline {
       steps {
         container('crane') {
           script {
-            if ("${params.image_push_enabled}" == "false") {
+            if (!params.image_push_enabled) {
               echo 'image_push_enabled is set to false, skipping the image push step'
               return
             }
-            // Authentication by copying a docker config JSON to config directory
-            echo 'export image registry auth json to /root/.docker/config.json'
-            sh 'touch docker-config.json'
-            sh "cat ${image_registry_auth_json} > docker-config.json"
-            sh 'mkdir -p /root/.docker'
-            sh 'mv docker-config.json /root/.docker/config.json'
 
-            sh 'crane version'
-            sh 'pwd && ls -laH'
-            sh "crane push ./image.tar ${params.image}:${params.tag}"
+            // Authentication by copying a docker config JSON to config directory
+            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+              echo 'export image registry auth json to /root/.docker/config.json'
+              sh 'mkdir -p /root/.docker'
+              sh 'mv "$AUTH_JSON_FILE" /root/.docker/config.json'
+              sh 'crane version'
+              sh 'pwd && ls -laH'
+              sh "crane push ./image.tar ${params.image}:${params.tag}"
+
+              if (params.update_latest) {
+                sh "crane push ./image.tar ${params.image}:latest"
+              }
+            }
           }
         }
       }
