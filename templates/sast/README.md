@@ -149,3 +149,27 @@ pipeline {
   }
 }
 ```
+
+## Copy Artifacts from Jenkins to Sonarqube
+
+For some tech stacks, for example Java Maven, Sonarqube requires the compiled .class files to perform the scan. Copy artifact functionality should be used so needed artifacts will be available for Sonarqube.
+
+1. Add to the pipeline Jenkinsfile, between 'agent' and 'stages':
+```
+options {
+  copyArtifactPermission('*');
+}
+```
+
+2. Add to the build stage commands:
+```
+archiveArtifacts artifacts: 'target/**/*.class', allowEmptyArchive: true
+```
+
+3. Add to parameters passed into delivery stage:
+```
+string(name: 'copy_artifacts_job_name', value: "${env.JOB_NAME}"),
+string(name: 'copy_artifacts_build_number', value: "${env.BUILD_NUMBER}"),
+string(name: 'copy_artifacts_filter', value: 'target/**/*.class')
+```
+NOTE: The file filter of 'target/**/*.class' is only applicable for Maven projects; this will vary by tech stack.
