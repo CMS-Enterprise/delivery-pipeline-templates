@@ -3,6 +3,7 @@ pipeline {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
     string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.')
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    booleanParam(name: 'image_push_enabled', defaultValue: false, description: 'optionally enable/disable the image push step.')
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
 
@@ -16,6 +17,9 @@ pipeline {
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
+    string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: 'Kaniko memory limit input for those larger builds.')
+    booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
+    booleanParam(name: 'enable_cache', defaultValue: false, description: 'Enable Kaniko image build cache.')
   }
 
   agent {
