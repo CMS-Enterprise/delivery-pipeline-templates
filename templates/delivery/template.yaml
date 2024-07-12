@@ -47,3 +47,8 @@ parameters:
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
     type: boolean
     defaultValue: true
+  - name: default_image_push_enabled
+    displayName: Enable Image Push
+    description: "Enable the image push step."
+    type: boolean
+    defaultValue: false
