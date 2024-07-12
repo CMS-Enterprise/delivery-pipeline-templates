@@ -74,3 +74,8 @@ parameters:
     description: "When true, update the latest tag to point to the newly built image."
     type: boolean
     defaultValue: false
+  - name: default_enable_cache
+    displayName: Enable Image Build Caching
+    description: "Enable Kaniko image build cache."
+    type: boolean
+    defaultValue: false
