@@ -87,12 +87,19 @@ pipeline {
               }
             }
 
-            if ("${enable_ansi_colors}" == "true") {
-              ansiColor('xterm') {
+            // Authentication by copying a docker config JSON to config directory
+            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+              echo 'export image registry auth json to /kaniko/.docker/config.json'
+              sh 'mkdir -p /kaniko/.docker'
+              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
+
+              if ("${enable_ansi_colors}" == "true") {
+                ansiColor('xterm') {
+                  sh "/kaniko/executor ${arguments.join(' ')}"
+                }
+              } else {
                 sh "/kaniko/executor ${arguments.join(' ')}"
               }
-            } else {
-              sh "/kaniko/executor ${arguments.join(' ')}"
             }
           }
         }
