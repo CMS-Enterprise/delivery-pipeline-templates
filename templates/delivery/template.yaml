@@ -52,3 +52,8 @@ parameters:
     description: "Enable the image push step."
     type: boolean
     defaultValue: false
+  - name: default_update_latest
+    displayName: Update Latest Image Tag
+    description: "When true, update the latest tag to point to the newly built image."
+    type: boolean
+    defaultValue: false

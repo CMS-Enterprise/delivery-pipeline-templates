@@ -8,7 +8,7 @@ pipeline {
     string(name: 'image', defaultValue: "${default_image ?: 'my-app'}", description: 'The fully qualified container image name.')
     string(name: 'tag', defaultValue: "${default_tag ?: 'latest'}", description: 'Container image tag.')
 
-    booleanParam(name: 'update_latest', defaultValue: false, description: 'When true, update the latest tag to point to the newly built image.')
+    booleanParam(name: 'update_latest', defaultValue: "${default_update_latest ?: false}", description: 'When true, update the latest tag to point to the newly built image.')
     string(name: 'build_args', defaultValue: "${default_build_args ?: '{}'}", description: 'A JSON object of build arguments to pass to the container build process.')
     string(name: 'build_dir', defaultValue: "${default_build_dir ?: '.'}", description: 'The directory to use as the build context for the container build.')
     string(name: 'dockerfile', defaultValue: "${default_dockerfile ?: 'Dockerfile'}", description: 'The path to the Dockerfile to use for the container build.')
