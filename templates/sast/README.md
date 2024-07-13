@@ -166,7 +166,7 @@ options {
 archiveArtifacts artifacts: 'target/**/*.class', allowEmptyArchive: true
 ```
 
-3. Add to parameters passed into delivery stage:
+3. Add to parameters passed into SAST stage:
 ```
 string(name: 'copy_artifacts_job_name', value: "${env.JOB_NAME}"),
 string(name: 'copy_artifacts_build_number', value: "${env.BUILD_NUMBER}"),
