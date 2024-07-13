@@ -6,22 +6,24 @@ The Delivery Pipeline builds a container image, scans the container image for vu
 
 The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/pipeline/syntax/#parameters) that is intended to be invoked from another pipeline. Some of the parameters can be given default values when an instance of the template is created.
 
-| Parameter Name           | Pipeline | Template | Description                                                                   | Default Value    |
-|--------------------------|----------|----------|-------------------------------------------------------------------------------|------------------|
-| image                    | X        | X        | The name of the container image to build and publish.                         | docker.io/my-app |
-| tag                      | X        | X        | The tag to apply to the container image.                                      | latest           |
-| image_registry_auth_json |          | X        | JSON File Docker Config for Authentication (Secret File)                      |                  |
-| build_args               | X        | X        | Additional arguments to pass to the `docker build` command.                   |                  |
-| build_dir                | X        | X        | The context directory to use when building the container image.               | .                |
-| dockerfile               | X        | X        | The path to the Dockerfile to use when building the container image.          | Dockerfile       |
-| build_target             | X        | X        | The build stage to target when building the container image.                  |                  |
-| platform                 | X        | X        | A comma separated list of platforms to build the container image for.         | linux/amd64      |
-| enable_ansi_colors       |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).  | true             |
-| git_repository           | X        |          | The URL of the Git repository to clone when building the container image.     |                  |
-| git_credentials          | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository      |                  |
-| git_commit               | X        |          | The commit hash or branch name to checkout when building the container image. |                  |
-| log_level                | X        |          | The log level to use for the container build process.                         | info             |
-| enable_cache             | X        | X        | Enable Kaniko image build cache.                                              | false            |
+| Parameter Name           | Pipeline | Template | Description                                                                                | Default Value    |
+|--------------------------|----------|----------|--------------------------------------------------------------------------------------------|------------------|
+| image                    | X        | X        | The name of the container image to build and publish.                                      | docker.io/my-app |
+| tag                      | X        | X        | The tag to apply to the container image.                                                   | latest           |
+| image_registry_auth_json |          | X        | The Jenkins Secret File credential to use when authenticating with the container registry. |                  |
+| image_push_enabled       | X        | X        | Enable the image push step.                                                                | false            |
+| update_latest            | X        | X        | When true, update the latest tag to point to the newly built image.                        | false            |
+| build_args               | X        | X        | Additional arguments to pass to the `docker build` command.                                |                  |
+| build_dir                | X        | X        | The context directory to use when building the container image.                            | .                |
+| dockerfile               | X        | X        | The path to the Dockerfile to use when building the container image.                       | Dockerfile       |
+| build_target             | X        | X        | The build stage to target when building the container image.                               |                  |
+| platform                 | X        | X        | A comma separated list of platforms to build the container image for.                      | linux/amd64      |
+| enable_cache             | X        | X        | Enable Kaniko image build cache.                                                           | false            |
+| enable_ansi_colors       |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).               | true             |
+| git_repository           | X        |          | The URL of the Git repository to clone when building the container image.                  |                  |
+| git_credentials          | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                   |                  |
+| git_commit               | X        |          | The commit hash or branch name to checkout when building the container image.              |                  |
+| log_level                | X        |          | The log level to use for the container build process.                                      | info             |
 
 # Usage
 
