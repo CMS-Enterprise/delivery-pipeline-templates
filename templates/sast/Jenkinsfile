@@ -84,6 +84,7 @@ pipeline {
                 """,
                 returnStdout: true
               )
+              echo "Fetched SonarQube project settings: ${projectSettingsJson}"
               def defaultBranch =
                 new groovy.json.JsonSlurper().parseText(projectSettingsJson).settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
               def args = [
@@ -94,8 +95,10 @@ pipeline {
                 "-Dsonar.qualitygate.wait=true"
               ]
               if (params.git_branch == defaultBranch) {
+                echo "Performing analysis for the default branch: ${defaultBranch}"
                 args.add("-Dsonar.branch.name=${params.git_branch}")
               } else {
+                echo "Performing analysis for a feature branch: ${params.git_branch} (does not match default branch ${defaultBranch})"
                 args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
                 args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
               }
