@@ -75,18 +75,20 @@ pipeline {
         container('sonarqube') {
           withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
             script {
-              def project_settings_url = "${params.sonarqube_url}/api/settings/values?component=${params.sonarqube_project_key}"
-              def projectSettingsJson = sh(
+              def projectBranchesUrl = "${params.sonarqube_url}/api/project_branches/list?project=${params.sonarqube_project_key}"
+              sh "set +x" // Disable command echoing
+              def projectBranchesJson = sh(
                 script: """
-                  curl --location '${project_settings_url}&keys=sonar.projectCreation.mainBranchName' \
+                  curl --location '${projectBranchesUrl}' \
                     --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
                     --no-progress-meter -f
                 """,
                 returnStdout: true
               )
-              echo "Fetched SonarQube project settings: ${projectSettingsJson}"
+              sh "set -x"
+              echo "Fetched SonarQube project branch list: ${projectBranchesJson}"
               def defaultBranch =
-                new groovy.json.JsonSlurper().parseText(projectSettingsJson).settings.find { it.key == 'sonar.projectCreation.mainBranchName' }?.value ?: 'main'
+                new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
               def args = [
                 '-Dsonar.login=$SONAR_TOKEN',
                 "-Dsonar.host.url=${params.sonarqube_url}",
