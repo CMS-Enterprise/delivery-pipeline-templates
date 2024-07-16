@@ -79,6 +79,7 @@ pipeline {
               def projectBranchesJson = sh(
                 script: """
                   #! /bin/sh -e
+                  set +x
                   curl --location '${projectBranchesUrl}' \
                     --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
                     --no-progress-meter -f
