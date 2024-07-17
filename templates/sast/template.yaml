@@ -1,4 +1,4 @@
-version: 1
+sonar version: 1
 name: SAST Pipeline
 displayName: SAST Pipeline
 description: Pipeline for scanning a source code for potential security and other defects.
@@ -34,3 +34,9 @@ parameters:
     description: "The container image to use when running the pre-scan build command."
     type: string
     defaultValue: "artifactory.cloud.cms.gov/docker/alpine:3"
+  - name: default_sonar_scanner_java_opts
+    displayName: Sonar Scanner Java Opts
+    description: "Java options for the SonarQube scanner."
+    type: string
+    defaultValue: "-Xmx512m"
+
