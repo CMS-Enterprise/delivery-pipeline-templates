@@ -24,3 +24,9 @@ parameters:
     description: "The relative path of the source code to scan."
     type: string
     defaultValue: "."
+  - name: default_sonar_scanner_java_opts
+    displayName: Sonar Scanner Java Opts
+    description: "Java options for the SonarQube scanner."
+    type: string
+    defaultValue: "-Xmx512m"
+
