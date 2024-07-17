@@ -1,4 +1,4 @@
-sonar version: 1
+version: 1
 name: SAST Pipeline
 displayName: SAST Pipeline
 description: Pipeline for scanning a source code for potential security and other defects.
