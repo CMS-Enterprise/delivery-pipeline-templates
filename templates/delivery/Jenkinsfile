@@ -22,35 +22,40 @@ pipeline {
     booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
   }
 
-  agent {
-    kubernetes {
-      yaml """
-      apiVersion: v1
-      kind: Pod
-      metadata:
-        annotations:
-          com.cloudbees.sidecar-injector/inject: no
-      spec:
-        restartPolicy: Never
-        containers:
-        - name: fetch
-          image: artifactory.cloud.cms.gov/docker/alpine:3
-          command: ['tail', '-f', '/dev/null']
-        - name: kaniko
-          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
-          command: ['tail', '-f', '/dev/null']
-          resources:
-            limits:
-              memory: "${params.kaniko_memory_limit}"    
-        - name: crane
-          image: gcr.io/go-containerregistry/crane/debug:latest
-          command: ['tail', '-f', '/dev/null']
-      """
-    }
-  }
+  agent none
 
   stages {
-    stage('Build Image') {
+    stage('Build linux/amd64 Image') {
+      agent {
+        kubernetes {
+          yaml """
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            annotations:
+              com.cloudbees.sidecar-injector/inject: no
+          spec:
+            restartPolicy: Never
+            containers:
+            - name: fetch
+              image: artifactory.cloud.cms.gov/docker/alpine:3
+              command: ['tail', '-f', '/dev/null']
+            - name: kaniko
+              image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+              command: ['tail', '-f', '/dev/null']
+              resources:
+                limits:
+                  memory: "${params.kaniko_memory_limit}"    
+            - name: crane
+              image: gcr.io/go-containerregistry/crane/debug:latest
+              command: ['tail', '-f', '/dev/null']
+          """
+        }
+      }
+      when {
+        beforeAgent true
+        equals expected: 'linux/amd64', actual: "${params.platform}"
+      }
       steps {
         container('fetch') {
           checkout scmGit(
