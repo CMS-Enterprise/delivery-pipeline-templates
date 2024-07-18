@@ -5,7 +5,11 @@ def containerListYaml() {
       command: ['tail', '-f', '/dev/null']
     - name: sonarqube
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
-      command: ['tail', '-f', '/dev/null']""");
+      command: ['tail', '-f', '/dev/null']
+      resources:
+        limits:
+          memory: 3Gi
+          cpu: 1500m""");
 
   return containerListYaml
 }
@@ -38,6 +42,7 @@ pipeline {
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
+    string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
   }
 
   agent {
@@ -113,7 +118,9 @@ pipeline {
                 // Add all the items in argArray to the args list
                 args.addAll(argArray)
               }
-              sh "sonar-scanner ${args.join(' ')}"
+              withEnv(["SONAR_SCANNER_OPTS=${params.sonar_scanner_java_opts}"]) {
+                sh "sonar-scanner ${args.join(' ')}"
+              }
             }
           }
         }
