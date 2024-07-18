@@ -45,10 +45,7 @@ pipeline {
               command: ['tail', '-f', '/dev/null']
               resources:
                 limits:
-                  memory: "${params.kaniko_memory_limit}"    
-            - name: crane
-              image: gcr.io/go-containerregistry/crane/debug:latest
-              command: ['tail', '-f', '/dev/null']
+                  memory: "${params.kaniko_memory_limit}"
           """
         }
       }
@@ -131,7 +128,127 @@ pipeline {
       }
     }
 
+    stage('Build linux/arm64 Image') {
+      agent {
+        kubernetes {
+          yaml """
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            annotations:
+              com.cloudbees.sidecar-injector/inject: no
+          spec:
+            restartPolicy: Never
+            containers:
+            - name: fetch
+              image: artifactory.cloud.cms.gov/docker/alpine:3
+              command: ['tail', '-f', '/dev/null']
+            - name: kaniko
+              image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+              command: ['tail', '-f', '/dev/null']
+              resources:
+                limits:
+                  memory: "${params.kaniko_memory_limit}"
+          """
+        }
+      }
+      when {
+        beforeAgent true
+        equals expected: 'linux/arm64', actual: "${params.platform}"
+      }
+      steps {
+        container('fetch') {
+          checkout scmGit(
+            branches: [[ name: "${params.git_commit}" ]],
+            userRemoteConfigs: [[
+              url: "${params.git_repository}",
+              credentialsId: "${params.git_credentials}",
+              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+            ]],
+            extensions: [
+              cloneOption(shallow: true, honorRefspec: true, noTags: true),
+              submodule(recursiveSubmodules: true, shallow: true)
+            ]
+          )
+        }
+        container('kaniko') {
+          script {
+            def arguments = [
+              "--context=${params.build_dir}",
+              "--dockerfile=${params.dockerfile}",
+              "--destination=${params.image}:${params.tag}",
+              "--verbosity=${params.log_level}",
+              '--no-push',
+              '--tar-path=./image.tar'
+            ]
+
+            if (params.build_target) {
+              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+              echo "default_build_target: ${default_build_target}"
+              arguments.add("--target=${params.build_target}")
+            }
+
+            if (params.platform) {
+              arguments.add("--custom-platform=${params.platform}")
+            }
+
+            if (params.build_args) {
+              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+              argMap.each { key, value ->
+                arguments.add("--build-arg=${key}='${value}'")
+              }
+            }
+
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+            }
+
+            if (params.enable_cache) {
+              arguments.add("--cache=${params.enable_cache}")
+              arguments.add("--cache-repo=${params.image}-cache")
+              arguments.add("--compressed-caching=false")
+              arguments.add("--cache-dir=/kaniko/cache")
+              arguments.add("--cache-run-layers")
+              arguments.add("--cache-copy-layers")
+            }
+
+            // Authentication by copying a docker config JSON to config directory
+            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+              echo 'export image registry auth json to /kaniko/.docker/config.json'
+              sh 'mkdir -p /kaniko/.docker'
+              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
+
+              if ("${enable_ansi_colors}" == "true") {
+                ansiColor('xterm') {
+                  sh "/kaniko/executor ${arguments.join(' ')}"
+                }
+              } else {
+                sh "/kaniko/executor ${arguments.join(' ')}"
+              }
+            }
+          }
+        }
+      }
+    }
+
     stage('Image Publish') {
+      agent {
+        kubernetes {
+          yaml """
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            annotations:
+              com.cloudbees.sidecar-injector/inject: no
+          spec:
+            restartPolicy: Never
+            containers:
+            - name: crane
+              image: gcr.io/go-containerregistry/crane/debug:latest
+              command: ['tail', '-f', '/dev/null']
+          """
+        }
+      }
       steps {
         container('crane') {
           script {
