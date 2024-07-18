@@ -35,6 +35,8 @@ pipeline {
             annotations:
               com.cloudbees.sidecar-injector/inject: no
           spec:
+            nodeSelector:
+              kubernetes.io/arch: amd64
             restartPolicy: Never
             containers:
             - name: fetch
@@ -183,6 +185,8 @@ pipeline {
             annotations:
               com.cloudbees.sidecar-injector/inject: no
           spec:
+            nodeSelector:
+              kubernetes.io/arch: arm64
             restartPolicy: Never
             containers:
             - name: fetch
