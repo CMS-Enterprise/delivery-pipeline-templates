@@ -8,7 +8,7 @@ def containerListYaml() {
       command: ['tail', '-f', '/dev/null']
       resources:
         limits:
-          memory: 2Gi
+          memory: 3Gi
           cpu: 1500m""");
 
   return containerListYaml
