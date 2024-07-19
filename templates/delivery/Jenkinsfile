@@ -131,18 +131,24 @@ pipeline {
             }
           }
         }
+      }
+    }
+
+    stage('Malware Scan') {
+      steps {
         container('clamav') {
           script {
-            if (!params.clamscan_enabled) {
-              echo 'clamscan_enabled is set to false, skipping the image antivirus scan with ClamAV step'
-              return
-            }
             sh "freshclam"
             sh "touch virus-report.clamav.txt"
             sh "pwd && ls -laH"
             sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
           }
         }
+      }
+    }
+
+    stage('Image Publish') {
+      steps {
         container('crane') {
           script {
             if (!params.image_push_enabled) {
@@ -163,19 +169,6 @@ pipeline {
                 sh "crane push ./image.tar ${params.image}:latest"
               }
             }
-          }
-        }
-      }
-    }
-
-    stage('Malware Scan') {
-      steps {
-        container('clamav') {
-          script {
-            sh "freshclam"
-            sh "touch virus-report.clamav.txt"
-            sh "pwd && ls -laH"
-            sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
           }
         }
       }
