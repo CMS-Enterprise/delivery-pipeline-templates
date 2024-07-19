@@ -16,6 +16,7 @@ pipeline {
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
+    string(name: 'arch', defaultValue: "${default_arch ?: ''}", description: 'The OS architecture to build the container image for (e.g., amd64,arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: "Kaniko memory limit input for those larger builds.")
 
@@ -31,6 +32,9 @@ pipeline {
         annotations:
           com.cloudbees.sidecar-injector/inject: no
       spec:
+        nodeSelector:
+          kubernetes.io/os: linux
+          kubernetes.io/arch: "${params.arch}"
         restartPolicy: Never
         containers:
         - name: fetch
