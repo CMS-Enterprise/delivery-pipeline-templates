@@ -42,6 +42,14 @@ pipeline {
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"    
+        - name: clamav
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          command: ['tail', '-f', '/dev/null']
+          resources:
+            limits:
+              memory: "5Gi"
+            requests:
+              memory: "3Gi"
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
@@ -148,6 +156,19 @@ pipeline {
                 sh "crane push ./image.tar ${params.image}:latest"
               }
             }
+          }
+        }
+      }
+    }
+
+    stage('Malware Scan') {
+      steps {
+        container('clamav') {
+          script {
+            sh "freshclam"
+            sh "touch virus-report.clamav.txt"
+            sh "pwd && ls -laH"
+            sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar"
           }
         }
       }
