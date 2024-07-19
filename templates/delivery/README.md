@@ -18,7 +18,6 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | dockerfile                  | X        | X        | The path to the Dockerfile to use when building the container image.                       | Dockerfile       |
 | build_target                | X        | X        | The build stage to target when building the container image.                               |                  |
 | platform                    | X        | X        | A comma separated list of platforms to build the container image for.                      | linux/amd64      |
-| arch                        | X        | X        | The OS architecture to build the container image for.                                      | amd64            |
 | enable_cache                | X        | X        | Enable Kaniko image build cache.                                                           | false            |
 | enable_ansi_colors          |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).               | true             |
 | git_repository              | X        |          | The URL of the Git repository to clone when building the container image.                  |                  |
