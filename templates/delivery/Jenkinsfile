@@ -144,13 +144,12 @@ pipeline {
     stage('Image Scan') {
       parallel {
         stage('Vulnerability Scan') {
+          when {
+            expression { params.enable_snyk }
+          }
           steps {
             container('snyk') {
               script {
-                if "${snyk_token}" == "" {
-                  error 'The snyk_token template parameter is not set to a Jenkins Credential ID, skipping the Snyk scan step.'
-                  return
-                }
                 def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
                 def args = [
                   // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
@@ -160,17 +159,19 @@ pipeline {
                   "docker-archive:${image_file_name}"
                 ]
                 def sbom_ext = "${sbom_format}".split('+')[1]
-                withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                  sh """
-                    ln image.tar '${image_file_name}'
-                    # Report vulnerabilities to the Snyk dashboard
-                    snyk container monitor ${args.join(' ')}
-                    snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
-                    snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
-                  """
+                try {
+                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                    sh """
+                      ln image.tar '${image_file_name}'
+                      # Report vulnerabilities to the Snyk dashboard
+                      snyk container monitor ${args.join(' ')}
+                      snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
+                      snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
+                    """
+                  }
+                } finally {
+                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                 }
-
-                archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
               }
             }
           }
@@ -180,13 +181,15 @@ pipeline {
           steps {
             container('clamav') {
               script {
-                sh """
-                  set -o pipefail
-                  freshclam
-                  clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                """
-
-                archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                try {
+                  sh """
+                    set -o pipefail
+                    freshclam
+                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
+                  """
+                } finally {
+                  archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                }
               }
             }
           }
@@ -195,14 +198,12 @@ pipeline {
     }
 
     stage('Image Publish') {
+      when {
+        expression { params.image_push_enabled }
+      }
       steps {
         container('crane') {
           script {
-            if (!params.image_push_enabled) {
-              echo 'image_push_enabled is set to false, skipping the image push step'
-              return
-            }
-
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
               echo 'export image registry auth json to /root/.docker/config.json'
