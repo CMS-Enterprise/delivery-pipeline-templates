@@ -79,3 +79,22 @@ parameters:
     description: "Enable Kaniko image build cache."
     type: boolean
     defaultValue: false
+  - name: default_snyk_scan_enabled
+    displayName: Enable Snyk Scan
+    description: "Enable the Snyk container image vulnerability scan step."
+    type: boolean
+    defaultValue: false
+  - name: snyk_token
+    displayName: Snyk API Token
+    description: "The Snyk API token to use for scanning the container image."
+    type: credentials
+  - name: default_snyk_project_name
+    displayName: Snyk Project Name
+    description: "The name of the Snyk project to associate the container image scan with."
+    type: string
+    defaultValue: "my-app"
+  - name: sbom_format
+    displayName: SBOM Format
+    description: "The SBOM format to produce (cyclonedx1.4+json, cyclonedx1.4+xml, [cyclonedx1.5+json], cyclonedx1.5+xml, or spdx2.3+json)"
+    type: string
+    defaultValue: "cyclonedx1.5+json"
