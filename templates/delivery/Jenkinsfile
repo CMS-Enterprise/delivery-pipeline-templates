@@ -16,6 +16,7 @@ pipeline {
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
+    string(name: 'arch', defaultValue: "${default_arch ?: ''}", description: 'The architecture to build the container image for (e.g., amd64,arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'kaniko_memory_limit', defaultValue: "${default_kaniko_memory_limit ?: '1Gi'}", description: "Kaniko memory limit input for those larger builds.")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
@@ -39,9 +40,11 @@ pipeline {
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
@@ -60,6 +63,9 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
+        nodeSelector:
+          kubernetes.io/os: linux
+          kubernetes.io/arch: "${params.arch}"
       """
     }
   }
