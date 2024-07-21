@@ -79,7 +79,7 @@ parameters:
     description: "Enable Kaniko image build cache."
     type: boolean
     defaultValue: false
-  - name: default_snyk_scan_enabled
+  - name: default_enable_snyk
     displayName: Enable Snyk Scan
     description: "Enable the Snyk container image vulnerability scan step."
     type: boolean
