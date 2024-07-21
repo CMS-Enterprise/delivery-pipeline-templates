@@ -55,7 +55,7 @@ pipeline {
             requests:
               memory: "3Gi"
         - name: synk
-          image: artifactory.cloud.cms.gov/docker/synk/synk:alpine
+          image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
