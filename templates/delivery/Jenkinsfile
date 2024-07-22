@@ -158,7 +158,7 @@ pipeline {
                   "--project-name=${params.snyk_project_name}",
                   "docker-archive:${image_file_name}"
                 ]
-                def sbom_ext = "${sbom_format}".split('+')[1]
+                def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
                   withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                     sh """
