@@ -56,7 +56,7 @@ pipeline {
               memory: "5Gi"
             requests:
               memory: "3Gi"
-        - name: synk
+        - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
         - name: crane
