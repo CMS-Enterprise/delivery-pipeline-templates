@@ -25,6 +25,8 @@ pipeline {
     booleanParam(name: 'enable_snyk', defaultValue: "${default_enable_snyk ?: false}", description: 'Enable the Snyk container image vulnerability scan step.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     choice(name: 'vulnerability_severity_threshold', choices: ['high', 'critical', 'medium', 'low'], description: 'The minimum severity level of vulnerabilities to fail the build (default: high).')
+
+    booleanParam(name: 'continue_on_image_scan_failure', defaultValue: false, description: 'When set to true, the pipeline will succeed even if either of the malware scan or vulnerability scan fails for any reason.')
   }
 
   agent {
@@ -156,27 +158,29 @@ pipeline {
           steps {
             container('snyk') {
               script {
-                def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
-                def args = [
-                  // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
-                  '--exclude-app-vulns',
-                  "--severity-threshold=${params.vulnerability_severity_threshold}",
-                  "--project-name=${params.snyk_project_name}",
-                  "docker-archive:${image_file_name}"
-                ]
-                def sbom_ext = "${sbom_format}".split('+')[1]
-                try {
-                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                    sh """
-                      ln image.tar '${image_file_name}'
-                      # Report vulnerabilities to the Snyk dashboard
-                      snyk container monitor ${args.join(' ')}
-                      snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
-                      snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
-                    """
+                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
+                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
+                  def args = [
+                    // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
+                    '--exclude-app-vulns',
+                    "--severity-threshold=${params.vulnerability_severity_threshold}",
+                    "--project-name=${params.snyk_project_name}",
+                    "docker-archive:${image_file_name}"
+                  ]
+                  def sbom_ext = "${sbom_format}".tokenize('+')[1]
+                  try {
+                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                      sh """
+                        ln image.tar '${image_file_name}'
+                        # Report vulnerabilities to the Snyk dashboard
+                        snyk container monitor ${args.join(' ')}
+                        snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
+                        snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
+                      """
+                    }
+                  } finally {
+                    archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                   }
-                } finally {
-                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                 }
               }
             }
@@ -187,14 +191,16 @@ pipeline {
           steps {
             container('clamav') {
               script {
-                try {
-                  sh """
-                    set -o pipefail
-                    freshclam
-                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                  """
-                } finally {
-                  archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
+                  try {
+                    sh """
+                      set -o pipefail
+                      freshclam
+                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
+                    """
+                  } finally {
+                    archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                  }
                 }
               }
             }
