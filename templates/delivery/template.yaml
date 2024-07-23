@@ -101,7 +101,7 @@ parameters:
   - name: default_vulnerability_severity_threshold
     displayName: Vulnerability Severity Threshold
     description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
-    type: choice
+    type: string
     choices:
       - low
       - medium
