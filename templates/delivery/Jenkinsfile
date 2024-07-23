@@ -155,15 +155,14 @@ pipeline {
             }
 
             build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"
-            build_config_dir = '~/.docker/'
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              build_config = new File(build_config_dir, "config.json").path
+              image_auth_config_file = '~/.docker/config.json'
 
-              echo 'export image registry auth json to ${build_config}'
-              sh 'mkdir -p ${build_config_dir}'
-              sh 'mv "$AUTH_JSON_FILE" ${build_config}'
+              echo 'export image registry auth json to ${image_auth_config_file}'
+              sh 'mkdir -p ~/.docker'
+              sh 'mv "$AUTH_JSON_FILE" ${image_auth_config_file}'
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
@@ -221,15 +220,14 @@ pipeline {
             }
 
             build_command = "/kaniko/executor ${arguments.join(' ')}"
-            build_config_dir = '/kaniko/.docker/'
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              build_config = new File(build_config_dir, "config.json").path
+              image_auth_config_file = "/kaniko/.docker/config.json"
 
-              echo 'export image registry auth json to ${build_config}'
-              sh 'mkdir -p ${build_config_dir}'
-              sh 'mv "$AUTH_JSON_FILE" ${build_config}'
+              echo 'export image registry auth json to ${image_auth_config_file}'
+              sh 'mkdir -p /kaniko/.docker'
+              sh 'mv "$AUTH_JSON_FILE" ${image_auth_config_file}'
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
