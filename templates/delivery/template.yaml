@@ -88,6 +88,11 @@ parameters:
     description: "The SBOM format to produce (cyclonedx1.4+json, cyclonedx1.4+xml, [cyclonedx1.5+json], cyclonedx1.5+xml, or spdx2.3+json)"
     type: string
     defaultValue: "cyclonedx1.5+json"
+  - name: default_continue_on_image_scan_failure
+    displayName: Continue on Image Scan Failure
+    description: "When enabled, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason."
+    type: boolean
+    defaultValue: false
   - name: build_retention_days
     displayName: Build Log Retention Days
     description: "The number of days to retain build logs and artifacts."
