@@ -36,11 +36,9 @@ pipeline {
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
-          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: kaniko
           image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
-          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
@@ -48,9 +46,6 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
-        nodeSelector:
-          kubernetes.io/os: linux
-          kubernetes.io/arch: "${params.arch}"
       """
     }
   }
