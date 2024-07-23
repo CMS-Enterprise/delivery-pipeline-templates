@@ -25,6 +25,8 @@ pipeline {
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
 
+    booleanParam(name: 'enable_buildx', defaultValue: "${default_enable_buildx?: false}", description: 'Enable buildx instead of kaniko for image builds')
+
     booleanParam(name: 'enable_snyk', defaultValue: "${default_enable_snyk ?: false}", description: 'Enable the Snyk container image vulnerability scan step.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
@@ -54,6 +56,21 @@ pipeline {
           resources:
             limits:
               memory: "${params.kaniko_memory_limit}"
+        - name: buildkit
+          image: moby/buildkit:latest
+          args: ["--addr", "unix:///run/buildkit/buildkitd.sock"]
+          volumeMounts:
+          - name: buildkit-socket
+            mountPath: /run/buildkit
+        - name: buildx
+          image: docker:latest
+          command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+          - name: buildkit-socket
+            mountPath: /run/buildkit
+        volumes:
+        - name: buildkit-socket
+          emptyDir: {}
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -83,6 +100,48 @@ pipeline {
     buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
+  def kanikoBuildCommand() {
+    def arguments = [
+      "--context=${params.build_dir}",
+      "--dockerfile=${params.dockerfile}",
+      "--destination=${params.image}:${params.tag}",
+      "--verbosity=${params.log_level}",
+      '--no-push',
+      '--tar-path=./image.tar'
+    ]
+
+    if (params.build_target) {
+      echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+      echo "default_build_target: ${default_build_target}"
+      arguments.add("--target=${params.build_target}")
+    }
+
+    if (params.platform) {
+      arguments.add("--custom-platform=${params.platform}")
+    }
+
+    if (params.build_args) {
+      def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+      argMap.each { key, value ->
+        arguments.add("--build-arg=${key}='${value}'")
+      }
+    }
+
+    if (params.enable_cache) {
+      arguments.add("--cache=${params.enable_cache}")
+      arguments.add("--cache-repo=${params.image}-cache")
+      arguments.add("--compressed-caching=false")
+      arguments.add("--cache-dir=/kaniko/cache")
+      arguments.add("--cache-run-layers")
+      arguments.add("--cache-copy-layers")
+    }
+    return "/kaniko/executor ${arguments.join(' ')}"
+  }
+
+  def buildxBuild() {
+    return "echo 'FEATURE NOT READY' && exit 1"
+  }
+
   stages {
     stage('Build Image') {
       steps {
@@ -100,65 +159,43 @@ pipeline {
             ]
           )
         }
-        container('kaniko') {
+
+        if (params.enable_buildx) {
+          build_container = 'buildx'
+          build_command = buildxBuildCommand()
+          build_config_dir = '~/.docker/'
+        } else {
+          build_container = 'kaniko'
+          build_command = kanikoBuildCommand()
+          build_config_dir = '/kaniko/.docker/'
+        }
+
+        container(build_container) {
           script {
-            def arguments = [
-              "--context=${params.build_dir}",
-              "--dockerfile=${params.dockerfile}",
-              "--destination=${params.image}:${params.tag}",
-              "--verbosity=${params.log_level}",
-              '--no-push',
-              '--tar-path=./image.tar'
-            ]
-
-            if (params.build_target) {
-              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-              echo "default_build_target: ${default_build_target}"
-              arguments.add("--target=${params.build_target}")
-            }
-
-            if (params.platform) {
-              arguments.add("--custom-platform=${params.platform}")
-            }
-
-            if (params.build_args) {
-              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-              argMap.each { key, value ->
-                arguments.add("--build-arg=${key}='${value}'")
-              }
-            }
-
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
 
-            if (params.enable_cache) {
-              arguments.add("--cache=${params.enable_cache}")
-              arguments.add("--cache-repo=${params.image}-cache")
-              arguments.add("--compressed-caching=false")
-              arguments.add("--cache-dir=/kaniko/cache")
-              arguments.add("--cache-run-layers")
-              arguments.add("--cache-copy-layers")
-            }
-
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              echo 'export image registry auth json to /kaniko/.docker/config.json'
-              sh 'mkdir -p /kaniko/.docker'
-              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
+              build_config = new File(build_config_dir, "config.json").path
+
+              echo 'export image registry auth json to ${build_config}'
+              sh 'mkdir -p ${build_config_dir}'
+              sh 'mv "$AUTH_JSON_FILE" ${build_config}'
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
-                  sh "/kaniko/executor ${arguments.join(' ')}"
+                  sh build_command
                 }
               } else {
-                sh "/kaniko/executor ${arguments.join(' ')}"
+                  sh build_command
+                }
               }
             }
           }
         }
       }
-    }
 
     stage('Image Scan') {
       parallel {
