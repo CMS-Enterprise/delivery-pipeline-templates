@@ -156,11 +156,10 @@ pipeline {
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              image_auth_config_file = '~/.docker/config.json'
 
-              echo 'export image registry auth json to ${image_auth_config_file}'
+              echo "export image registry auth json to ~/.docker/config.json"
               sh 'mkdir -p ~/.docker'
-              sh 'mv "$AUTH_JSON_FILE" ${image_auth_config_file}'
+              sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
@@ -221,11 +220,10 @@ pipeline {
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              image_auth_config_file = "/kaniko/.docker/config.json"
 
-              echo 'export image registry auth json to ${image_auth_config_file}'
+              echo 'export image registry auth json to /kaniko/.docker/config.json'
               sh 'mkdir -p /kaniko/.docker'
-              sh 'mv "$AUTH_JSON_FILE" ${image_auth_config_file}'
+              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
