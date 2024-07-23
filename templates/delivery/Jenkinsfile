@@ -196,7 +196,6 @@ pipeline {
           }
         }
       }
-    }
 
     stage('Image Scan') {
       parallel {
