@@ -78,6 +78,15 @@ parameters:
     description: "The name of the Snyk project to associate the container image scan with."
     type: string
     defaultValue: "my-app"
+  - name: default_vulnerability_severity_threshold
+    displayName: Vulnerability Severity Threshold
+    description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
+    type: choice
+    choices:
+      - low
+      - medium
+      - high
+      - critical
   - name: sbom_format
     displayName: SBOM Format
     description: "The SBOM format to produce (cyclonedx1.4+json, cyclonedx1.4+xml, [cyclonedx1.5+json], cyclonedx1.5+xml, or spdx2.3+json)"
