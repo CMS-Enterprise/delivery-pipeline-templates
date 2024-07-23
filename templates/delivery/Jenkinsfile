@@ -168,7 +168,7 @@ pipeline {
                   // The image file that Kaniko produces is not compatible with Snyk (https://github.com/GoogleContainerTools/kaniko/issues/1976)
                   // By "copying" it with Skopeo, we create a new image file that Snyk can scan
                   sh 'skopeo copy docker-archive:image.tar docker-archive:skopeo-image.tar'
-                } catch {
+                } catch(err) {
                   if (params.continue_on_image_scan_failure) {
                     warn "Failed to copy the image file with skopeo. Skipping the Snyk scan."
                     return
@@ -203,7 +203,7 @@ pipeline {
                   } finally {
                     archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                   }
-                } catch {
+                } catch(err) {
                   if (params.continue_on_image_scan_failure) {
                     warn "Failed to scan the image with Snyk. Continuing pipeline execution."
                     return
