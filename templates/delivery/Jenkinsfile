@@ -100,47 +100,6 @@ pipeline {
     buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
-  def kanikoBuildCommand() {
-    def arguments = [
-      "--context=${params.build_dir}",
-      "--dockerfile=${params.dockerfile}",
-      "--destination=${params.image}:${params.tag}",
-      "--verbosity=${params.log_level}",
-      '--no-push',
-      '--tar-path=./image.tar'
-    ]
-
-    if (params.build_target) {
-      echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-      echo "default_build_target: ${default_build_target}"
-      arguments.add("--target=${params.build_target}")
-    }
-
-    if (params.platform) {
-      arguments.add("--custom-platform=${params.platform}")
-    }
-
-    if (params.build_args) {
-      def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-      argMap.each { key, value ->
-        arguments.add("--build-arg=${key}='${value}'")
-      }
-    }
-
-    if (params.enable_cache) {
-      arguments.add("--cache=${params.enable_cache}")
-      arguments.add("--cache-repo=${params.image}-cache")
-      arguments.add("--compressed-caching=false")
-      arguments.add("--cache-dir=/kaniko/cache")
-      arguments.add("--cache-run-layers")
-      arguments.add("--cache-copy-layers")
-    }
-    return "/kaniko/executor ${arguments.join(' ')}"
-  }
-
-  def buildxBuild() {
-    return "echo 'FEATURE NOT READY' && exit 1"
-  }
 
   stages {
     stage('Build Image') {
@@ -172,6 +131,48 @@ pipeline {
 
         container(build_container) {
           script {
+            def kanikoBuildCommand() {
+                def arguments = [
+                "--context=${params.build_dir}",
+                "--dockerfile=${params.dockerfile}",
+                "--destination=${params.image}:${params.tag}",
+                "--verbosity=${params.log_level}",
+                '--no-push',
+                '--tar-path=./image.tar'
+                ]
+
+                if (params.build_target) {
+                echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+                echo "default_build_target: ${default_build_target}"
+                arguments.add("--target=${params.build_target}")
+                }
+
+                if (params.platform) {
+                arguments.add("--custom-platform=${params.platform}")
+                }
+
+                if (params.build_args) {
+                def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+                argMap.each { key, value ->
+                    arguments.add("--build-arg=${key}='${value}'")
+                }
+                }
+
+                if (params.enable_cache) {
+                arguments.add("--cache=${params.enable_cache}")
+                arguments.add("--cache-repo=${params.image}-cache")
+                arguments.add("--compressed-caching=false")
+                arguments.add("--cache-dir=/kaniko/cache")
+                arguments.add("--cache-run-layers")
+                arguments.add("--cache-copy-layers")
+                }
+                return "/kaniko/executor ${arguments.join(' ')}"
+            }
+
+            def buildxBuild() {
+                return "echo 'FEATURE NOT READY' && exit 1"
+            }
+
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
             }
