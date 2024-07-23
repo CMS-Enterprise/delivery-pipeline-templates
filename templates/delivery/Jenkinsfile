@@ -48,7 +48,9 @@ pipeline {
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: kaniko
-          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.2
+          # Note: it is necessary to use the -debug version of the kaniko image because it includes
+          # basic shell utilities like tail which is required to keep the container running
+          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.2-debug
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
