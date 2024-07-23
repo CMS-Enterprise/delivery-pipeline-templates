@@ -1,6 +1,3 @@
-// Used during the Vulnerability Scan stage
-def image_file_name
-
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -167,17 +164,25 @@ pipeline {
           steps {
             container('skopeo') {
               script {
-                image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
-                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
+                try {
                   // The image file that Kaniko produces is not compatible with Snyk (https://github.com/GoogleContainerTools/kaniko/issues/1976)
                   // By "copying" it with Skopeo, we create a new image file that Snyk can scan
-                  sh "skopeo copy docker-archive:image.tar docker-archive:${image_file_name}"
+                  sh 'skopeo copy docker-archive:image.tar docker-archive:skopeo-image.tar'
+                } catch {
+                  if (params.continue_on_image_scan_failure) {
+                    warn "Failed to copy the image file with skopeo. Skipping the Snyk scan."
+                    return
+                  } else {
+                    error "Failed to copy the image file with skopeo."
+                  }
                 }
               }
             }
             container('snyk') {
               script {
-                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
+                try {
+                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
+                  sh "ln skopeo-image.tar ${image_file_name}"
                   def args = [
                     // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
                     '--exclude-app-vulns',
@@ -197,6 +202,13 @@ pipeline {
                     }
                   } finally {
                     archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
+                  }
+                } catch {
+                  if (params.continue_on_image_scan_failure) {
+                    warn "Failed to scan the image with Snyk. Continuing pipeline execution."
+                    return
+                  } else {
+                    error "Failed to scan the image with Snyk."
                   }
                 }
               }
