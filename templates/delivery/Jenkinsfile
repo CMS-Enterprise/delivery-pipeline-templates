@@ -24,7 +24,7 @@ pipeline {
 
     booleanParam(name: 'enable_snyk', defaultValue: "${default_enable_snyk ?: false}", description: 'Enable the Snyk container image vulnerability scan step.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
-    choice(name: 'vulnerability_severity_threshold', choices: ['high', 'critical', 'medium', 'low'], description: 'The minimum severity level of vulnerabilities to fail the build (default: high).')
+    string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
 
     booleanParam(name: 'continue_on_image_scan_failure', defaultValue: false, description: 'When set to true, the pipeline will succeed even if either of the malware scan or vulnerability scan fails for any reason.')
   }
@@ -71,6 +71,13 @@ pipeline {
           command: ['tail', '-f', '/dev/null']
       """
     }
+  }
+
+  options {
+    // Allow other pipelines to copy the artifacts produced by this pipeline
+    copyArtifactPermission('*')
+    // Automatically discard old builds
+    buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
   stages {
