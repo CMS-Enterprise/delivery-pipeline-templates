@@ -134,6 +134,7 @@ pipeline {
       steps {
         container('buildx') {
           script {
+            sh 'docker buildx create --name mybuilder --driver kubernetes --use'
             def arguments = [
               "--file=${params.dockerfile}",
               "--tag=${params.image}:${params.tag}",
