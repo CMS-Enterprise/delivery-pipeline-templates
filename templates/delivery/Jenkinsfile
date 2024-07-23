@@ -235,11 +235,9 @@ pipeline {
                 sh build_command
             }
           }
-
         }
       }
     }
-  }
 
     stage('Image Scan') {
       parallel {
@@ -364,5 +362,5 @@ pipeline {
         }
       }
     }
-  }
-}
+  } // stages
+} // pipelines
