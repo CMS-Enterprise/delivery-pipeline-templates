@@ -190,7 +190,11 @@ pipeline {
                       sh """
                         # Report vulnerabilities to the Snyk dashboard
                         snyk container monitor ${args.join(' ')}
-                        snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
+                        # Note: use skopeo-image.tar because the snyk sbom command does not support
+                        # filenames with colons.
+                        snyk container sbom --format=${sbom_format} docker-archive:skopeo-image.tar > './snyk-sbom.${sbom_ext}'
+                        # Report detected vulnerabilities to stdout and raise an error if
+                        # vulnerabilities are found exceeding the specified threshold
                         snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
                       """
                     }
