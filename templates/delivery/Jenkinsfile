@@ -182,20 +182,25 @@ pipeline {
             }
             container('snyk') {
               script {
+                if (params.continue_on_image_scan_failure) {
+                  echo "Pipeline configured to continue on scan error: ${params.continue_on_image_scan_failure}"
+                } else {
+                  echo "Pipeline configured to fail on scan error: ${params.continue_on_image_scan_failure}"
+                }
+                def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
+                sh "ln skopeo-image.tar ${image_file_name}"
+                def args = [
+                  // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
+                  '--exclude-app-vulns',
+                  "--severity-threshold=${params.vulnerability_severity_threshold}",
+                  "--project-name=${params.snyk_project_name}",
+                  "docker-archive:${image_file_name}"
+                ]
+                def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
-                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
-                  sh "ln skopeo-image.tar ${image_file_name}"
-                  def args = [
-                    // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
-                    '--exclude-app-vulns',
-                    "--severity-threshold=${params.vulnerability_severity_threshold}",
-                    "--project-name=${params.snyk_project_name}",
-                    "docker-archive:${image_file_name}"
-                  ]
-                  def sbom_ext = "${sbom_format}".tokenize('+')[1]
-                  try {
-                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                      sh """
+                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                    def scanExitCode = sh(
+                      script: """
                         # Report vulnerabilities to the Snyk dashboard
                         snyk container monitor ${args.join(' ')}
                         # Note: use skopeo-image.tar because the snyk sbom command does not support
@@ -204,18 +209,23 @@ pipeline {
                         # Report detected vulnerabilities to stdout and raise an error if
                         # vulnerabilities are found exceeding the specified threshold
                         snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
-                      """
+                      """,
+                      returnStatus: true
+                    )
+
+                    echo "Snyk scan completed with exit code: ${scanExitCode}"
+
+                    if (scanExitCode > 0) {
+                      if (params.continue_on_image_scan_failure) {
+                        warn "Failed to scan the image with Snyk. Continuing pipeline execution."
+                        return
+                      } else {
+                        error "Failed to scan the image with Snyk."
+                      }
                     }
-                  } finally {
-                    archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                   }
-                } catch(err) {
-                  if (params.continue_on_image_scan_failure) {
-                    warn "Failed to scan the image with Snyk. Continuing pipeline execution."
-                    return
-                  } else {
-                    error "Failed to scan the image with Snyk."
-                  }
+                } finally {
+                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                 }
               }
             }
@@ -226,16 +236,26 @@ pipeline {
           steps {
             container('clamav') {
               script {
-                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
-                  try {
-                    sh """
+                try {
+                  def scanExitCode = sh(
+                    script: """
                       set -o pipefail
                       freshclam
                       clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                    """
-                  } finally {
-                    archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                    """,
+                    returnStatus: true
+                  )
+
+                  if (scanExitCode > 0) {
+                    if (params.continue_on_image_scan_failure) {
+                      warn "Failed to scan the image with ClamAV. Continuing pipeline execution."
+                      return
+                    } else {
+                      error "Failed to scan the image with ClamAV."
+                    }
                   }
+                } finally {
+                  archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
                 }
               }
             }
