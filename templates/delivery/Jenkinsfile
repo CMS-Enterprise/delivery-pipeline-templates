@@ -1,3 +1,6 @@
+// Used to skip the Snyk scan when a previous step fails
+def skip_snyk_scan = false
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -172,8 +175,8 @@ pipeline {
                   sh 'skopeo copy docker-archive:image.tar docker-archive:skopeo-image.tar'
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
-                    warn "Failed to copy the image file with skopeo. Skipping the Snyk scan."
-                    return
+                    echo "Failed to copy the image file with skopeo. Skipping the Snyk scan."
+                    skip_snyk_scan = true
                   } else {
                     error "Failed to copy the image file with skopeo."
                   }
@@ -182,20 +185,24 @@ pipeline {
             }
             container('snyk') {
               script {
-                def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
-                sh "ln skopeo-image.tar ${image_file_name}"
-                def args = [
-                  // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
-                  '--exclude-app-vulns',
-                  "--severity-threshold=${params.vulnerability_severity_threshold}",
-                  "--project-name=${params.snyk_project_name}",
-                  "docker-archive:${image_file_name}"
-                ]
-                def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
-                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                    def scanExitCode = sh(
-                      script: """
+                  if (skip_snyk_scan) {
+                    error "Skipping the Snyk scan due to a previous failure.
+                  }
+
+                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
+                  sh "ln skopeo-image.tar ${image_file_name}"
+                  def args = [
+                    // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
+                    '--exclude-app-vulns',
+                    "--severity-threshold=${params.vulnerability_severity_threshold}",
+                    "--project-name=${params.snyk_project_name}",
+                    "docker-archive:${image_file_name}"
+                  ]
+                  def sbom_ext = "${sbom_format}".tokenize('+')[1]
+                  try {
+                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                      sh """
                         # Report vulnerabilities to the Snyk dashboard
                         snyk container monitor ${args.join(' ')}
                         # Note: use skopeo-image.tar because the snyk sbom command does not support
@@ -204,21 +211,18 @@ pipeline {
                         # Report detected vulnerabilities to stdout and raise an error if
                         # vulnerabilities are found exceeding the specified threshold
                         snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
-                      """,
-                      returnStatus: true
-                    )
-
-                    if (scanExitCode > 0) {
-                      if (params.continue_on_image_scan_failure) {
-                        echo "Failed to scan the image with Snyk. Continuing pipeline execution."
-                      } else {
-                        echo "Snyk scan failed with exit code: ${scanExitCode}"
-                        error "Failed to scan the image with Snyk."
-                      }
+                      """
                     }
+                  } finally {
+                    archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                   }
-                } finally {
-                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
+                } catch(err) {
+                  if (params.continue_on_image_scan_failure) {
+                    echo "Failed to scan the image with Snyk. Continuing pipeline execution."
+                  } else {
+                    echo "Snyk scan failed with error: ${err}"
+                    error "Failed to scan the image with Snyk."
+                  }
                 }
               }
             }
