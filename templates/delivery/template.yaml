@@ -63,7 +63,7 @@ parameters:
     displayName: Copy Artifacts Filter
     description: "The file filter identifying which artifacts to copy."
     type: string
-    defaultValue: ""
+    defaultValue: ""        
   - name: enable_ansi_colors
     displayName: Enable ANSI Colors
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
@@ -87,11 +87,6 @@ parameters:
   - name: default_enable_snyk
     displayName: Enable Snyk Scan
     description: "Enable the Snyk container image vulnerability scan step."
-    type: boolean
-    defaultValue: false
-  - name: default_enable_buildx
-    displayName: Enable Buildx (Replaces Kaniko)
-    description: "Enable buildx for image building instead of kaniko"
     type: boolean
     defaultValue: false
   - name: snyk_token
