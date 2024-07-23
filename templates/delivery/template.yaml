@@ -83,3 +83,13 @@ parameters:
     description: "The SBOM format to produce (cyclonedx1.4+json, cyclonedx1.4+xml, [cyclonedx1.5+json], cyclonedx1.5+xml, or spdx2.3+json)"
     type: string
     defaultValue: "cyclonedx1.5+json"
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: "The number of days to retain build logs and artifacts."
+    type: string
+    defaultValue: "90"
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: "The number of builds to retain."
+    type: string
+    defaultValue: "1000"
