@@ -217,7 +217,9 @@ pipeline {
                   }
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
-                    echo "Failed to scan the image with Snyk. Continuing pipeline execution."
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE', message: 'Failed to scan the image with Snyk. Continuing pipeline execution.') {
+                      error ""
+                    }
                   } else {
                     echo "Snyk scan failed with error: ${err}"
                     error "Failed to scan the image with Snyk."
