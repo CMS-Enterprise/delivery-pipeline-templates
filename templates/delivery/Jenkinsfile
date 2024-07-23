@@ -181,11 +181,6 @@ pipeline {
             }
             container('snyk') {
               script {
-                if (params.continue_on_image_scan_failure) {
-                  echo "Pipeline configured to continue on scan error: ${params.continue_on_image_scan_failure}"
-                } else {
-                  echo "Pipeline configured to fail on scan error: ${params.continue_on_image_scan_failure}"
-                }
                 def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
                 sh "ln skopeo-image.tar ${image_file_name}"
                 def args = [
@@ -212,13 +207,11 @@ pipeline {
                       returnStatus: true
                     )
 
-                    echo "Snyk scan completed with exit code: ${scanExitCode}"
-
                     if (scanExitCode > 0) {
                       if (params.continue_on_image_scan_failure) {
-                        warn "Failed to scan the image with Snyk. Continuing pipeline execution."
-                        return
+                        echo "Failed to scan the image with Snyk. Continuing pipeline execution."
                       } else {
+                        echo "Snyk scan failed with exit code: ${scanExitCode}"
                         error "Failed to scan the image with Snyk."
                       }
                     }
