@@ -217,8 +217,8 @@ pipeline {
                   }
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE', message: 'Failed to scan the image with Snyk. Continuing pipeline execution.') {
-                      error ""
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                      error "Failed to scan the image with Snyk. Continuing pipeline execution."
                     }
                   } else {
                     echo "Snyk scan failed with error: ${err}"
@@ -235,22 +235,18 @@ pipeline {
             container('clamav') {
               script {
                 try {
-                  def scanExitCode = sh(
-                    script: """
-                      set -o pipefail
-                      freshclam
-                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                    """,
-                    returnStatus: true
-                  )
-
-                  if (scanExitCode > 0) {
-                    if (params.continue_on_image_scan_failure) {
-                      warn "Failed to scan the image with ClamAV. Continuing pipeline execution."
-                      return
-                    } else {
-                      error "Failed to scan the image with ClamAV."
+                  sh """
+                    set -o pipefail
+                    freshclam
+                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
+                  """
+                } catch(err) {
+                  if (params.continue_on_image_scan_failure) {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                      error "Failed to scan the image with ClamAV. Continuing pipeline execution."
                     }
+                  } else {
+                    error "Failed to scan the image with ClamAV."
                   }
                 } finally {
                   archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
