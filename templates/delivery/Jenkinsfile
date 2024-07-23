@@ -187,7 +187,7 @@ pipeline {
               script {
                 try {
                   if (skip_snyk_scan) {
-                    error "Skipping the Snyk scan due to a previous failure.
+                    error "Skipping the Snyk scan due to a previous failure."
                   }
 
                   def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
