@@ -1,3 +1,6 @@
+// Used during the Vulnerability Scan stage
+def image_file_name
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -45,7 +48,7 @@ pipeline {
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: kaniko
-          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.1-debug
+          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.2
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
@@ -59,6 +62,10 @@ pipeline {
               memory: "5Gi"
             requests:
               memory: "3Gi"
+        - name: skopeo
+          # TODO: setup a artifactory based mirror for quay.io/skopeo/stable
+          image: quay.io/skopeo/stable:v1.15
+          command: ['tail', '-f', '/dev/null']
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
@@ -156,10 +163,19 @@ pipeline {
             expression { params.enable_snyk }
           }
           steps {
+            container('skopeo') {
+              script {
+                image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
+                catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
+                  // The image file that Kaniko produces is not compatible with Snyk (https://github.com/GoogleContainerTools/kaniko/issues/1976)
+                  // By "copying" it with Skopeo, we create a new image file that Snyk can scan
+                  sh "skopeo copy docker-archive:image.tar docker-archive:${image_file_name}"
+                }
+              }
+            }
             container('snyk') {
               script {
                 catchError(buildResult: (params.continue_on_image_scan_failure ? 'SUCCESS' : 'FAILURE'), stageResult: 'FAILURE') {
-                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
                   def args = [
                     // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
                     '--exclude-app-vulns',
@@ -171,7 +187,6 @@ pipeline {
                   try {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
-                        ln image.tar '${image_file_name}'
                         # Report vulnerabilities to the Snyk dashboard
                         snyk container monitor ${args.join(' ')}
                         snyk container sbom --format=${sbom_format} docker-archive:${image_file_name} > './snyk-sbom.${sbom_ext}'
