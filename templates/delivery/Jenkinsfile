@@ -116,9 +116,10 @@ pipeline {
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              echo 'export image registry auth json to /kaniko/.docker/config.json'
-              sh 'mkdir -p /kaniko/.docker'
-              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
+              sh """
+                mkdir -p /kaniko/.docker
+                mv "\$AUTH_JSON_FILE" /kaniko/.docker/config.json
+              """
 
               if ("${enable_ansi_colors}" == "true") {
                 ansiColor('xterm') {
@@ -157,12 +158,11 @@ pipeline {
 
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              echo 'export image registry auth json to /root/.docker/config.json'
-              sh 'mkdir -p /root/.docker'
-              sh 'mv "$AUTH_JSON_FILE" /root/.docker/config.json'
-              sh 'crane version'
-              sh 'pwd && ls -laH'
-              sh "crane push ./image.tar ${params.image}:${params.tag}"
+              sh """
+                mkdir -p /root/.docker
+                mv "\$AUTH_JSON_FILE" /root/.docker/config.json
+                crane push ./image.tar "${params.image}:${params.tag}"
+              """
 
               if (params.update_latest) {
                 sh "crane push ./image.tar ${params.image}:latest"
