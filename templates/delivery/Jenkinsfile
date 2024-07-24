@@ -68,9 +68,6 @@ pipeline {
           volumeMounts:
           - name: buildkit-socket
             mountPath: /run/buildkit
-        volumes:
-        - name: buildkit-socket
-          emptyDir: {}
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -89,6 +86,9 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
+        volumes:
+        - name: buildkit-socket
+          emptyDir: {}
       """
     }
   }
