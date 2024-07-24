@@ -236,7 +236,11 @@ pipeline {
               script {
                 try {
                   echo "Updating ClamAV database"
-                  sh "freshclam"
+                  def freshclamExitCode = sh(script: "freshclam", returnStatus: true)
+                  if (freshclamExitCode != 0) {
+                    echo "Freshclam exited with code ${freshclamExitCode}"
+                    error 'Failed to update ClamAV database.'
+                  }
                   echo "ClamAV database updated successfully, running clamscan"
                   sh """
                     set -o pipefail
