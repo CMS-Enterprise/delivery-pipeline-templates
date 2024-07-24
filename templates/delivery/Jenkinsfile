@@ -79,7 +79,6 @@ pipeline {
             def arguments = [
               "--context=${params.build_dir}",
               "--dockerfile=${params.dockerfile}",
-              "--destination=${params.image}:${params.tag}",
               "--verbosity=${params.log_level}",
               '--no-push',
               '--tar-path=./image.tar'
