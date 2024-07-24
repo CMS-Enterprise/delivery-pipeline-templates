@@ -316,9 +316,11 @@ pipeline {
             container('clamav') {
               script {
                 try {
+                  echo "Updating ClamAV database"
+                  sh "freshclam"
+                  echo "ClamAV database updated successfully, running clamscan"
                   sh """
                     set -o pipefail
-                    freshclam
                     clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
                   """
                 } catch(err) {
