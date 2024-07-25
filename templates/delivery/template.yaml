@@ -43,7 +43,7 @@ parameters:
     displayName: Platform
     description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
     type: string
-    defaultValue: "linux/amd64"  
+    defaultValue: "linux/amd64"
   - name: enable_ansi_colors
     displayName: Enable ANSI Colors
     description: "Enable ANSI color output in the Jenkins console (requires AnsiColor plugin)."
@@ -64,3 +64,42 @@ parameters:
     description: "Enable Kaniko image build cache."
     type: boolean
     defaultValue: false
+  - name: default_enable_snyk
+    displayName: Enable Snyk Scan
+    description: "Enable the Snyk container image vulnerability scan step."
+    type: boolean
+    defaultValue: false
+  - name: snyk_token
+    displayName: Snyk API Token
+    description: "The Snyk API token to use for scanning the container image."
+    type: credentials
+  - name: default_snyk_project_name
+    displayName: Snyk Project Name
+    description: "The name of the Snyk project to associate the container image scan with."
+    type: string
+    defaultValue: "my-app"
+  - name: default_vulnerability_severity_threshold
+    displayName: Vulnerability Severity Threshold
+    description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
+    type: string
+    defaultValue: "high"
+  - name: sbom_format
+    displayName: SBOM Format
+    description: "The SBOM format to produce (cyclonedx1.4+json, cyclonedx1.4+xml, [cyclonedx1.5+json], cyclonedx1.5+xml, or spdx2.3+json)"
+    type: string
+    defaultValue: "cyclonedx1.5+json"
+  - name: default_continue_on_image_scan_failure
+    displayName: Continue on Image Scan Failure
+    description: "When enabled, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason."
+    type: boolean
+    defaultValue: false
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: "The number of days to retain build logs and artifacts."
+    type: string
+    defaultValue: "90"
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: "The number of builds to retain."
+    type: string
+    defaultValue: "1000"
