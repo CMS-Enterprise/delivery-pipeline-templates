@@ -39,3 +39,7 @@ parameters:
     displayName: Default Target Service
     description: The name of the service to update.
     type: string
+  - name: default_toggle_job_deployment
+    displayName: Job Deployment
+    description: If the application is ALSO a Kubernetes Job enable this to update the job tag within the kustomize.yaml.
+    type: boolean

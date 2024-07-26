@@ -7,6 +7,7 @@ pipeline {
     string(name: 'target_service', defaultValue: "${default_target_service ?: ''}", description: 'The name of the service to update.')
     string(name: 'image', defaultValue: "${default_image ?: ''}", description: 'The fully qualified container image name.')
     string(name: 'tag', description: 'Container image tag.')
+    booleanParam(name: 'toggle_job_deployment', defaultValue:  "${default_toggle_job_deployment ?: false}", description: "If the application is also a Kubernetes Job toggle to update it within the kustomize.yaml")
   }
 
   agent {
@@ -58,6 +59,10 @@ pipeline {
               echo "[LOG] Target Environment -> ${params.environment_path}"
               cd "${params.environment_path}"
               kustomize edit set image ${params.target_service}=${fullImage}
+              if [[ ${params.toggle_job_deployment} == true ]]; then
+                sed -i "s/value: ${params.target_service}-.*$/value: ${params.target_service}-${params.tag}/" kustomize.yaml
+                echo "[LOG] Updating ${params.target_service} job name with ${params.tag}"
+              fi
               git config --global --add safe.directory "${WORKSPACE}"
               git config --global user.email '${params.git_author_email}'
               git config --global user.name '${params.git_author_name}'
