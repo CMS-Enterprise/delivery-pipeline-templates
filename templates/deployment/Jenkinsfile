@@ -60,8 +60,7 @@ pipeline {
               cd "${params.environment_path}"
               kustomize edit set image ${params.target_service}=${fullImage}
               if [[ ${params.enable_job_deployment} == true ]]; then
-                if [[ grep "s/value: ${params.target_service}-.*\$" "kustomization.yaml" ]]; then
-                  sed -i "s/value: ${params.target_service}-.*\$/value: ${params.target_service}-${params.tag}/" "kustomization.yaml"
+                if [[ sed -i "s/value: ${params.target_service}-.*\$/value: ${params.target_service}-${params.tag}/" "kustomization.yaml" ]]; then 
                   echo "[LOG] Updating ${params.target_service} job name with ${params.tag}"
                 else
                   echo "[WARN] Error updating ${params.target_service} job name with ${params.tag}, it does not exist."
