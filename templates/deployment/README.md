@@ -17,7 +17,7 @@ The Deployment Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc
 | target_service           | X        | X        | The name of the service to update.                                 |                     |
 | image                    | X        | X        | The fully qualified container image name (including the registry). |                     |
 | tag                      | X        |          | The tag of the container image being deployed.                     |                     |
-| Enable Job Deployment                      | X        |    X     | If the application is ALSO a Kubernetes Job enable this to update the job tag in addition to updating the service tag.                     |                     | 
+| Enable Job Deployment                      | X        |    X     | If the application is ALSO a Kubernetes Job, enable this to update the job tag in addition to updating the service tag.                     |                     | 
 
 # Usage
 
@@ -41,7 +41,8 @@ pipeline {
           string(name: 'environment_path', value: 'dev'),
           string(name: 'target_service', value: 'my-service'),
           string(name: 'image', value: "artifactory.cloud.cms.gov/your-account/your-app"),
-          string(name: 'tag', value: "${GIT_COMMIT[0..7]}")
+          string(name: 'tag', value: "${GIT_COMMIT[0..7]}"),
+          booleanParam(name: 'enable_job_deployment', value: 'true')
         ])
       }
     }
