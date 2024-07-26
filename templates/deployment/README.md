@@ -17,7 +17,7 @@ The Deployment Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc
 | target_service           | X        | X        | The name of the service to update.                                 |                     |
 | image                    | X        | X        | The fully qualified container image name (including the registry). |                     |
 | tag                      | X        |          | The tag of the container image being deployed.                     |                     |
-| Enable Job Deployment                      | X        |    X     | If the application is ALSO a Kubernetes Job, enable this to update the job tag in addition to updating the service tag.                     |                     | 
+| enable job deployment                      | X        |    X     | If the application is ALSO a Kubernetes Job, enable this to update the job tag in addition to updating the service tag.                     |         false            | 
 
 # Usage
 
