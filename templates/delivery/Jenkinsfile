@@ -62,14 +62,13 @@ pipeline {
             requests:
               memory: "3Gi"
         - name: skopeo
-          # TODO: setup a artifactory based mirror for quay.io/skopeo/stable
-          image: quay.io/skopeo/stable:v1.15
+          image: artifactory.cloud.cms.gov/docker/skopeo/stable:v1.15
           command: ['tail', '-f', '/dev/null']
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
         - name: crane
-          image: gcr.io/go-containerregistry/crane/debug:latest
+          image: artifactory.cloud.cms.gov/docker/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
       """
     }
