@@ -6,34 +6,36 @@ The Delivery Pipeline builds a container image, scans the container image for vu
 
 The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/pipeline/syntax/#parameters) that is intended to be invoked from another pipeline. Some of the parameters can be given default values when an instance of the template is created.
 
-| Parameter Name                   | Pipeline | Template | Description                                                                                                                                           | Default Value    |
-|----------------------------------|----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
-| image                            | X        | X        | The name of the container image to build and publish.                                                                                                 | docker.io/my-app |
-| tag                              | X        | X        | The tag to apply to the container image.                                                                                                              | latest           |
-| image_registry_auth_json         |          | X        | The Jenkins Secret File credential to use when authenticating with the container registry.                                                            |                  |
-| image_push_enabled               | X        | X        | Enable the image push step.                                                                                                                           | false            |
-| update_latest                    | X        | X        | When true, update the latest tag to point to the newly built image.                                                                                   | false            |
-| build_args                       | X        | X        | Additional arguments to pass to the `docker build` command.                                                                                           |                  |
-| build_dir                        | X        | X        | The context directory to use when building the container image.                                                                                       | .                |
-| dockerfile                       | X        | X        | The path to the Dockerfile to use when building the container image.                                                                                  | Dockerfile       |
-| build_target                     | X        | X        | The build stage to target when building the container image.                                                                                          |                  |
-| platform                         | X        | X        | A comma separated list of platforms to build the container image for.                                                                                 | linux/amd64      |
-| enable_cache                     | X        | X        | Enable Kaniko image build cache.                                                                                                                      | false            |
-| enable_ansi_colors               |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).                                                                          | true             |
-| git_repository                   | X        |          | The URL of the Git repository to clone when building the container image.                                                                             |                  |
-| git_credentials                  | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                                                                              |                  |
-| git_commit                       | X        |          | The commit hash or branch name to checkout when building the container image.                                                                         |                  |
-| log_level                        | X        |          | The log level to use for the container build process.                                                                                                 | info             |
-| kaniko_memory_limit              | X        | X        | Kaniko memory limit input for those larger builds.                                                                                                    | 1Gi              |
-| copy_artifacts_job_name          | X        |          | The Jenkins job name from which to copy artifacts.                                                                                                    |                  |
-| copy_artifacts_build_number      | X        |          | The Jenkins job build number from which to copy artifacts.                                                                                            |                  |
-| copy_artifacts_filter            | X        |          | A string expression to filter artifact names.                                                                                                         |                  |
-| enable_cache                     | X        | X        | Enable Kaniko image build cache.                                                                                                                      | false            |
-| enable_snyk                      | X        | X        | Enable Snyk scanning of the container image.                                                                                                          | false            |
-| snyk_token                       |          | X        | The Snyk API token to use when scanning the container image.                                                                                          |                  |
-| snyk_project_name                | X        | X        | The name of the Snyk project to associate the container image scan with.                                                                              | my-app           |
-| vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).                  | high             |
-| continue_on_image_scan_failure   | X        | X        | When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason. | false            |
+| Parameter Name                   | Pipeline | Template | Description                                                                                                                                            | Default Value    |
+|----------------------------------|----------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| image                            | X        | X        | The name of the container image to build and publish.                                                                                                  | docker.io/my-app |
+| tag                              | X        | X        | The tag to apply to the container image.                                                                                                               | latest           |
+| image_registry_auth_json         |          | X        | The Jenkins Secret File credential to use when authenticating with the container registry.                                                             |                  |
+| image_push_enabled               | X        | X        | Enable the image push step.                                                                                                                            | false            |
+| update_latest                    | X        | X        | When true, update the latest tag to point to the newly built image.                                                                                    | false            |
+| build_args                       | X        | X        | Additional arguments to pass to the `docker build` command.                                                                                            |                  |
+| build_dir                        | X        | X        | The context directory to use when building the container image.                                                                                        | .                |
+| dockerfile                       | X        | X        | The path to the Dockerfile to use when building the container image.                                                                                   | Dockerfile       |
+| build_target                     | X        | X        | The build stage to target when building the container image.                                                                                           |                  |
+| platform                         | X        | X        | A comma separated list of platforms to build the container image for.                                                                                  | linux/amd64      |
+| enable_cache                     | X        | X        | Enable Kaniko image build cache.                                                                                                                       | false            |
+| enable_ansi_colors               |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).                                                                           | true             |
+| git_repository                   | X        |          | The URL of the Git repository to clone when building the container image.                                                                              |                  |
+| git_credentials                  | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                                                                               |                  |
+| git_commit                       | X        |          | The commit hash or branch name to checkout when building the container image.                                                                          |                  |
+| log_level                        | X        |          | The log level to use for the container build process.                                                                                                  | info             |
+| kaniko_memory_limit              | X        | X        | Kaniko memory limit input for those larger builds.                                                                                                     | 1Gi              |
+| copy_artifacts_job_name          | X        |          | The Jenkins job name from which to copy artifacts.                                                                                                     |                  |
+| copy_artifacts_build_number      | X        |          | The Jenkins job build number from which to copy artifacts.                                                                                             |                  |
+| copy_artifacts_filter            | X        |          | A string expression to filter artifact names.                                                                                                          |                  |
+| enable_cache                     | X        | X        | Enable Kaniko image build cache.                                                                                                                       | false            |
+| enable_snyk                      | X        | X        | Enable Snyk scanning of the container image.                                                                                                           | false            |
+| snyk_token                       |          | X        | The Snyk API token to use when scanning the container image.                                                                                           |                  |
+| snyk_project_name                | X        | X        | The name of the Snyk project to associate the container image scan with.                                                                               | my-app           |
+| vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).                   | high             |
+| continue_on_image_scan_failure   | X        | X        | When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.  | false            |
+| build_retention_days             |          | X        | The number of days to retain build logs and artifacts.                                                                                                 | 90               |
+| build_retention_count            |          | X        | The number of builds to retain.                                                                                                                        | 1000             |
 
 # Usage
 
@@ -139,3 +141,7 @@ The Delivery Pipeline produces the following artifacts when Snyk and/or ClamAV a
  * `snyk-vulnerabilities.json`
  * `snyk-sbom.json`
  * `virus-report.clamav.txt`
+
+## Build Retention
+
+The Delivery Pipeline can be configured to retain build logs and artifacts for a specified number of days and/or a specified number of builds. The default values are 90 days and 1000 builds respectively. The build retention settings can be configured when an instance of the Delivery Pipeline is created in the Jenkins dashboard.
