@@ -24,7 +24,7 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | git_credentials             | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                   |                  |
 | git_commit                  | X        |          | The commit hash or branch name to checkout when building the container image.              |                  |
 | log_level                   | X        |          | The log level to use for the container build process.                                      | info             |
-| kaniko_memory_limit         | X        | X        | Kaniko memory limit input for those larger builds.                                         | 1Gi              |
+| build_memory_limit          | X        | X        | Memory limit for the image build process.                                                  | 1Gi              |
 | copy_artifacts_job_name     | X        |          | The Jenkins job name from which to copy artifacts.                                         |                  |
 | copy_artifacts_build_number | X        |          | The Jenkins job build number from which to copy artifacts.                                 |                  |
 | copy_artifacts_filter       | X        |          | A string expression to filter artifact names.                                              |                  |
