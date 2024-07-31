@@ -22,12 +22,9 @@ pipeline {
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
-    booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
+    // TODO: caching for buildx ??
+    // booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
 
-    booleanParam(name: 'enable_buildx', defaultValue: "${default_enable_buildx ?: false}", description: 'Enable buildx instead of kaniko for image builds')
-    booleanParam(name: 'enable_buildx_snyk', defaultValue: "${default_enable_buildx_snyk ?: false}", description: '(EXPERIMENTAL) scan the image tar produced by buildx with snyk')
-
-    booleanParam(name: 'enable_snyk', defaultValue: "${default_enable_snyk ?: false}", description: 'Enable the Snyk container image vulnerability scan step.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
 
@@ -48,14 +45,6 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-        - name: kaniko
-          # Note: it is necessary to use the -debug version of the kaniko image because it includes
-          # basic shell utilities like tail which is required to keep the container running
-          image: artifactory.cloud.cms.gov/docker/kaniko-project/executor:v1.23.2-debug
-          command: ['tail', '-f', '/dev/null']
-          resources:
-            limits:
-              memory: "${params.build_memory_limit}"
         - name: buildkit
           image: moby/buildkit:latest
           args: ["--addr", "unix:///run/buildkit/buildkitd.sock"]
@@ -76,9 +65,6 @@ pipeline {
               memory: "5Gi"
             requests:
               memory: "3Gi"
-        - name: skopeo
-          image: artifactory.cloud.cms.gov/docker/skopeo/stable:v1.15
-          command: ['tail', '-f', '/dev/null']
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
@@ -127,9 +113,6 @@ pipeline {
     }
 
     stage('Build Image - buildx') {
-      when {
-        expression { params.enable_buildx }
-      }
       steps {
         container('buildx') {
           script {
@@ -137,13 +120,9 @@ pipeline {
             def arguments = [
               "--file=${params.dockerfile}",
               "--tag=${params.image}:${params.tag}",
+              "--output type=oci,dest=./image.oci.tar",
+              "--output type=tar,dest=./image.raw.tar"
             ]
-            if (params.enable_buildx_snyk) {
-              arguments.add("--output type=oci,dest=./image.tar")
-              arguments.add("--output type=tar,dest=./image-raw.tar")
-            } else {
-              arguments.add("--output type=tar,dest=./image.tar")
-            }
 
             if (params.build_target) {
               echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
@@ -181,75 +160,9 @@ pipeline {
       }
     }
 
-    stage('Build Image - kaniko') {
-      when {
-        expression { !params.enable_buildx }
-      }
-      steps {
-        container('kaniko') {
-          script {
-            def arguments = [
-              "--context=${params.build_dir}",
-              "--dockerfile=${params.dockerfile}",
-              "--destination=${params.image}:${params.tag}",
-              "--verbosity=${params.log_level}",
-              '--no-push',
-              '--tar-path=./image.tar'
-            ]
-            if (params.build_target) {
-              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-              echo "default_build_target: ${default_build_target}"
-              arguments.add("--target=${params.build_target}")
-            }
-
-            if (params.platform) {
-              arguments.add("--custom-platform=${params.platform}")
-            }
-
-            if (params.build_args) {
-              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-              argMap.each { key, value ->
-                arguments.add("--build-arg=${key}='${value}'")
-              }
-            }
-
-            if (params.enable_cache) {
-              arguments.add("--cache=${params.enable_cache}")
-              arguments.add("--cache-repo=${params.image}-cache")
-              arguments.add("--compressed-caching=false")
-              arguments.add("--cache-dir=/kaniko/cache")
-              arguments.add("--cache-run-layers")
-              arguments.add("--cache-copy-layers")
-            }
-
-            build_command = "/kaniko/executor ${arguments.join(' ')}"
-
-            // Authentication by copying a docker config JSON to config directory
-            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-
-              echo 'export image registry auth json to /kaniko/.docker/config.json'
-              sh 'mkdir -p /kaniko/.docker'
-              sh 'mv "$AUTH_JSON_FILE" /kaniko/.docker/config.json'
-
-              if ("${enable_ansi_colors}" == "true") {
-                ansiColor('xterm') {
-                  sh build_command
-                }
-              } else {
-                  sh build_command
-              }
-            }
-          }
-        }
-      }
-    }
-
     stage('Image Scan') {
       parallel {
-        stage('Buildx Vulnerability Scan') {
-          when {
-            expression { params.enable_buildx_snyk}
-          }
+        stage('Vulnerability Scan') {
           steps {
             container('snyk') {
               script {
@@ -258,7 +171,7 @@ pipeline {
                   '--exclude-app-vulns',
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--project-name=${params.snyk_project_name}",
-                  "oci-archive:image.tar"
+                  "oci-archive:image.oci.tar"
                 ]
                 def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
@@ -266,76 +179,16 @@ pipeline {
                     sh """
                       # Report vulnerabilities to the Snyk dashboard
                       snyk container monitor ${args.join(' ')}
-                      snyk container sbom --format=${sbom_format} oci-archive:image.tar > './snyk-sbom.${sbom_ext}'
+                      snyk container sbom --format=${sbom_format} oci-archive:image.oci.tar > './snyk-sbom.${sbom_ext}'
                       # Report detected vulnerabilities to stdout and raise an error if
                       # vulnerabilities are found exceeding the specified threshold
                       snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
                     """
                   }
-                } finally {
-                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
-                }
 
-              }
-            }
-          }
-        }
-
-        stage('Vulnerability Scan') {
-          when {
-            expression { params.enable_snyk }
-          }
-          steps {
-            container('skopeo') {
-              script {
-                try {
-                  // The image file that Kaniko produces is not compatible with Snyk (https://github.com/GoogleContainerTools/kaniko/issues/1976)
-                  // By "copying" it with Skopeo, we create a new image file that Snyk can scan
-                  sh 'skopeo copy docker-archive:image.tar docker-archive:skopeo-image.tar'
+                // If there is an error during the snyk scan
                 } catch(err) {
-                  if (params.continue_on_image_scan_failure) {
-                    echo "Failed to copy the image file with skopeo. Skipping the Snyk scan."
-                    skip_snyk_scan = true
-                  } else {
-                    error "Failed to copy the image file with skopeo."
-                  }
-                }
-              }
-            }
-            container('snyk') {
-              script {
-                try {
-                  if (skip_snyk_scan) {
-                    error "Skipping the Snyk scan due to a previous failure."
-                  }
 
-                  def image_file_name = "'${params.image.replace(':', '_')}:${params.tag.replace(':', '_')}'".replace('/', '_')
-                  sh "ln skopeo-image.tar ${image_file_name}"
-                  def args = [
-                    // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
-                    '--exclude-app-vulns',
-                    "--severity-threshold=${params.vulnerability_severity_threshold}",
-                    "--project-name=${params.snyk_project_name}",
-                    "docker-archive:${image_file_name}"
-                  ]
-                  def sbom_ext = "${sbom_format}".tokenize('+')[1]
-                  try {
-                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                      sh """
-                        # Report vulnerabilities to the Snyk dashboard
-                        snyk container monitor ${args.join(' ')}
-                        # Note: use skopeo-image.tar because the snyk sbom command does not support
-                        # filenames with colons.
-                        snyk container sbom --format=${sbom_format} docker-archive:skopeo-image.tar > './snyk-sbom.${sbom_ext}'
-                        # Report detected vulnerabilities to stdout and raise an error if
-                        # vulnerabilities are found exceeding the specified threshold
-                        snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
-                      """
-                    }
-                  } finally {
-                    archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
-                  }
-                } catch(err) {
                   if (params.continue_on_image_scan_failure) {
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                       error "Failed to scan the image with Snyk. Continuing pipeline execution."
@@ -344,11 +197,17 @@ pipeline {
                     echo "Snyk scan failed with error: ${err}"
                     error "Failed to scan the image with Snyk."
                   }
+
+                // No matter what, make sure the artifacts are archived
+                } finally {
+                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
                 }
-              }
-            }
-          }
-        }
+
+              } // end script block
+            } // end  container snyk
+          } // end steps
+        } // end vulnerability scan stage
+
 
         stage('Malware Scan') {
           steps {
@@ -362,17 +221,10 @@ pipeline {
                     error 'Failed to update ClamAV database.'
                   }
                   echo "ClamAV database updated successfully, running clamscan"
-                  if (params.enable_buildx_snyk) {
-                    sh """
-                      set -o pipefail
-                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                    """
-                  } else {
-                    sh """
-                      set -o pipefail
-                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image-raw.tar | tee virus-report.clamav.txt
-                    """
-                  }
+                  sh """
+                    set -o pipefail
+                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --log virus-report.clamav.txt --stdout ./image.raw.tar
+                  """
 
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
@@ -388,9 +240,9 @@ pipeline {
               }
             }
           }
-        }
-      }
-    }
+        } // end stage malware scan
+      } // end parallel
+    } // end image scan stage
 
     stage('Image Publish') {
       when {
@@ -404,16 +256,16 @@ pipeline {
               sh """
                 mkdir -p /root/.docker
                 mv "\$AUTH_JSON_FILE" /root/.docker/config.json
-                crane push ./image.tar "${params.image}:${params.tag}"
+                crane push ./image.oci.tar "${params.image}:${params.tag}"
               """
 
               if (params.update_latest) {
-                sh "crane push ./image.tar ${params.image}:latest"
+                sh "crane push ./image.oci.tar ${params.image}:latest"
               }
             }
           }
         }
       }
     }
-  } // stages
-} // pipelines
+  } // end stages
+} // end pipelines

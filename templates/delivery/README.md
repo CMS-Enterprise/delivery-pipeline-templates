@@ -28,7 +28,6 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | copy_artifacts_job_name          | X        |          | The Jenkins job name from which to copy artifacts.                                                                                                     |                  |
 | copy_artifacts_build_number      | X        |          | The Jenkins job build number from which to copy artifacts.                                                                                             |                  |
 | copy_artifacts_filter            | X        |          | A string expression to filter artifact names.                                                                                                          |                  |
-| enable_cache                     | X        | X        | Enable Kaniko image build cache.                                                                                                                       | false            |
 | enable_snyk                      | X        | X        | Enable Snyk scanning of the container image.                                                                                                           | false            |
 | snyk_token                       |          | X        | The Snyk API token to use when scanning the container image.                                                                                           |                  |
 | snyk_project_name                | X        | X        | The name of the Snyk project to associate the container image scan with.                                                                               | my-app           |
@@ -55,17 +54,17 @@ pipeline {
         // Pipeline created in Jenkins from the Delivery Pipeline Template.
         build(job: 'App Delivery', wait: true, propagate: true, parameters: [
           string(name: 'tag', value: "${GIT_COMMIT[0..7]}"),
-          
+
           // These parameters leverage the configuration of the Multi-Branch
           // Pipeline so that the Delivery Pipeline runs for the same commit
           // that the project-specific pipeline is running for.
           string(name: 'git_repository', value: "${scm.userRemoteConfigs[0].url}"),
           string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_commit', value: "${GIT_COMMIT}"),
-          
+
           // These parameters may be specified here, or as defaults when an instance of the
           // SAST Pipeline is created in the Jenkins dashboard
-          
+
           string(name: 'image', value: "docker.io/your-account/your-app"),
           // buid_args specified here corresond to ARG statements in your Dockerfile
           string(name: 'build_args', value: "{ \"BUILD_REVISION\": \"${GIT_COMMIT}\" }"),
