@@ -74,26 +74,6 @@ parameters:
     description: "When true, update the latest tag to point to the newly built image."
     type: boolean
     defaultValue: false
-  - name: default_enable_cache
-    displayName: Enable Image Build Caching
-    description: "Enable Kaniko image build cache."
-    type: boolean
-    defaultValue: false
-  - name: default_enable_snyk
-    displayName: Enable Snyk Scan
-    description: "Enable the Snyk container image vulnerability scan step."
-    type: boolean
-    defaultValue: false
-  - name: default_enable_buildx
-    displayName: Enable Buildx (Replaces Kaniko)
-    description: "Enable buildx for image building instead of kaniko"
-    type: boolean
-    defaultValue: false
-  - name: default_enable_buildx_snyk
-    displayName: Enable Snyk scan using buildx archive
-    description: "(EXPERIMENTAL) scan the image tar produced by buildx with snyk"
-    type: boolean
-    defaultValue: false
   - name: snyk_token
     displayName: Snyk API Token
     description: "The Snyk API token to use for scanning the container image."

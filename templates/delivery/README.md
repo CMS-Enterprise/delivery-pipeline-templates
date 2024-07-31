@@ -18,7 +18,6 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | dockerfile                  | X        | X        | The path to the Dockerfile to use when building the container image.                       | Dockerfile       |
 | build_target                | X        | X        | The build stage to target when building the container image.                               |                  |
 | platform                    | X        | X        | A comma separated list of platforms to build the container image for.                      | linux/amd64      |
-| enable_cache                | X        | X        | Enable Kaniko image build cache.                                                           | false            |
 | enable_ansi_colors          |          | X        | Enable ANSI color output in the Jenkins console (requires AnsiColor plugin).               | true             |
 | git_repository              | X        |          | The URL of the Git repository to clone when building the container image.                  |                  |
 | git_credentials             | X        |          | The ID of the Jenkins credentials to use when cloning the Git repository                   |                  |
@@ -47,17 +46,17 @@ pipeline {
         // Pipeline created in Jenkins from the Delivery Pipeline Template.
         build(job: 'App Delivery', wait: true, propagate: true, parameters: [
           string(name: 'tag', value: "${GIT_COMMIT[0..7]}"),
-          
+
           // These parameters leverage the configuration of the Multi-Branch
           // Pipeline so that the Delivery Pipeline runs for the same commit
           // that the project-specific pipeline is running for.
           string(name: 'git_repository', value: "${scm.userRemoteConfigs[0].url}"),
           string(name: 'git_credentials', value: "${scm.userRemoteConfigs[0].credentialsId}"),
           string(name: 'git_commit', value: "${GIT_COMMIT}"),
-          
+
           // These parameters may be specified here, or as defaults when an instance of the
           // SAST Pipeline is created in the Jenkins dashboard
-          
+
           string(name: 'image', value: "docker.io/your-account/your-app"),
           // buid_args specified here corresond to ARG statements in your Dockerfile
           string(name: 'build_args', value: "{ \"BUILD_REVISION\": \"${GIT_COMMIT}\" }"),
