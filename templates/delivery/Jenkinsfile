@@ -139,7 +139,8 @@ pipeline {
               "--tag=${params.image}:${params.tag}",
             ]
             if (params.enable_buildx_snyk) {
-              arguments.add("--output type=docker,dest=./image.tar")
+              arguments.add("--output type=oci,dest=./image.tar")
+              arguments.add("--output type=tar,dest=./image-raw.tar")
             } else {
               arguments.add("--output type=tar,dest=./image.tar")
             }
@@ -257,7 +258,7 @@ pipeline {
                   '--exclude-app-vulns',
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--project-name=${params.snyk_project_name}",
-                  "docker-archive:image.tar"
+                  "oci-archive:image.tar"
                 ]
                 def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
@@ -265,7 +266,7 @@ pipeline {
                     sh """
                       # Report vulnerabilities to the Snyk dashboard
                       snyk container monitor ${args.join(' ')}
-                      snyk container sbom --format=${sbom_format} docker-archive:image.tar > './snyk-sbom.${sbom_ext}'
+                      snyk container sbom --format=${sbom_format} oci-archive:image.tar > './snyk-sbom.${sbom_ext}'
                       # Report detected vulnerabilities to stdout and raise an error if
                       # vulnerabilities are found exceeding the specified threshold
                       snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
@@ -361,10 +362,18 @@ pipeline {
                     error 'Failed to update ClamAV database.'
                   }
                   echo "ClamAV database updated successfully, running clamscan"
-                  sh """
-                    set -o pipefail
-                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
-                  """
+                  if (params.enable_buildx_snyk) {
+                    sh """
+                      set -o pipefail
+                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image.tar | tee virus-report.clamav.txt
+                    """
+                  } else {
+                    sh """
+                      set -o pipefail
+                      clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --stdout ./image-raw.tar | tee virus-report.clamav.txt
+                    """
+                  }
+
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
