@@ -45,18 +45,9 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-        - name: buildkit
-          image: moby/buildkit:latest
-          args: ["--addr", "unix:///run/buildkit/buildkitd.sock"]
-          volumeMounts:
-          - name: buildkit-socket
-            mountPath: /run/buildkit
         - name: buildx
           image: docker:latest
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-          - name: buildkit-socket
-            mountPath: /run/buildkit
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -71,9 +62,6 @@ pipeline {
         - name: crane
           image: artifactory.cloud.cms.gov/docker/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
-        volumes:
-        - name: buildkit-socket
-          emptyDir: {}
       """
     }
   }
