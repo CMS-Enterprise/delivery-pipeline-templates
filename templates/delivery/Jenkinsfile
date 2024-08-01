@@ -218,10 +218,7 @@ pipeline {
                     error 'Failed to update ClamAV database.'
                   }
                   echo "ClamAV database updated successfully, running clamscan"
-                  sh """
-                    set -o pipefail
-                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --log virus-report.clamav.txt --stdout ./image.raw.tar
-                  """
+                  sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --log virus-report.clamav.txt --stdout ./image.raw.tar"
 
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
@@ -232,6 +229,7 @@ pipeline {
                     error "Failed to scan the image with ClamAV."
                   }
                 } finally {
+                  sh "sleep 2" // wait for the log file to close
                   archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
                 }
               }
