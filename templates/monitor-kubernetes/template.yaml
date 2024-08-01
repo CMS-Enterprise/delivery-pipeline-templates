@@ -1,0 +1,19 @@
+version: 1
+name: Monitor Kubernetes Events
+displayName: Monitor Kubernetes Events
+description: Pipeline for monitoring Kubernetes events in the current namespace
+type: pipeline-template
+parameters:
+  - name: jenkins_controller_name
+    displayName: Jenkins Controller Name
+    description: The Kubernetes Namespace where the Secret will be created is based on the name of the Jenkins Controller.
+    type: string
+  - name: target_pod
+    displayName: Target Pod
+    description: The name of a specific pod to monitor.
+    type: string
+  - name: iterations
+    displayName: Iterations
+    description: The number of iterations to run the monitor.
+    type: string
+    defaultValue: "30"

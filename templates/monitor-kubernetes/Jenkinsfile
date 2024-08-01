@@ -1,0 +1,55 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: kubectl
+          image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
+          command: ['tail', '-f', '/dev/null']
+        securityContext:
+          runAsUser: 1001
+      """
+    }
+  }
+
+  stages {
+    stage('Watch Pods') {
+      steps {
+        container('kubectl') {
+          script {
+            sh "kubectl get namespace cbc-${jenkins_controller_name} || echo 'Error: namespace not found'"
+            echo "Watching kubernetes events in the cbc-${jenkins_controller_name}"
+            sh """
+              set +x
+
+              if [ "${target_pod}" != "" ]; then
+                kubectl get pod -n cbc-${jenkins_controller_name} ${target_pod} -o yaml
+              fi
+              echo "================================================================================"
+
+              kubectl get event --namespace cbc-${jenkins_controller_name} --watch | tee kubernetes.events.txt &
+              for i in `seq 2 ${iterations}`; do
+                echo "iteration \$i"
+                echo "================================================================================"
+                kubectl get pods --namespace cbc-${jenkins_controller_name}
+                if [ "${target_pod}" != "" ]; then
+                  echo "--------------------------------------------------------------------------------"
+                  kubectl top pod "${target_pod}" -n cbc-${jenkins_controller_name} --containers
+                fi
+                echo "================================================================================"
+
+                sleep 20
+              done
+              echo "Terminating kubernetes event watcher"
+              kill %1
+            """
+          }
+        }
+      }
+    }
+  }
+}
