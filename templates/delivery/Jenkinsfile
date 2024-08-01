@@ -18,7 +18,6 @@ pipeline {
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
-    string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
     string(name: 'build_cpu_limit', defaultValue: "${default_build_cpu_limit ?: '1'}", description: "CPU limit for the image build process.")
