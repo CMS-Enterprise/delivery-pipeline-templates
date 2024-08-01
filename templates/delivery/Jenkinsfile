@@ -103,42 +103,47 @@ pipeline {
       steps {
         container('buildx') {
           script {
-            sh "docker buildx create --name mybuilder --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit} --use"
-            def arguments = [
-              "--file=${params.dockerfile}",
-              "--tag=${params.image}:${params.tag}",
-              "--output type=oci,dest=./image.oci.tar",
-              "--output type=tar,dest=./image.raw.tar"
-            ]
+            def builderName = "buildkit-builder-${UUID.randomUUID().toString().substring(0, 8)}"
+            sh "docker buildx create --name ${builderName} --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit} --use"
+            try {
+              def arguments = [
+                "--file=${params.dockerfile}",
+                "--tag=${params.image}:${params.tag}",
+                "--output type=oci,dest=./image.oci.tar",
+                "--output type=tar,dest=./image.raw.tar"
+              ]
 
-            if (params.build_target) {
-              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-              echo "default_build_target: ${default_build_target}"
-              arguments.add("--target=${params.build_target}")
-            }
-
-            if (params.build_args) {
-              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-              argMap.each { key, value ->
-                arguments.add("--build-arg=${key}='${value}'")
+              if (params.build_target) {
+                echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+                echo "default_build_target: ${default_build_target}"
+                arguments.add("--target=${params.build_target}")
               }
-            }
 
-            build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"
+              if (params.build_args) {
+                def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+                argMap.each { key, value ->
+                  arguments.add("--build-arg=${key}='${value}'")
+                }
+              }
 
-            // Authentication by copying a docker config JSON to config directory
-            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              echo "export image registry auth json to ~/.docker/config.json"
-              sh 'mkdir -p ~/.docker'
-              sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
+              build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"
 
-              if ("${enable_ansi_colors}" == "true") {
-                ansiColor('xterm') {
+              // Authentication by copying a docker config JSON to config directory
+              withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+                echo "export image registry auth json to ~/.docker/config.json"
+                sh 'mkdir -p ~/.docker'
+                sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
+
+                if ("${enable_ansi_colors}" == "true") {
+                  ansiColor('xterm') {
+                    sh build_command
+                  }
+                } else {
                   sh build_command
                 }
-              } else {
-                sh build_command
               }
+            } finally {
+              sh "docker buildx rm --force ${builderName}"
             }
           }
         }
