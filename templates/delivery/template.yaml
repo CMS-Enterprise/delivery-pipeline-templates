@@ -39,11 +39,11 @@ parameters:
     description: "Memory limit for the image build process."
     defaultValue: "1Gi"
     type: string
-  - name: default_platform
-    displayName: Platform
-    description: "A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64)."
+  - name: default_build_cpu_limit
+    displayName: Image Build CPU Limit
+    description: "CPU limit for the image build process."
+    defaultValue: "1"
     type: string
-    defaultValue: "linux/amd64"
   - name: copy_artifacts_job_name
     displayName: Copy Artifacts Job Name
     description: "The Jenkins job name from which to copy artifacts."

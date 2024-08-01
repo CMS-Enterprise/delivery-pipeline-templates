@@ -18,9 +18,9 @@ pipeline {
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
-    string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
+    string(name: 'build_cpu_limit', defaultValue: "${default_build_cpu_limit ?: '1'}", description: "CPU limit for the image build process.")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     // TODO: caching for buildx ??
     // booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
@@ -45,18 +45,9 @@ pipeline {
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
           command: ['tail', '-f', '/dev/null']
-        - name: buildkit
-          image: moby/buildkit:latest
-          args: ["--addr", "unix:///run/buildkit/buildkitd.sock"]
-          volumeMounts:
-          - name: buildkit-socket
-            mountPath: /run/buildkit
         - name: buildx
           image: docker:latest
           command: ['tail', '-f', '/dev/null']
-          volumeMounts:
-          - name: buildkit-socket
-            mountPath: /run/buildkit
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
@@ -71,9 +62,6 @@ pipeline {
         - name: crane
           image: gcr.io/go-containerregistry/crane/debug:latest
           command: ['tail', '-f', '/dev/null']
-        volumes:
-        - name: buildkit-socket
-          emptyDir: {}
       """
     }
   }
@@ -115,42 +103,47 @@ pipeline {
       steps {
         container('buildx') {
           script {
-            sh "docker buildx create --name mybuilder --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit} --use"
-            def arguments = [
-              "--file=${params.dockerfile}",
-              "--tag=${params.image}:${params.tag}",
-              "--output type=oci,dest=./image.oci.tar",
-              "--output type=tar,dest=./image.raw.tar"
-            ]
+            def builderName = "buildkit-builder-${UUID.randomUUID().toString().substring(0, 8)}"
+            sh "docker buildx create --name ${builderName} --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit},limits.cpu=${params.build_cpu_limit} --use"
+            try {
+              def arguments = [
+                "--file=${params.dockerfile}",
+                "--tag=${params.image}:${params.tag}",
+                "--output type=oci,dest=./image.oci.tar",
+                "--output type=tar,dest=./image.raw.tar"
+              ]
 
-            if (params.build_target) {
-              echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-              echo "default_build_target: ${default_build_target}"
-              arguments.add("--target=${params.build_target}")
-            }
-
-            if (params.build_args) {
-              def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-              argMap.each { key, value ->
-                arguments.add("--build-arg=${key}='${value}'")
+              if (params.build_target) {
+                echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+                echo "default_build_target: ${default_build_target}"
+                arguments.add("--target=${params.build_target}")
               }
-            }
 
-            build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"
+              if (params.build_args) {
+                def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+                argMap.each { key, value ->
+                  arguments.add("--build-arg=${key}='${value}'")
+                }
+              }
 
-            // Authentication by copying a docker config JSON to config directory
-            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              echo "export image registry auth json to ~/.docker/config.json"
-              sh 'mkdir -p ~/.docker'
-              sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
+              build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"
 
-              if ("${enable_ansi_colors}" == "true") {
-                ansiColor('xterm') {
+              // Authentication by copying a docker config JSON to config directory
+              withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+                echo "export image registry auth json to ~/.docker/config.json"
+                sh 'mkdir -p ~/.docker'
+                sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
+
+                if ("${enable_ansi_colors}" == "true") {
+                  ansiColor('xterm') {
+                    sh build_command
+                  }
+                } else {
                   sh build_command
                 }
-              } else {
-                sh build_command
               }
+            } finally {
+              sh "docker buildx rm --force ${builderName}"
             }
           }
         }
@@ -163,12 +156,17 @@ pipeline {
           steps {
             container('snyk') {
               script {
+                // When Snyk reports findings it uses the filename as the "target" in the dashboard,
+                // so using the image name as the filename keeps things better organized.
+                // Unfortunately since filenames cannot contain / we have to replace them with _.
+                def image_file_name = "'${params.image}:${params.tag}'".replace('/', '_')
+                sh "ln image.oci.tar ${image_file_name}"
                 def args = [
                   // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
                   '--exclude-app-vulns',
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--project-name=${params.snyk_project_name}",
-                  "oci-archive:image.oci.tar"
+                  "oci-archive:${image_file_name}"
                 ]
                 def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
@@ -218,8 +216,18 @@ pipeline {
                     error 'Failed to update ClamAV database.'
                   }
                   echo "ClamAV database updated successfully, running clamscan"
-                  sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --log virus-report.clamav.txt --stdout ./image.raw.tar"
-                  sh "chmod a+r virus-report.clamav.txt"
+                  sh """
+                    # Note: while clamscan can scan a tar files contents recursively, the
+                    # max-filesize and max-scansize limit still apply to the tar file itself. So if
+                    # the image tar files is scanned unextracted it will be a no-op if the file is
+                    # larger than the max-filesize limit.
+                    mkdir image.raw
+                    tar -xf image.raw.tar --directory image.raw
+                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M \
+                             --log virus-report.clamav.txt --stdout ./image.raw
+
+                    chmod a+r virus-report.clamav.txt
+                  """
 
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
