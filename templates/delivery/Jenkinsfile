@@ -156,12 +156,17 @@ pipeline {
           steps {
             container('snyk') {
               script {
+                // When Snyk reports findings it uses the filename as the "target" in the dashboard,
+                // so using the image name as the filename keeps things better organized.
+                // Unfortunately since filenames cannot contain / we have to replace them with _.
+                def image_file_name = "'${params.image}:${params.tag}'".replace('/', '_')
+                sh "ln image.oci.tar ${image_file_name}"
                 def args = [
                   // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
                   '--exclude-app-vulns',
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--project-name=${params.snyk_project_name}",
-                  "oci-archive:image.oci.tar"
+                  "oci-archive:${image_file_name}"
                 ]
                 def sbom_ext = "${sbom_format}".tokenize('+')[1]
                 try {
