@@ -111,7 +111,7 @@ pipeline {
                 "--file=${params.dockerfile}",
                 "--tag=${params.image}:${params.tag}",
                 "--output type=oci,dest=./image.oci.tar",
-                "--output type=tar,dest=./image.raw.tar"
+                "--output type=local,dest=./image-raw"
               ]
 
               if (params.build_target) {
@@ -224,9 +224,8 @@ pipeline {
                     # the image tar files is scanned unextracted it will be a no-op if the file is
                     # larger than the max-filesize limit.
                     mkdir image.raw
-                    tar -xf image.raw.tar --directory image.raw
                     clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M \
-                             --log virus-report.clamav.txt --stdout ./image.raw
+                             --log virus-report.clamav.txt --stdout ./image-raw
 
                     chmod a+r virus-report.clamav.txt
                   """
