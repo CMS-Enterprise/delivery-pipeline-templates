@@ -21,6 +21,7 @@ pipeline {
     string(name: 'platform', defaultValue: "${default_platform ?: ''}", description: 'A comma separated list of platforms to build the container image for (e.g., linux/amd64,linux/arm64).')
     choice(name: 'log_level', choices: ['info', 'panic', 'fatal', 'error', 'warn', 'debug', 'trace'], description: 'The log level to use for the container build process.')
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
+    string(name: 'build_cpu_limit', defaultValue: "${default_build_cpu_limit ?: '1'}", description: "CPU limit for the image build process.")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     // TODO: caching for buildx ??
     // booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
@@ -105,7 +106,7 @@ pipeline {
         container('buildx') {
           script {
             def builderName = "buildkit-builder-${UUID.randomUUID().toString().substring(0, 8)}"
-            sh "docker buildx create --name ${builderName} --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit} --use"
+            sh "docker buildx create --name ${builderName} --driver kubernetes --driver-opt=limits.memory=${params.build_memory_limit},limits.cpu=${params.build_cpu_limit} --use"
             try {
               def arguments = [
                 "--file=${params.dockerfile}",
