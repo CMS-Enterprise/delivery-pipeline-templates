@@ -59,8 +59,9 @@ pipeline {
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
           command: ['tail', '-f', '/dev/null']
-        - name: crane
-          image: artifactory.cloud.cms.gov/docker/go-containerregistry/crane/debug:latest
+        - name: skopeo
+          # pull through from quay.io
+          image: artifactory.cloud.cms.gov/docker/skopeo/stable:v1
           command: ['tail', '-f', '/dev/null']
       """
     }
@@ -252,18 +253,18 @@ pipeline {
         expression { params.image_push_enabled }
       }
       steps {
-        container('crane') {
+        container('skopeo') {
           script {
             // Authentication by copying a docker config JSON to config directory
             withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
               sh """
-                mkdir -p /root/.docker
-                mv "\$AUTH_JSON_FILE" /root/.docker/config.json
-                crane push ./image.oci.tar "${params.image}:${params.tag}"
+                skopeo copy --dest-authfile "\$AUTH_JSON_FILE" oci-archive:image-oci.tar "docker:${params.image}:${params.tag}"
               """
 
               if (params.update_latest) {
-                sh "crane push ./image.oci.tar ${params.image}:latest"
+                sh """
+                  skopeo copy --dest-authfile "\$AUTH_JSON_FILE" oci-archive:image-oci.tar "docker:${params.image}:latest"
+                """
               }
             }
           }
