@@ -222,8 +222,7 @@ pipeline {
                   }
                   echo "ClamAV database updated successfully, running clamscan"
                   sh "clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M --log virus-report.clamav.txt --stdout ./image.raw.tar"
-                  sh "ls -lah"
-                  sh "df -h" // check file limits
+                  sh "chmod a+r virus-report.clamav.txt"
 
                 } catch(err) {
                   if (params.continue_on_image_scan_failure) {
