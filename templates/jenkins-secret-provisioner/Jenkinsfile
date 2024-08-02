@@ -1,7 +1,7 @@
 pipeline {
   parameters {
     string(name: 'secret_name', defaultValue: "${default_secret_name}", description: 'The name of the Kubernetes secret to create.')
-    string(name: 'secret_type', defaultValue: "${default_secret_type}", description: 'The type of Kubernetes Secret to create (generic or docker-registry).')
+    string(name: 'secret_type', defaultValue: "${default_secret_type}", description: 'The type of Kubernetes Secret to create (generic, docker-registry, or docker-registry-from-file).')
     string(name: 'registry_path', defaultValue: "${default_registry_path}", description: 'The URL of the Docker registry to use when creating the Kubernetes secret.')
     string(name: 'generic_key', defaultValue: "${default_generic_key}", description: 'The key to use when creating a generic secret.')
 
@@ -45,10 +45,18 @@ pipeline {
               case 'docker-registry':
                 withCredentials([usernamePassword(credentialsId: "${params.jenkins_credential_id}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                   sh """
-                  kubectl create secret docker-registry "${params.secret_name}" -n cbc-"${params.jenkins_controller_name}" \
+                  kubectl create secret docker-registry "${params.secret_name}" -n "cbc-${params.jenkins_controller_name}" \
                     --docker-server="${params.registry_path}" \
                     --docker-username="\$USER" \
                     --docker-password="\$PASS"
+                  """
+                }
+                break
+              case 'docker-registry-from-file':
+                withCredentials([file(credentialId: "${params.jenkins_credential_id}", variable: 'DOCKER_CONFIG')]) {
+                  sh """
+                    kubectl create secret docker-registry "${params.secret_name}" -n "cbc-${params.jenkins_controller_name}" \
+                      --from-file=".dockerconfigjson=\$DOCKER_CONFIG"
                   """
                 }
                 break
