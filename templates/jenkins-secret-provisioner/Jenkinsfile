@@ -53,7 +53,7 @@ pipeline {
                 }
                 break
               case 'docker-registry-from-file':
-                withCredentials([file(credentialId: "${params.jenkins_credential_id}", variable: 'DOCKER_CONFIG')]) {
+                withCredentials([file(credentialsId: "${params.jenkins_credential_id}", variable: 'DOCKER_CONFIG')]) {
                   sh """
                     kubectl create secret docker-registry "${params.secret_name}" -n "cbc-${params.jenkins_controller_name}" \
                       --from-file=".dockerconfigjson=\$DOCKER_CONFIG"
