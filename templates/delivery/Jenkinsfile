@@ -48,6 +48,9 @@ pipeline {
         - name: buildx
           image: docker:latest
           command: ['tail', '-f', '/dev/null']
+          resources:
+            limits:
+              memory: "${params.build_memory_limit}"
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           command: ['tail', '-f', '/dev/null']
