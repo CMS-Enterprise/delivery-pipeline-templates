@@ -7,6 +7,7 @@ pipeline {
     string(name: 'target_service', defaultValue: "${default_target_service ?: ''}", description: 'The name of the service to update.')
     string(name: 'image', defaultValue: "${default_image ?: ''}", description: 'The fully qualified container image name.')
     string(name: 'tag', description: 'Container image tag.')
+    string(name: 'maximum_retries', defaultValue: "${default_maximum_retries ?: '3'}", description: 'The maximum number of retries to attempt when applying changes to the manifest repo. Each retry will be delayed by 1.5 ^ n seconds up to a maximum of 30.')
   }
 
   agent {
@@ -48,37 +49,81 @@ pipeline {
 
             sh """
               set -e
+              # Install prerequisites
               apk add --update --no-cache curl tar gzip git openssh
               curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz | tar xz -C /usr/local/bin
               kustomize version
+
+              # Set git config
+              git config --global --add safe.directory "${WORKSPACE}"
+              git remote set-url origin "${git_manifest_repository}"
+              git config --global user.email '${params.git_author_email}'
+              git config --global user.name '${params.git_author_name}'
               echo "[LOG] Target Service -> ${params.target_service}"
               echo "[LOG] Target Manifest Repo -> ${git_manifest_repository}"
               echo "[LOG] Target Image -> ${fullImage}"
-              echo "[LOG] Checkout manifest repository"
               echo "[LOG] Target Environment -> ${params.environment_path}"
-              cd "${params.environment_path}"
-              kustomize edit set image ${params.target_service}=${fullImage}
-              git config --global --add safe.directory "${WORKSPACE}"
-              git config --global user.email '${params.git_author_email}'
-              git config --global user.name '${params.git_author_name}'
-              git status
-              git diff
-              if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
-                  echo '[WARN] No changes made to manifest'
-                  exit 0
-              fi
-              git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
-              git remote set-url origin "${git_manifest_repository}"
             """
 
-            if (isHttps) {
-              withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                sh "git push https://\${GIT_USERNAME}:\${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')} HEAD:${params.git_manifest_branch}"
+            def retryCount = 0
+            def maxRetries = params.maximum_retries.toInteger()
+            def gitPushResult = -1
+            while (gitPushResult != 0) {
+              sh """
+                cd "${params.environment_path}"
+                kustomize edit set image ${params.target_service}=${fullImage}
+                git status
+                git diff
+                if [[ \$(git diff --name-only | wc -l | tr -d ' ') -eq "0" ]]; then
+                    echo '[WARN] No changes made to manifest'
+                    exit 0
+                fi
+                git commit -am "pipeline update service ${params.target_service} to ${params.tag}"
+              """
+
+              if (isHttps) {
+                withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                  gitPushResult = sh(
+                    script: "git push \"https://\${GIT_USERNAME}:\${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')}\" \"HEAD:${params.git_manifest_branch}\"",
+                    returnStatus: true
+                  )
+                }
+              } else {
+                withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY_FILE', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+                  def sshCommand = 'ssh -o StrictHostKeyChecking=no -i "$SSH_PRIVATE_KEY_FILE"'
+                  gitPushResult = sh(
+                    script: "GIT_SSH_COMMAND='${sshCommand}' git push origin \"HEAD:${params.git_manifest_branch}\"",
+                    returnStatus: true
+                  )
+                }
               }
-            } else {
-              withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY_FILE', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
-                def sshCommand = 'ssh -o StrictHostKeyChecking=no -i "$SSH_PRIVATE_KEY_FILE"'
-                sh "GIT_SSH_COMMAND='${sshCommand}' git push origin HEAD:${params.git_manifest_branch}"
+
+              if (gitPushResult != 0) {
+                retryCount++
+                if (retryCount > maxRetries) {
+                  error "[ERROR] Failed to apply changes to manifest after ${maxRetries} retries."
+                }
+
+                def delay = retryCount < 10 ? (1.5 ** (retryCount - 1)) : 30
+                echo "[WARN] Failed to apply changes to manifest. Retrying in ${delay} seconds."
+                sleep delay
+                echo "Resetting to origin/${params.git_manifest_branch} and re-applying the image update."
+                if (isHttps) {
+                  withCredentials([usernamePassword(credentialsId: "${git_manifest_credentials}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                    sh """
+                      git fetch "https://\${GIT_USERNAME}:\${GIT_PASSWORD}@${git_manifest_repository.replace('https://', '')}" "${params.git_manifest_branch}"
+                    """
+                  }
+                } else {
+                  withCredentials([sshUserPrivateKey(credentialsId: "${git_manifest_credentials}", keyFileVariable: 'SSH_PRIVATE_KEY_FILE', passphraseVariable: 'SSH_PASSPHRASE', usernameVariable: 'GIT_USERNAME')]) {
+                    def sshCommand = 'ssh -o StrictHostKeyChecking=no -i "$SSH_PRIVATE_KEY_FILE"'
+                    sh """
+                      GIT_SSH_COMMAND='${sshCommand}' git fetch origin "${params.git_manifest_branch}"
+                    """
+                  }
+                }
+                // Reset HEAD to the revision that was just fetched
+                sh "git reset --hard FETCH_HEAD"
               }
             }
           }

@@ -39,3 +39,8 @@ parameters:
     displayName: Default Target Service
     description: The name of the service to update.
     type: string
+  - name: default_maximum_retries
+    displayName: Maximum Retries
+    description: The maximum number of retries to attempt when applying changes to the manifest repo. Each retry will be delayed by 1.5 ^ n seconds up to a maximum of 30.
+    type: number
+    defaultValue: 3
