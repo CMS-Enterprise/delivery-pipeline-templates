@@ -104,7 +104,7 @@ pipeline {
       }
     }
 
-    stage('Build Image - buildx') {
+    stage('Build Image') {
       steps {
         container('buildx') {
           script {
