@@ -22,8 +22,7 @@ pipeline {
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
     string(name: 'build_cpu_limit', defaultValue: "${default_build_cpu_limit ?: '1'}", description: "CPU limit for the image build process.")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
-    // TODO: caching for buildx ??
-    // booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable Kaniko image build cache.')
+    booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable image build cache.')
 
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
@@ -129,6 +128,11 @@ pipeline {
                 argMap.each { key, value ->
                   arguments.add("--build-arg=${key}='${value}'")
                 }
+              }
+
+              if (params.enable_cache) {
+                arguments.add("--cache-from=${params.image}/build-layer-cache")
+                arguments.add("--cache-to=${params.image}/build-layer-cache")
               }
 
               build_command = "docker buildx build ${arguments.join(' ')} ${params.build_dir}"

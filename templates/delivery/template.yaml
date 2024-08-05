@@ -34,6 +34,11 @@ parameters:
     displayName: Build Target
     description: "The build target to use when building the container image (for use with multi-stage Dockerfiles)."
     type: string
+  - name: default_enable_cache
+    displayName: Enable Build Cache
+    description: "Enable image build cache."
+    type: boolean
+    defaultValue: false
   - name: default_build_memory_limit
     displayName: Image Build Memory Limit
     description: "Memory limit for the image build process."
