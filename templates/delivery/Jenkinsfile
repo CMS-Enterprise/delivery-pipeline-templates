@@ -211,6 +211,9 @@ pipeline {
 
 
         stage('Malware Scan') {
+          when {
+            expression { params.clamscan_enabled }
+          }
           steps {
             container('clamav') {
               script {
