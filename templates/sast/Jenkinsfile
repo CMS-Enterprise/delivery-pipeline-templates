@@ -32,13 +32,6 @@ def reindent(spaces, str) {
   return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
 }
 
-options {
-  // Allow other pipelines to copy the artifacts produced by this pipeline
-  copyArtifactPermission('*')
-  // Automatically discard old builds
-  buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
-}
-
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -71,6 +64,13 @@ pipeline {
         restartPolicy: Never
         containers:${containerListYaml()}"""
     }
+  }
+
+  options {
+    // Allow other pipelines to copy the artifacts produced by this pipeline
+    copyArtifactPermission('*')
+    // Automatically discard old builds
+    buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
   stages {
