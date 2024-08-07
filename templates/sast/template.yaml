@@ -7,9 +7,9 @@ parameters:
   - name: sonarqube_token
     displayName: SonarQube Token
     type: credentials
-  - name: default_source_path_sonarqube
-    displayName: Sonarqube Source Path
-    description: "The relative path of the source code to scan."
+  - name: default_source_path
+    displayName: SonarQube Source Path
+    description: "The relative path of the source code to scan for SonarQube."
     type: string
     defaultValue: "."
   - name: default_sonarqube_url
@@ -43,11 +43,6 @@ parameters:
     description: "Edit the Snyk Image Tag to reflect the project language."
     type: string
     defaultValue: "alpine"
-  - name: default_source_path_snyk
-    displayName: Snyk Source Path
-    description: "The relative path of the source code to scan for Snyk."
-    type: string
-    defaultValue: "."
   - name: default_snyk_project_name
     displayName: Snyk Project Name
     description: "The name of the Snyk project to associate the container image scan with."
@@ -59,15 +54,13 @@ parameters:
     type: string
     defaultValue: "high"
   - name: default_package_file
-    displayName: Package Lock File
-    description: "The name of the package lock file for Snyk to test."
+    displayName: Package File
+    description: "The name of the package file for Snyk to test."
     type: string
-    defaultValue: "my-package-lock-file"
   - name: default_package_manager
     displayName: Package Manager
     description: "The name of the package manager for Snyk to use to test."
     type: string
-    defaultValue: "my-package-manager"
   - name: build_retention_days
     displayName: Build Log Retention Days
     description: "The number of days to retain build logs and artifacts."
