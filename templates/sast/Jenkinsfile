@@ -49,7 +49,7 @@ pipeline {
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
-    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan.')
+    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan for Sonarqube and Snyk.')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
@@ -106,17 +106,20 @@ pipeline {
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--project-name=${params.snyk_project_name}",
                   "--file=${params.package_file}",
-                  "--package-manager=${params.package_manager}"
+                  "--package-manager=${params.package_manager}",
+                  "--target"
                 ]
                 try {
-                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                    sh """
-                      # Report vulnerabilities to the Snyk dashboard
-                      snyk monitor ${args.join(' ')}
-                      # Report detected vulnerabilities to stdout and raise an error if
-                      # vulnerabilities are found exceeding the specified threshold
-                      snyk test --json-file-output=snyk-test-vulnerabilities.json ${args.join(' ')}
-                    """
+                  dir("${params.source_path}") {
+                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                      sh """
+                        # Report vulnerabilities to the Snyk dashboard
+                        snyk monitor ${args.join(' ')}
+                        # Report detected vulnerabilities to stdout and raise an error if
+                        # vulnerabilities are found exceeding the specified threshold
+                        snyk test --json-file-output=snyk-test-vulnerabilities.json ${args.join(' ')}
+                      """
+                    }
                   }
 
                 // If there is an error during the snyk scan
