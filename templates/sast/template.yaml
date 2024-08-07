@@ -49,10 +49,10 @@ parameters:
     type: string
     defaultValue: "high"
   - name: default_package_file
-    displayName: Package File
-    description: "The name of the package file for Snyk to test."
+    displayName: Package Lock File
+    description: "The name of the package lock file for Snyk to test."
     type: string
-    defaultValue: "my-package-file"
+    defaultValue: "my-package-lock-file"
   - name: default_package_manager
     displayName: Package Manager
     description: "The name of the package manager for Snyk to use to test."
