@@ -38,6 +38,11 @@ parameters:
     displayName: Snyk API Token
     description: "The Snyk API token to use for scanning the container image."
     type: credentials
+  - name: default_snyk_image_tag
+    displayName: Snyk Image Tag
+    description: "Edit the Snyk Image Tag to reflect the project language."
+    type: string
+    defaultValue: "alpine"
   - name: default_source_path_snyk
     displayName: Snyk Source Path
     description: "The relative path of the source code to scan for Snyk."
