@@ -9,7 +9,11 @@ def containerListYaml() {
       resources:
         limits:
           memory: 3Gi
-          cpu: 1500m""");
+          cpu: 1500m
+    - name: snyk
+      image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
+      command: ['tail', '-f', '/dev/null']
+  """);
 
   return containerListYaml
 }
@@ -28,6 +32,13 @@ def reindent(spaces, str) {
   return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
 }
 
+options {
+  // Allow other pipelines to copy the artifacts produced by this pipeline
+  copyArtifactPermission('*')
+  // Automatically discard old builds
+  buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
+}
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -43,6 +54,12 @@ pipeline {
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
+  
+    booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
+    string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
+    string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
+    string(name: 'package_file', defaultValue: "${default_package_file ?: 'my-package-file'}", description: 'The name of the package file for Snyk to test.')
+    string(name: 'package_manager', defaultValue: "${default_package_manager ?: 'my-package-manager'}", description: 'The name of the package manager for Snyk to use to test.')
   }
 
   agent {
@@ -76,50 +93,92 @@ pipeline {
       }
     }
     stage("Scan Source") {
-      steps {
-        container('sonarqube') {
-          withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
-            script {
-              def projectBranchesUrl = "${params.sonarqube_url}/api/project_branches/list?project=${params.sonarqube_project_key}"
-              def projectBranchesJson = sh(
-                script: """
-                  #! /bin/sh -e
-                  set +x
-                  curl --location '${projectBranchesUrl}' \
-                    --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
-                    --no-progress-meter -f
-                """,
-                returnStdout: true
-              )
-              echo "Fetched SonarQube project branch list: ${projectBranchesJson}"
-              def defaultBranch =
-                new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
-              def args = [
-                '-Dsonar.login=$SONAR_TOKEN',
-                "-Dsonar.host.url=${params.sonarqube_url}",
-                "-Dsonar.projectKey=${params.sonarqube_project_key}",
-                "-Dsonar.sources=${params.source_path}",
-                "-Dsonar.qualitygate.wait=true"
-              ]
-              if (params.git_branch == defaultBranch) {
-                echo "Performing analysis for the default branch: ${defaultBranch}"
-                args.add("-Dsonar.branch.name=${params.git_branch}")
-              } else {
-                echo "Performing analysis for a feature branch: ${params.git_branch} (does not match default branch ${defaultBranch})"
-                args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
-                args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
-              }
+      parallel {
+        stage("Snyk: Test") {
+          when {
+            expression {params.enable_snyk_test}
+          }
+          steps {
+            container('snyk') {
+              script {
+                // When Snyk reports findings it uses the filename as the "target" in the dashboard
+                def args = [
+                  "--severity-threshold=${params.vulnerability_severity_threshold}",
+                  "--project-name=${params.snyk_project_name}",
+                  "--file=${params.package_file}",
+                  "--package-manager=${params.package_manager}"
+                ]
+                try {
+                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                    sh """
+                      # Report vulnerabilities to the Snyk dashboard
+                      snyk monitor ${args.join(' ')}
+                      # Report detected vulnerabilities to stdout and raise an error if
+                      # vulnerabilities are found exceeding the specified threshold
+                      snyk test --json-file-output=snyk-test-vulnerabilities.json ${args.join(' ')}
+                    """
+                  }
 
-              if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
-                copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
-              }
-              if (params.sonarqube_additional_arguments) {
-                def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
-                // Add all the items in argArray to the args list
-                args.addAll(argArray)
-              }
-              withEnv(["SONAR_SCANNER_OPTS=${params.sonar_scanner_java_opts}"]) {
-                sh "sonar-scanner ${args.join(' ')}"
+                // If there is an error during the snyk scan
+                } catch(err) {
+                    echo "Snyk scan failed with error: ${err}"
+                    error "Failed to scan the packages with Snyk."
+
+                // No matter what, make sure the artifacts are archived
+                } finally {
+                  archiveArtifacts artifacts: 'snyk-test-vulnerabilities.json', allowEmptyArchive: true
+                }
+              } // end script block
+            } // end  container snyk
+          }
+        }
+        stage("Sonarqube: Scan") {
+          steps {
+            container('sonarqube') {
+              withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
+                script {
+                  def projectBranchesUrl = "${params.sonarqube_url}/api/project_branches/list?project=${params.sonarqube_project_key}"
+                  def projectBranchesJson = sh(
+                    script: """
+                      #! /bin/sh -e
+                      set +x
+                      curl --location '${projectBranchesUrl}' \
+                        --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
+                        --no-progress-meter -f
+                    """,
+                    returnStdout: true
+                  )
+                  echo "Fetched SonarQube project branch list: ${projectBranchesJson}"
+                  def defaultBranch =
+                    new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
+                  def args = [
+                    '-Dsonar.login=$SONAR_TOKEN',
+                    "-Dsonar.host.url=${params.sonarqube_url}",
+                    "-Dsonar.projectKey=${params.sonarqube_project_key}",
+                    "-Dsonar.sources=${params.source_path}",
+                    "-Dsonar.qualitygate.wait=true"
+                  ]
+                  if (params.git_branch == defaultBranch) {
+                    echo "Performing analysis for the default branch: ${defaultBranch}"
+                    args.add("-Dsonar.branch.name=${params.git_branch}")
+                  } else {
+                    echo "Performing analysis for a feature branch: ${params.git_branch} (does not match default branch ${defaultBranch})"
+                    args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
+                    args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
+                  }
+
+                  if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+                    copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+                  }
+                  if (params.sonarqube_additional_arguments) {
+                    def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
+                    // Add all the items in argArray to the args list
+                    args.addAll(argArray)
+                  }
+                  withEnv(["SONAR_SCANNER_OPTS=${params.sonar_scanner_java_opts}"]) {
+                    sh "sonar-scanner ${args.join(' ')}"
+                  }
+                }
               }
             }
           }
