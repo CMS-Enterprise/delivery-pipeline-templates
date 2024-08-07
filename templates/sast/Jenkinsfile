@@ -12,8 +12,7 @@ def containerListYaml() {
           cpu: 1500m
     - name: snyk
       image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
-      command: ['tail', '-f', '/dev/null']
-  """);
+      command: ['tail', '-f', '/dev/null']""");
 
   return containerListYaml
 }
@@ -107,7 +106,7 @@ pipeline {
                   "--project-name=${params.snyk_project_name}",
                   "--file=${params.package_file}",
                   "--package-manager=${params.package_manager}",
-                  "--target"
+                  // "--target-reference=${params.git_branch}"
                 ]
                 try {
                   dir("${params.source_path}") {
