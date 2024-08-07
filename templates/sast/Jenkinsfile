@@ -41,13 +41,14 @@ pipeline {
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
-    string(name: 'source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan for Sonarqube and Snyk.')
+    string(name: 'source_path_sonarqube', defaultValue: "${default_source_path_sonarqube ?: '.'}", description: 'The relative path of the source code to scan for Sonarqube.')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
     string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
   
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
+    string(name: 'source_path_snyk', defaultValue: "${default_source_path_snyk ?: '.'}", description: 'The relative path of the source code to scan for Snyk.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
     string(name: 'package_file', defaultValue: "${default_package_file ?: 'my-package-file'}", description: 'The name of the package file for Snyk to test.')
@@ -109,7 +110,7 @@ pipeline {
                   // "--target-reference=${params.git_branch}"
                 ]
                 try {
-                  dir("${params.source_path}") {
+                  dir("${params.source_path_snyk}") {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
                         # Report vulnerabilities to the Snyk dashboard
@@ -128,7 +129,7 @@ pipeline {
 
                 // No matter what, make sure the artifacts are archived
                 } finally {
-                  dir("${params.source_path}"){
+                  dir("${params.source_path_snyk}"){
                     archiveArtifacts artifacts: 'snyk-test-vulnerabilities.json', allowEmptyArchive: true
                   }
                 }
@@ -159,7 +160,7 @@ pipeline {
                     '-Dsonar.login=$SONAR_TOKEN',
                     "-Dsonar.host.url=${params.sonarqube_url}",
                     "-Dsonar.projectKey=${params.sonarqube_project_key}",
-                    "-Dsonar.sources=${params.source_path}",
+                    "-Dsonar.sources=${params.source_path_sonarqube}",
                     "-Dsonar.qualitygate.wait=true"
                   ]
                   if (params.git_branch == defaultBranch) {

@@ -4,14 +4,14 @@ displayName: SAST Pipeline
 description: Pipeline for scanning a source code for potential security and other defects.
 type: pipeline-template
 parameters:
-  - name: default_source_path
-    displayName: Source Path
-    description: "The relative path of the source code to scan."
-    type: string
-    defaultValue: "."
   - name: sonarqube_token
     displayName: SonarQube Token
     type: credentials
+  - name: default_source_path_sonarqube
+    displayName: Sonarqube Source Path
+    description: "The relative path of the source code to scan."
+    type: string
+    defaultValue: "."
   - name: default_sonarqube_url
     displayName: SonarQube URL
     type: string
@@ -38,6 +38,11 @@ parameters:
     displayName: Snyk API Token
     description: "The Snyk API token to use for scanning the container image."
     type: credentials
+  - name: default_source_path_snyk
+    displayName: Snyk Source Path
+    description: "The relative path of the source code to scan for Snyk."
+    type: string
+    defaultValue: "."
   - name: default_snyk_project_name
     displayName: Snyk Project Name
     description: "The name of the Snyk project to associate the container image scan with."
