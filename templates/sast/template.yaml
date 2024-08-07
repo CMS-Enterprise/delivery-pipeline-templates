@@ -29,4 +29,43 @@ parameters:
     description: "Java options for the SonarQube scanner."
     type: string
     defaultValue: "-Xmx512m"
+  - name: default_enable_snyk_test
+    displayName: Enable Snyk Test
+    description: "When enabled, the pipeline will run Sonarqube and Snyk Test in parallel."
+    type: boolean
+    defaultValue: false
+  - name: snyk_token
+    displayName: Snyk API Token
+    description: "The Snyk API token to use for scanning the container image."
+    type: credentials
+  - name: default_snyk_project_name
+    displayName: Snyk Project Name
+    description: "The name of the Snyk project to associate the container image scan with."
+    type: string
+    defaultValue: "my-app"
+  - name: default_vulnerability_severity_threshold
+    displayName: Vulnerability Severity Threshold
+    description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
+    type: string
+    defaultValue: "high"
+  - name: default_package_file
+    displayName: Package File
+    description: "The name of the package file for Snyk to test."
+    type: string
+    defaultValue: "my-package-file"
+  - name: default_package_manager
+    displayName: Package Manager
+    description: "The name of the package manager for Snyk to use to test."
+    type: string
+    defaultValue: "my-package-manager"
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: "The number of days to retain build logs and artifacts."
+    type: string
+    defaultValue: "90"
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: "The number of builds to retain."
+    type: string
+    defaultValue: "1000"
 
