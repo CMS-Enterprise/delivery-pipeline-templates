@@ -111,6 +111,11 @@ pipeline {
                   // "--target-reference=${params.git_branch}"
                 ]
                 try {
+                  if( "${params.snyk_image_tag}" == "python" && ("${params.package_file}" == "Pipfile" || "${params.package_file}" == "Pipfile.lock") && "${params.package_manager}" == "pip") {
+                    sh """
+                      pip install pipenv
+                    """
+                  }
                   dir("${params.source_path_snyk}") {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
