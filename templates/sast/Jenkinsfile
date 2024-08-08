@@ -118,7 +118,6 @@ pipeline {
                 if (params.snyk_additional_arguments) {
                   def argArray = new groovy.json.JsonSlurper().parseText(params.snyk_additional_arguments)
                   if (argArray.size() > 0) {
-                    args.add('--')
                     args.addAll(argArray)
                   }
                 }
