@@ -48,7 +48,7 @@ pipeline {
     string(name: 'sonarqube_source_path', defaultValue: "${default_source_path ?: '.'}", description: 'The relative path of the source code to scan for SonarQube.')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
-    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.')
     string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
   
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
@@ -81,18 +81,47 @@ pipeline {
     stage("Fetch") {
       steps {
         container('fetch') {
-          checkout scmGit(
-            branches: [[ name: "${params.git_commit}" ]],
-            userRemoteConfigs: [[
-              url: "${params.git_repository}",
-              credentialsId: "${params.git_credentials}",
-              refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
-            ]],
-            extensions: [
-              cloneOption(shallow: true, honorRefspec: true, noTags: true),
-              submodule(recursiveSubmodules: true, shallow: true)
-            ]
-          )
+          script {
+            checkout scmGit(
+              branches: [[ name: "${params.git_commit}" ]],
+              userRemoteConfigs: [[
+                url: "${params.git_repository}",
+                credentialsId: "${params.git_credentials}",
+                refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+              ]],
+              extensions: [
+                cloneOption(shallow: true, honorRefspec: true, noTags: true),
+                submodule(recursiveSubmodules: true, shallow: true)
+              ]
+            )
+
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              def filters = []
+              def escaped = false
+              for (def filter in params.copy_artifacts_filter.split(',')) {
+                next_escaped = filter.endsWith('\\') && !(filter =~ /(\\\\)+$/)
+                filter = filter.replaceAll(/\\(.)/) { _, c -> c }
+                if (next_escaped) {
+                  filter = filter.substring(0, filter.length() - 1)
+                }
+                if (escaped) {
+                  filters[-1] = filters[-1] + "," + filter
+                } else {
+                  filters << filter
+                }
+
+                escaped = next_escaped
+              }
+
+              for (def filter in filters) {
+                copyArtifacts(
+                  projectName: params.copy_artifacts_job_name,
+                  filter: filter,
+                  selector: specific(params.copy_artifacts_build_number)
+                )
+              }
+            }
+          }
         }
       }
     }
@@ -177,9 +206,6 @@ pipeline {
                     args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
                   }
 
-                  if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
-                    copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
-                  }
                   if (params.sonarqube_additional_arguments) {
                     def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
                     // Add all the items in argArray to the args list
