@@ -111,9 +111,9 @@ pipeline {
                   // "--target-reference=${params.git_branch}"
                 ]
                 try {
-                  if( "${params.snyk_image_tag}" =~ /python(-3.*)*/ && ("${params.package_file}" == "Pipfile" || "${params.package_file}" == "Pipfile.lock") && "${params.package_manager}" == "pip") {
+                  if( "${params.snyk_image_tag}" =~ /python(-3.*)?/ && ("${params.package_file}" == "Pipfile" || "${params.package_file}" == "Pipfile.lock") && "${params.package_manager}" == "pip") {
                     sh """
-                      pip install --upgrade pip && pip install pipenv
+                      pip install --upgrade pip && pip install pipenv && pipenv install
                     """
                   }
                   dir("${params.source_path_snyk}") {
