@@ -127,6 +127,11 @@ pipeline {
                       pip install --upgrade pip && pip install pipenv && pipenv install --deploy --ignore-pipfile --dev
                     """
                   }
+                  else if ("${params.snyk_image_tag}" =~ /golang(-.*)?/) {
+                    sh """
+                      export GOFLAGS="-buildvcs=false"
+                    """
+                  }
                   dir("${params.source_path_snyk}") {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
