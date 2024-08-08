@@ -54,6 +54,7 @@ pipeline {
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
     string(name: 'snyk_image_tag', defaultValue: "${default_snyk_image_tag ?: 'alpine'}", description: 'Edit the Snyk Image Tag to reflect the project language.')
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
+    string(name: 'snyk_additional_arguments', defaultValue: "${default_snyk_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the snyk test.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
     string(name: 'package_file', defaultValue: "${default_package_file ?: ''}", description: 'The name of the package file for Snyk to test.')
     string(name: 'package_manager', defaultValue: "${default_package_manager ?: ''}", description: 'The name of the package manager for Snyk to use to test.')
@@ -134,6 +135,7 @@ pipeline {
           steps {
             container('snyk') {
               script {
+                echo "Scanning package dependencies for vulnerabilities..."
                 // When Snyk reports findings it uses the filename as the "target" in the dashboard
                 def args = [
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
@@ -141,10 +143,16 @@ pipeline {
                   "--target-reference=${params.git_branch}"
                 ]
                 if (params.package_file) {
-                  args += [ "--file=${params.package_file}" ]
+                  args.add("--file=${params.package_file}")
                 }
                 if (params.package_manager) {
-                  args += [ "--package-manager=${params.package_manager}" ]
+                  args.add("--package-manager=${params.package_manager}")
+                }
+                if (params.snyk_additional_arguments) {
+                  def argArray = new groovy.json.JsonSlurper().parseText(params.snyk_additional_arguments)
+                  if (argArray.size() > 0) {
+                    args.addAll(argArray)
+                  }
                 }
 
                 try {
