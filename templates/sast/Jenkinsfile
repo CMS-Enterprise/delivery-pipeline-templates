@@ -128,10 +128,9 @@ pipeline {
                     """
                   }
                   else if ("${params.snyk_image_tag}" =~ /golang(-.*)?/) {
-                    sh """
-                     export GOFLAGS="-buildvcs=false"
-                     go env
-                    """
+                    environment {
+                      GOFLAGS = "-buildvcs=false"
+                    }
                   }
 
                   dir("${params.source_path_snyk}") {
