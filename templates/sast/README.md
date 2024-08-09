@@ -19,7 +19,10 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | git_commit                     | X        |          | The commit hash or branch name to checkout when running the SAST scan.                                                                                   |                                           |
 | git_branch                     | X        |          | The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch). |                                           |
 | git_change_id                  | X        |          | (Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).                                              |                                           |
-| OPTIONAL FEATURE: SNYK TEST |
+
+### Optional Feature: Snyk Test
+| Parameter Name                 | Pipeline | Template | Description                                                                                                                                              | Default Value                             |
+|--------------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | enable_snyk_test | X        | X        | Toggle this to enable snyk test. | False |
 | snyk_token | X        | X        | Credentials for your snyk organization to enable snyk metrics to appear in the dashboard. |
 | snyk_image_tag | X        | X        | The snyk container image tag relevant to your project's language. (python, golang-1.22, php, node, etc.) | alpine |
