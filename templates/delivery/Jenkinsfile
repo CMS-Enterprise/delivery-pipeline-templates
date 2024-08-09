@@ -17,7 +17,7 @@ pipeline {
     string(name: 'build_target', defaultValue: "${default_build_target ?: ''}", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
-    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, filemask to identify build artifacts to copy.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.')
     string(name: 'build_memory_limit', defaultValue: "${default_build_memory_limit ?: '1Gi'}", description: "Memory limit for the image build process.")
     string(name: 'build_cpu_limit', defaultValue: "${default_build_cpu_limit ?: '1'}", description: "CPU limit for the image build process.")
     booleanParam(name: 'enable_cache', defaultValue: "${default_enable_cache ?: false}", description: 'Enable image build cache.')
@@ -94,7 +94,30 @@ pipeline {
             )
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
-              copyArtifacts projectName: params.copy_artifacts_job_name, filter: params.copy_artifacts_filter, selector: specific(params.copy_artifacts_build_number)
+              def filters = []
+              def escaped = false
+              for (def filter in params.copy_artifacts_filter.split(',')) {
+                next_escaped = filter.endsWith('\\') && !(filter =~ /(\\\\)+$/)
+                filter = filter.replaceAll(/\\(.)/) { _, c -> c }
+                if (next_escaped) {
+                  filter = filter.substring(0, filter.length() - 1)
+                }
+                if (escaped) {
+                  filters[-1] = filters[-1] + "," + filter
+                } else {
+                  filters << filter
+                }
+
+                escaped = next_escaped
+              }
+
+              for (def filter in filters) {
+                copyArtifacts(
+                  projectName: params.copy_artifacts_job_name,
+                  filter: filter,
+                  selector: specific(params.copy_artifacts_build_number)
+                )
+              }
             }
           }
         }

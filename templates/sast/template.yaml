@@ -7,6 +7,11 @@ parameters:
   - name: sonarqube_token
     displayName: SonarQube Token
     type: credentials
+  - name: default_source_path
+    displayName: SonarQube Source Path
+    description: "The relative path of the source code to scan for SonarQube."
+    type: string
+    defaultValue: "."
   - name: default_sonarqube_url
     displayName: SonarQube URL
     type: string
@@ -19,14 +24,59 @@ parameters:
     description: "A JSON serialized array of additional arguments to pass to the SonarQube scanner."
     type: string
     defaultValue: "[]"
-  - name: default_source_path
-    displayName: Source Path
-    description: "The relative path of the source code to scan."
-    type: string
-    defaultValue: "."
   - name: default_sonar_scanner_java_opts
     displayName: Sonar Scanner Java Opts
     description: "Java options for the SonarQube scanner."
     type: string
     defaultValue: "-Xmx512m"
+  - name: default_enable_snyk_test
+    displayName: Enable Snyk Test
+    description: "When enabled, the pipeline will run Sonarqube and Snyk Test in parallel."
+    type: boolean
+    defaultValue: false
+  - name: snyk_token
+    displayName: Snyk API Token
+    description: "The Snyk API token to use for scanning the container image."
+    type: credentials
+  - name: default_snyk_image_tag
+    displayName: Snyk Image Tag
+    description: "Edit the Snyk Image Tag to reflect the project language."
+    type: string
+    defaultValue: "alpine"
+  - name: default_snyk_project_name
+    displayName: Snyk Project Name
+    description: "The name of the Snyk project to associate the container image scan with."
+    type: string
+    defaultValue: "my-app"
+  - name: default_snyk_additional_arguments
+    displayName: Snyk Additional Arguments
+    description: "A JSON serialized array of additional arguments to pass to the snyk."
+    type: string
+    defaultValue: "[]"
+  - name: default_snyk_additional_env
+    displayName: Snyk Additional Environment Variables
+    description: "A JSON serialized array of additional environment variables to pass to the snyk."
+  - name: default_vulnerability_severity_threshold
+    displayName: Vulnerability Severity Threshold
+    description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
+    type: string
+    defaultValue: "high"
+  - name: default_package_file
+    displayName: Package File
+    description: "The name of the package file for Snyk to test."
+    type: string
+  - name: default_package_manager
+    displayName: Package Manager
+    description: "The name of the package manager for Snyk to use to test."
+    type: string
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: "The number of days to retain build logs and artifacts."
+    type: string
+    defaultValue: "90"
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: "The number of builds to retain."
+    type: string
+    defaultValue: "1000"
 
