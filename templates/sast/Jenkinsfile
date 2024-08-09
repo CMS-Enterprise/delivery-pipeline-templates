@@ -75,6 +75,8 @@ pipeline {
     buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
+  enviornmen
+
   stages {
     stage("Fetch") {
       steps {
@@ -130,6 +132,7 @@ pipeline {
                   else if ("${params.snyk_image_tag}" =~ /golang(-.*)?/) {
                     sh """
                      export GOFLAGS="-buildvcs=false"
+                     go env
                     """
                   }
 
