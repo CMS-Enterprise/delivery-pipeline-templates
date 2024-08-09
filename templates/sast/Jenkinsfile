@@ -75,8 +75,6 @@ pipeline {
     buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
   }
 
-  enviornmen
-
   stages {
     stage("Fetch") {
       steps {
