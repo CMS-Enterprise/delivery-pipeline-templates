@@ -53,6 +53,9 @@ parameters:
     description: "A JSON serialized array of additional arguments to pass to the snyk."
     type: string
     defaultValue: "[]"
+  - name: default_snyk_additional_env
+    displayName: Snyk Additional Environment Variables
+    description: "A JSON serialized array of additional environment variables to pass to the snyk."
   - name: default_vulnerability_severity_threshold
     displayName: Vulnerability Severity Threshold
     description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
