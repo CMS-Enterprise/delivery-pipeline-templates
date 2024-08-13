@@ -41,15 +41,18 @@ pipeline {
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: buildx
           image: docker:latest
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
               memory: "${params.build_memory_limit}"
         - name: clamav
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
@@ -58,10 +61,12 @@ pipeline {
               memory: "3Gi"
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: skopeo
           # pull through from quay.io
           image: artifactory.cloud.cms.gov/docker/skopeo/stable:v1
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
       """
     }

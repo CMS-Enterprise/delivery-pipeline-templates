@@ -19,6 +19,7 @@ pipeline {
         containers:
         - name: kubectl
           image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         securityContext:
           runAsUser: 1001
