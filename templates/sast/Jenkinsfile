@@ -2,9 +2,11 @@ def containerListYaml(snyk_image_tag) {
   def containerListYaml = reindent(10, """
     - name: fetch
       image: artifactory.cloud.cms.gov/docker/alpine:3
+      imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
     - name: sonarqube
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
+      imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
       resources:
         limits:
@@ -15,6 +17,7 @@ def containerListYaml(snyk_image_tag) {
     containerListYaml += reindent(10, """
       - name: snyk
         image: artifactory.cloud.cms.gov/docker/snyk/snyk:$snyk_image_tag
+        imagePullPolicy: Always
         command: ['tail', '-f', '/dev/null']""")
   }
 

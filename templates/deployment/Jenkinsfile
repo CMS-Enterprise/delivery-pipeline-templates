@@ -23,6 +23,7 @@ pipeline {
         containers:
         - name: fetch
           image: artifactory.cloud.cms.gov/docker/alpine:3
+          imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
       """
     }
