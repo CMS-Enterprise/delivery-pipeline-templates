@@ -208,6 +208,7 @@ pipeline {
                 try {
                   withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                     sh """
+                      snyk --version
                       # Report vulnerabilities to the Snyk dashboard
                       snyk container monitor ${args.join(' ')}
                       snyk container sbom --format=${sbom_format} oci-archive:image.oci.tar > './snyk-sbom.${sbom_ext}'
