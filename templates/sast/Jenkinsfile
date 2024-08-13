@@ -168,6 +168,7 @@ pipeline {
                   withEnv(env) {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
+                        snyk --version
                         # Report vulnerabilities to the Snyk dashboard
                         snyk monitor ${args.join(' ')}
                         # Report detected vulnerabilities to stdout and raise an error if
