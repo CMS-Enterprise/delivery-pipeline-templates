@@ -62,6 +62,8 @@ pipeline {
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
     string(name: 'package_file', defaultValue: "${default_package_file ?: ''}", description: 'The name of the package file for Snyk to test.')
     string(name: 'package_manager', defaultValue: "${default_package_manager ?: ''}", description: 'The name of the package manager for Snyk to use to test.')
+    booleanParam(name: 'enable_all_projects', defaultValue: "false", description: 'Enable Snyk to test code statically.')
+    booleanParam(name: 'enable_maven_aggregate_projects', defaultValue: "false", description: 'Enable Snyk to test code statically.')
   }
 
   agent {
@@ -143,9 +145,19 @@ pipeline {
                 // When Snyk reports findings it uses the filename as the "target" in the dashboard
                 def args = [
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
-                  "--project-name=${params.snyk_project_name}",
                   "--target-reference=${params.git_branch}"
                 ]
+                // Custom project names conflicts with --all-projects and --maven-aggregate-projects
+                if (!params.enable_all_projects && !params.enable_maven_aggregate_projects) {
+                  args.add("--project-name=${params.snyk_project_name}")
+                }
+                else if (params.enable_all_projects) {
+                  args.add("--all-projects")
+                }
+                else if (params.enable_maven_aggregate_projects) {
+                  args.add("--maven-aggregate-projects")
+                }
+
                 if (params.package_file) {
                   args.add("--file=${params.package_file}")
                 }
