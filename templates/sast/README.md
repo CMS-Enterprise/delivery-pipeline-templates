@@ -19,6 +19,8 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | git_commit                     | X        |          | The commit hash or branch name to checkout when running the SAST scan.                                                                                   |                                           |
 | git_branch                     | X        |          | The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch). |                                           |
 | git_change_id                  | X        |          | (Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).                                              |                                           |
+| build_retention_days             |      X    | X        | The number of days to retain build logs and artifacts.                                                                                                | 90               |
+| build_retention_count            |       X   | X        | The number of builds to retain.                                                                                                                       | 1000             |
 
 ### Optional Feature: Snyk Test
 | Parameter Name                 | Pipeline | Template | Description                                                                                                                                              | Default Value                             |
@@ -32,8 +34,9 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).        | high                                                                | 
 | package_file | X        | X        | (Optional) The name of the package file for Snyk to test. |
 | package_manager | X        | X        | (Optional) The name of the package manager for Snyk to test. |
-| build_retention_days             |      X    | X        | The number of days to retain build logs and artifacts.                                                                                                | 90               |
-| build_retention_count            |       X   | X        | The number of builds to retain.                                                                                                                       | 1000             |
+| enable_all_projects | X        |         | Toggle this to enable --all-projects. | False |
+| enable_maven_aggregate_project | X        |        | Toggle this to enable flag --maven-aggregate-project. | False |
+
 
 # SonarQube Setup
 
