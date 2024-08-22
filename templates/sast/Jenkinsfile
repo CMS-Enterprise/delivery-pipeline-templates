@@ -171,6 +171,7 @@ pipeline {
                   withEnv(env) {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       sh """
+                        cd sematrix-api-parent
                         snyk --version
                         # Report vulnerabilities to the Snyk dashboard
                         snyk monitor ${args.join(' ')}
