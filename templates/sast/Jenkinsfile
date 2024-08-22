@@ -56,14 +56,12 @@ pipeline {
   
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
     string(name: 'snyk_image_tag', defaultValue: "${default_snyk_image_tag ?: 'alpine'}", description: 'Edit the Snyk Image Tag to reflect the project language.')
-    string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
+    string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: ''}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'snyk_additional_arguments', defaultValue: "${default_snyk_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the snyk test.')
     string(name: 'snyk_additional_env', defaultValue: "${default_snyk_additional_env ?: ''}", description: 'A JSON serialized array of additional environment variables to pass to the snyk test.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
     string(name: 'package_file', defaultValue: "${default_package_file ?: ''}", description: 'The name of the package file for Snyk to test.')
     string(name: 'package_manager', defaultValue: "${default_package_manager ?: ''}", description: 'The name of the package manager for Snyk to use to test.')
-    booleanParam(name: 'enable_all_projects', defaultValue: "false", description: 'Enable Snyk to test code statically.')
-    booleanParam(name: 'enable_maven_aggregate_projects', defaultValue: "false", description: 'Enable Snyk to test code statically.')
   }
 
   agent {
@@ -147,17 +145,10 @@ pipeline {
                   "--severity-threshold=${params.vulnerability_severity_threshold}",
                   "--target-reference=${params.git_branch}"
                 ]
-                // Custom project names conflicts with --all-projects and --maven-aggregate-projects
-                if (!params.enable_all_projects && !params.enable_maven_aggregate_projects) {
+                // Custom project names conflicts with --all-projects and --maven-aggregate-projects remove the project name field if using these flags
+                if (params.snyk_project_name) {
                   args.add("--project-name=${params.snyk_project_name}")
                 }
-                else if (params.enable_all_projects) {
-                  args.add("--all-projects")
-                }
-                else if (params.enable_maven_aggregate_projects) {
-                  args.add("--maven-aggregate-projects")
-                }
-
                 if (params.package_file) {
                   args.add("--file=${params.package_file}")
                 }

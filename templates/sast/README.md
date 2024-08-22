@@ -34,8 +34,6 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).        | high                                                                | 
 | package_file | X        | X        | (Optional) The name of the package file for Snyk to test. |
 | package_manager | X        | X        | (Optional) The name of the package manager for Snyk to test. |
-| enable_all_projects | X        |         | Toggle this to enable --all-projects. | False |
-| enable_maven_aggregate_project | X        |        | Toggle this to enable flag --maven-aggregate-project. | False |
 
 
 # SonarQube Setup
