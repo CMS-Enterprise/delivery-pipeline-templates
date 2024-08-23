@@ -191,7 +191,7 @@ pipeline {
 
                 // No matter what, make sure the artifacts are archived
                 } finally {
-                  archiveArtifacts artifacts: 'snyk-test-vulnerabilities.json', allowEmptyArchive: true
+                  archiveArtifacts artifacts: "${params.snyk_source_path}/snyk-test-vulnerabilities.json", allowEmptyArchive: true
                 }
               } // end script block
             } // end  container snyk
