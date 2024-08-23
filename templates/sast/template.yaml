@@ -7,7 +7,7 @@ parameters:
   - name: sonarqube_token
     displayName: SonarQube Token
     type: credentials
-  - name: default_source_path
+  - name: default_sonarqube_source_path
     displayName: SonarQube Source Path
     description: "The relative path of the source code to scan for SonarQube."
     type: string
@@ -48,14 +48,19 @@ parameters:
     description: "The name of the Snyk project to associate the container image scan with."
     type: string
     defaultValue: "my-app"
+  - name: default_snyk_source_path
+    displayName: Snyk Source Path
+    description: "The relative path of the source code to scan for Snyk."
+    type: string
+    defaultValue: "."
   - name: default_snyk_additional_arguments
     displayName: Snyk Additional Arguments
-    description: "A JSON serialized array of additional arguments to pass to the snyk."
+    description: "A JSON serialized array of additional arguments to pass to the Snyk."
     type: string
     defaultValue: "[]"
   - name: default_snyk_additional_env
     displayName: Snyk Additional Environment Variables
-    description: "A JSON serialized array of additional environment variables to pass to the snyk."
+    description: "A JSON serialized array of additional environment variables to pass to the Snyk."
   - name: default_vulnerability_severity_threshold
     displayName: Vulnerability Severity Threshold
     description: "The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical)."
