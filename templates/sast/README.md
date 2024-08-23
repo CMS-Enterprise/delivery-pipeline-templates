@@ -11,7 +11,7 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | sonarqube_url                  | X        | X        | The URL of the SonarQube server to use when running the SAST scan.                                                                                       | https://sonarqube.cloud.cms.gov           |
 | sonarqube_project_key          | X        | X        | The SonarQube project key to use when reporting issues.                                                                                                  |                                           |
 | sonarqube_additional_arguments | X        | X        | A JSON serialized array of additional arguments to pass to the SonarQube scanner.                                                                        | []                                        |
-| sonarqube_source_path                    | X        | X        | The relative path of the source code to scan for Sonarqube.                                                                                                            | .                                         |
+| sonarqube_source_path          | X        | X        | The relative path of the source code to scan for Sonarqube.                                                                                              | .                                         |
 | pre_scan_build_command         | X        | X        | A command to run before scanning the source code. Useful if the SAST tool depends on dependencies being installed, or source code being compiled.        |                                           |
 | pre_scan_build_image           | X        | X        | The container image to use when running the pre-scan build command.                                                                                      | artifactory.cloud.cms.gov/docker/alpine:3 |
 | git_repository                 | X        |          | The URL of the Git repository to clone when running the SAST scan.                                                                                       |                                           |
@@ -19,22 +19,24 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | git_commit                     | X        |          | The commit hash or branch name to checkout when running the SAST scan.                                                                                   |                                           |
 | git_branch                     | X        |          | The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch). |                                           |
 | git_change_id                  | X        |          | (Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).                                              |                                           |
-| build_retention_days             |      X    | X        | The number of days to retain build logs and artifacts.                                                                                                | 90               |
-| build_retention_count            |       X   | X        | The number of builds to retain.                                                                                                                       | 1000             |
+| build_retention_days           | X        | X        | The number of days to retain build logs and artifacts.                                                                                                   | 90                                        |
+| build_retention_count          | X        | X        | The number of builds to retain.                                                                                                                          | 1000                                      |
+
 
 ### Optional Feature: Snyk Test
-| Parameter Name                 | Pipeline | Template | Description                                                                                                                                              | Default Value                             |
-|--------------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
-| enable_snyk_test | X        | X        | Toggle this to enable snyk test. | False |
-| snyk_token | X        | X        | Credentials for your snyk organization to enable snyk metrics to appear in the dashboard. |
-| snyk_image_tag | X        | X        | The snyk container image tag relevant to your project's language. (python, golang-1.22, php, node, etc.) | alpine |
-| snyk_project_name | X        | X        | The snyk project name to appear in the snyk dashboard | my-app |
-| snyk_source_path                    | X        | X        | The relative path of the source code to scan for Snyk.                                                                                                            | .                                         |
-| snyk_additional_arguments | X        | X        | A JSON serialized array of additional arguments to pass to the Snyk test. | []                                              |
-| snyk_additional_env | X        | X        | A JSON serialized array of additional environment variables to pass to the Snyk test.                                          | []                                | 
-| vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).        | high                                                                | 
-| package_file | X        | X        | (Optional) The name of the package file for Snyk to test. |
-| package_manager | X        | X        | (Optional) The name of the package manager for Snyk to test. |
+| Parameter Name                   | Pipeline | Template | Description                                                                                                                          | Default Value |
+|----------------------------------|----------|----------|--------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| enable_snyk_test                 | X        | X        | Toggle this to enable snyk test.                                                                                                     | False         |
+| snyk_token                       | X        | X        | Credentials for your snyk organization to enable snyk metrics to appear in the dashboard.                                            |               |
+| snyk_image_tag                   | X        | X        | The snyk container image tag relevant to your project's language. (python, golang-1.22, php, node, etc.)                             | alpine        |
+| snyk_project_name                | X        | X        | The snyk project name to appear in the snyk dashboard                                                                                | my-app        |
+| snyk_source_path                 | X        | X        | The relative path of the source code to scan for Snyk.                                                                               | .             |
+| snyk_additional_arguments        | X        | X        | A JSON serialized array of additional arguments to pass to the Snyk test.                                                            | []            |
+| snyk_additional_env              | X        | X        | A JSON serialized array of additional environment variables to pass to the Snyk test.                                                | []            |
+| vulnerability_severity_threshold | X        | X        | The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical). | high          |
+| package_file                     | X        | X        | (Optional) The name of the package file for Snyk to test.                                                                            |               |
+| package_manager                  | X        | X        | (Optional) The name of the package manager for Snyk to test.                                                                         |               |
+
 
 
 # SonarQube Setup
@@ -76,6 +78,14 @@ This menu allows you to view the analysis results for different branches.
 ## SonarQube Branch Tracking
 
 SonarQube uses a "clean as you code" approach where any issues detected in your `main` or "default" branch will not prevent future pipelines from continuing, however, if you introduce new issues in a branch the SAST scan will fail and the pipeline will not continue. You can then either fix the issues prior to merging the branch, or you can resolve the issues in the SonarQube project dashboard including a reason why the issues can safely be ignored.
+
+
+# Snyk Setup
+
+For more information on how to set up Snyk reference the following documents:
+1. [Snyk Startup Guide](https://confluenceent.cms.gov/display/BH/Snyk+Guide)
+2. [Snyk Dashboard Management](https://confluenceent.cms.gov/display/BH/Snyk%3A+Dashboard+Management)
+3. [Sast Scanning for Snyk](https://confluenceent.cms.gov/display/BH/Snyk%3A+SAST+Scanning)
 
 # Usage
 
