@@ -24,6 +24,7 @@ pipeline {
 
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
+    string(name: 'clamscan_size_limit', defaultValue: "${default_clamscan_size_limit ?: '500M'}", description: "clamscan file & scan size limits")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "${default_continue_on_image_scan_failure ?: false}", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
   }
@@ -255,14 +256,28 @@ pipeline {
                     echo "Freshclam exited with code ${freshclamExitCode}"
                     error 'Failed to update ClamAV database.'
                   }
+
+                  def args = [
+                    '--infected',
+                    '--recursive',
+                    '--scan-archive=yes',
+                    "--max-filesize=${params.clamscan_size_limit}",
+                    "--max-scansize=${params.clamscan_size_limit}",
+                    "--log=virus-report.clamav.txt",
+                    "--alert-exceeds-max",
+                    "--stdout",
+                    "./image-raw"
+                  ]
+
+
                   echo "ClamAV database updated successfully, running clamscan"
                   sh """
-                    # Note: while clamscan can scan a tar files contents recursively, the
-                    # max-filesize and max-scansize limit still apply to the tar file itself. So if
-                    # the image tar files is scanned unextracted it will be a no-op if the file is
-                    # larger than the max-filesize limit.
-                    clamscan --infected --recursive --scan-archive=yes --max-filesize=500M --max-scansize=500M \
-                             --log virus-report.clamav.txt --stdout ./image-raw
+                    # Note: while clamscan can scan a tar files contents recursively, the tar or zip files
+                    # in the image are still subject to the file / scan size limits BEFORE the untar / unzip.
+                    # If a file exists that exceeds the limit, the command will exit code 1, causing the job
+                    # to fail. Use the clamscan_size_limit parameter to increase as needed.
+
+                    clamscan ${args.join(' ')}
 
                     chmod a+r virus-report.clamav.txt
                   """
