@@ -6,17 +6,17 @@ This repository contains a Jenkins [Pipeline Template Catalog](https://docs.clou
 
 The following pipeline templates are available in this catalog:
 
-* [SAST Scan](./templates/sast/README.md) - Runs Static Application Security Testing (SAST) scans on the application code (using SonarQube).
-* [Delivery Pipeline](./templates/delivery/README.md) - Runs container build and scan steps and publishes the resulting container image to the CMS container registry (Artifactory).
-* [GitOps Deployment](./templates/deployment/README.md) - Runs steps to deploy the container image to a Kubernetes cluster by updating the image tag in Kubernetes manifests.
+* [SAST Scan](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/sast/README.md) - Runs Static Application Security Testing (SAST) scans on the application code (using SonarQube).
+* [Delivery Pipeline](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/delivery/README.md) - Runs container build and scan steps and publishes the resulting container image to the CMS container registry (Artifactory).
+* [GitOps Deployment](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/deployment/README.md) - Runs steps to deploy the container image to a Kubernetes cluster by updating the image tag in Kubernetes manifests.
 
 # Architecture
 
 The pipeline templates in this catalog are designed to be used by invoking them from another Jenkins Pipeline that will typically be a Multi-Branch Pipeline that runs when the source code of a project changes, and/or can run with different configurations for different branches.
 
-![](./static/images/Jenkins%20Delivery%20Pipelines%20-%20Architecture.png)
+![](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/static/images/Jenkins%20Delivery%20Pipelines%20-%20Architecture.png)
 
-![](./static/images/Jenkins%20Delivery%20Pipelines%20-%20Sequence.png)
+![](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/static/images/Jenkins%20Delivery%20Pipelines%20-%20Sequence.png)
 
 ## Tools
 
@@ -28,7 +28,7 @@ The pipeline templates in this catalog are designed to be used by invoking them 
 | SAST       | Scan Source        | SonarQube                                            |
 | Delivery   | Build Image        | Kaniko                                               |
 | Delivery   | Vulnerability Scan | Snyk                                                 |
-| Delivery   | Malware Scan       | ClamAV (to be replaced by TrendMicro when available) |
+| Delivery   | Malware Scan       | ClamAV                                               |
 | Delivery   | Publish Image      | Crane -> Artifactory                                 |
 | Deployment | Update Image Tags  | Kustomize                                            |
 | Deployment | Commit & Push      | Git -> ArgoCD                                        |
@@ -49,11 +49,11 @@ To use the Pipeline Templates in this catalog, the [CloudBees Pipeline: Template
 
 From the Jenkins dashboard, select "Pipeline Template Catalogs" and then click the "Add catalog" link under that.
 
-![The Pipeline Template Catalogs Menu](./static/images/Pipeline%20Template%20Catalogs%20-%20Add.png)
+![The Pipeline Template Catalogs Menu](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/static/images/Pipeline%20Template%20Catalogs%20-%20Add.png)
 
 Select the Branch or Tag that you want to utilize. Selecting the `main` branch will give you the latest version of the templates, however it could lead to breaking changes being automatically introduced during a future update. Selecting a "stable" version branch such as `v1` will give you a stable version of the templates that will not introduce breaking changes, but will be updated with bug and security fixes. Selecting a specific version tag such as `v1.0.0` will give you a specific version of the templates that will not be updated.
 
-![New Pipeline Catalog Source Control Options](./static/images/Catalog%20Source%20Control%20Options.png)
+![New Pipeline Catalog Source Control Options](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/static/images/Catalog%20Source%20Control%20Options.png)
 
 Enter the URL of this repository (`https://github.com/CMS-Enterprise/delivery-pipeline-templates.git`) in the "Catalog source code repository location" section, and click Save.
 
