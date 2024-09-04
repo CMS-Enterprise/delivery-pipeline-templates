@@ -2,6 +2,8 @@
 
 This repository contains a Jenkins [Pipeline Template Catalog](https://docs.cloudbees.com/docs/cloudbees-ci/latest/pipeline-templates-user-guide/) for Application Development Organizations to use to build, scan, publish, and deploy containerized applications at CMS.
 
+This resource was co developed with other IUSG cloud engineering contractors such as Leidos and Samtek.
+
 # Pipeline Templates
 
 The following pipeline templates are available in this catalog:
