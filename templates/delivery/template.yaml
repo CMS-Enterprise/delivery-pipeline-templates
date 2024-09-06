@@ -98,3 +98,7 @@ parameters:
     description: "The number of builds to retain."
     type: string
     defaultValue: "1000"
+  - name: default_clamscan_size_limit
+    displayName: Clamscan file & scan size limits
+    description: "The limit set for both the filesize_limit and scansize_limit for the clamscan cli"
+    defaultValue: "500M"
