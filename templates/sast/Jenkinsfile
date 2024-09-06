@@ -172,8 +172,7 @@ pipeline {
                   withEnv(env) {
                     withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
                       dir("${params.snyk_source_path}") {
-                        sh """  
-                          #!/bin/sh
+                        sh """#!/bin/sh
                           snyk --version
                           # Report vulnerabilities to the Snyk dashboard
                           snyk monitor ${args.join(' ')}
