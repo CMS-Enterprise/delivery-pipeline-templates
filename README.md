@@ -22,19 +22,18 @@ The pipeline templates in this catalog are designed to be used by invoking them 
 
 ## Tools
 
-| Stage      | Step                        | Tool                                            |
-|------------|-----------------------------|-------------------------------------------------|
-| Build      | Build                       | Application Specific (e.g. Maven, npm, pip)     |
-| Test       | Unit Test                   | Application Specific (e.g. JUnit, Jest, Pytest) |
-| Test       | Lint                        | Application Specific (e.g. ESLint, Pylint)      |
-| SAST       | Scan Source                 | SonarQube                                       |
-| SAST       | Scan Dependencies(Optional) | Snyk                                            |
-| Delivery   | Build Image                 | Kaniko                                          |
-| Delivery   | Vulnerability Scan          | Snyk                                            |
-| Delivery   | Malware Scan                | ClamAV                                          |
-| Delivery   | Publish Image               | Crane -> Artifactory                            |
-| Deployment | Update Image Tags           | Kustomize                                       |
-| Deployment | Commit & Push               | Git -> ArgoCD                                   |
+| Stage      | Step               | Tool                                                 |
+|------------|--------------------|------------------------------------------------------|
+| Build      | Build              | Application Specific (e.g. Maven, npm, pip)          |
+| Test       | Unit Test          | Application Specific (e.g. JUnit, Jest, Pytest)      |
+| Test       | Lint               | Application Specific (e.g. ESLint, Pylint)           |
+| SAST       | Scan Source        | SonarQube & Snyk (Dependency Vulnerabilities)        |
+| Delivery   | Build Image        | BuildKit (Kubernetes Driver)                         |
+| Delivery   | Vulnerability Scan | Snyk Container Scan                                  |
+| Delivery   | Malware Scan       | ClamAV                                               |
+| Delivery   | Publish Image      | Skopeo -> Artifactory                                |
+| Deployment | Update Image Tags  | Kustomize                                            |
+| Deployment | Commit & Push      | Git -> ArgoCD                                        |
 
 # Delivery & Deployment Model
 
