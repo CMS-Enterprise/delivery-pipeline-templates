@@ -35,6 +35,7 @@ The Delivery Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/b
 | build_retention_days             |          | X        | The number of days to retain build logs and artifacts.                                                                                                | 90               |
 | build_retention_count            |          | X        | The number of builds to retain.                                                                                                                       | 1000             |
 | clamscan_size_limit              | X        | X        | The limit set for both the filesize_limit and scansize_limit for the clamscan cli                                                                     | 500M             |
+| clamscan_oci_tar                 | X        | X        | Set Clamscan to scan the OCI tar archive instead of the raw filesystem. May need to increase scansize limitations                                     | false            |
 
 
 For general usage see the [CMS ADO Pipeline Catalog README](../../README.md).

@@ -24,8 +24,9 @@ pipeline {
 
     string(name: 'snyk_project_name', defaultValue: "${default_snyk_project_name ?: 'my-app'}", description: 'The name of the Snyk project to associate the container image scan with.')
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
-    string(name: 'clamscan_size_limit', defaultValue: "${default_clamscan_size_limit ?: '500M'}", description: "clamscan file & scan size limits")
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
+    booleanParam(name: 'clamscan_oci_tar', defaultValue: false, description: 'if enabled, clamscan will scan the entire tar archive rather than a flat file system which could improve performance')
+    string(name: 'clamscan_size_limit', defaultValue: "${default_clamscan_size_limit ?: '500M'}", description: "clamscan file & scan size limits")
     booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "${default_continue_on_image_scan_failure ?: false}", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
   }
 
@@ -141,8 +142,14 @@ pipeline {
                 "--file=${params.dockerfile}",
                 "--tag=${params.image}:${params.tag}",
                 "--output type=oci,dest=./image.oci.tar",
-                "--output type=local,dest=./image-raw"
               ]
+
+              if (params.clamscan_oci_tar)  {
+                echo "Option 'clamscan_oci_tar' set to true. Only building OCI tar"
+              } else {
+                echo "Option 'clamscan_oci_tar' set to false. Adding build output of raw image filesystem"
+                arguments.add("--output type=local,dest=./image-raw")
+              }
 
               if (params.build_target) {
                 echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
@@ -266,9 +273,15 @@ pipeline {
                     "--log=virus-report.clamav.txt",
                     "--alert-exceeds-max",
                     "--stdout",
-                    "./image-raw"
                   ]
 
+                  if (params.clamscan_oci_tar)  {
+                    echo "Option 'clamscan_oci_tar' set to true. Scanning OCI tar instead of raw image filesystem"
+                    args.add("./image.oci.tar")
+                  } else {
+                    echo "Option 'clamscan_oci_tar' set to false. Scanning raw image filesystem"
+                    args.add("./image-raw")
+                  }
 
                   echo "ClamAV database updated successfully, running clamscan"
                   sh """
