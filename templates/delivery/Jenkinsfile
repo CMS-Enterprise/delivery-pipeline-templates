@@ -264,12 +264,16 @@ pipeline {
                     error 'Failed to update ClamAV database.'
                   }
 
+                  // the defaults for clamav like max-scantime are designed to protect
+                  // against DoS attacks. `man clamscan` for details
                   def args = [
                     '--infected',
                     '--recursive',
                     '--scan-archive=yes',
                     "--max-filesize=${params.clamscan_size_limit}",
                     "--max-scansize=${params.clamscan_size_limit}",
+                    "--max-files=0", // Disabled the default max files (10,000)
+                    "--max-scantime=0", // Disabled the default scan time (2min)
                     "--log=virus-report.clamav.txt",
                     "--alert-exceeds-max",
                     "--stdout",
