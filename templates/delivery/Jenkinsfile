@@ -26,7 +26,8 @@ pipeline {
     string(name: 'vulnerability_severity_threshold', defaultValue: "${default_vulnerability_severity_threshold ?: 'high'}", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
     booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
     booleanParam(name: 'clamscan_oci_tar', defaultValue: false, description: 'if enabled, clamscan will scan the entire tar archive rather than a flat file system which could improve performance')
-    string(name: 'clamscan_size_limit', defaultValue: "${default_clamscan_size_limit ?: '500M'}", description: "clamscan file & scan size limits")
+    string(name: 'clamscan_filesize_limit', defaultValue: "${default_clamscan_size_limit ?: '500M'}", description: "clamscan filesize limits")
+    string(name: 'clamscan_size_limit', defaultValue: "${default_clamscan_size_limit ?: '1G'}", description: "clamscan scan size limits")
     booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "${default_continue_on_image_scan_failure ?: false}", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
   }
 
@@ -270,8 +271,8 @@ pipeline {
                     '--infected',
                     '--recursive',
                     '--scan-archive=yes',
-                    "--max-filesize=${params.clamscan_size_limit}",
-                    "--max-scansize=${params.clamscan_size_limit}",
+                    "--max-filesize=${params.clamscan_filesize_limit}", // Max size 2G
+                    "--max-scansize=${params.clamscan_size_limit}", //max size 10G
                     "--max-files=0", // Disabled the default max files (10,000)
                     "--max-scantime=0", // Disabled the default scan time (2min)
                     "--log=virus-report.clamav.txt",
