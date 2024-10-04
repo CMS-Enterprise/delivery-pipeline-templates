@@ -38,7 +38,7 @@ pipeline {
               case 'generic':
                 withCredentials([string(credentialsId: "${params.jenkins_credential_id}", variable: 'SECRET')]) {
                   sh """
-                  kubectl create secret generic "${params.jenkins_credential_id}" -n "cbc-${params.jenkins_controller_name}" \
+                  kubectl create secret generic "${params.secret_name}" -n "cbc-${params.jenkins_controller_name}" \
                     --from-literal="${params.generic_key}=\$SECRET" \
                   """
                 }
