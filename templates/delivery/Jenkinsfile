@@ -54,7 +54,7 @@ pipeline {
             limits:
               memory: "${params.build_memory_limit}"
         - name: clamav
-          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          image: artifactory.cloud.cms.gov/docker/clamav/clamav:1.4
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
