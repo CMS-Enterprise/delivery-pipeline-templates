@@ -28,7 +28,7 @@ parameters:
     displayName: Sonar Scanner Java Opts
     description: "Java options for the SonarQube scanner."
     type: string
-    defaultValue: "-Xmx512m"
+    defaultValue: "-Xmx1g"
   - name: default_enable_snyk_test
     displayName: Enable Snyk Test
     description: "When enabled, the pipeline will run Sonarqube and Snyk Test in parallel."

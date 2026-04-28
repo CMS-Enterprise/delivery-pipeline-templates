@@ -5,13 +5,13 @@ def containerListYaml(snyk_image_tag) {
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
     - name: sonarqube
-      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
+      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:12.1.0.3225_8.0.1
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
       resources:
         limits:
-          memory: 3Gi
-          cpu: 1500m""");
+          memory: 4Gi
+          cpu: 2000m""");
 
   if (params.enable_snyk_test) {
     containerListYaml += reindent(10, """
@@ -208,7 +208,7 @@ pipeline {
                       #! /bin/sh -e
                       set +x
                       curl --location '${projectBranchesUrl}' \
-                        --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
+                        --header "Authorization: Bearer \${SONAR_TOKEN}" \\
                         --no-progress-meter -f
                     """,
                     returnStdout: true
@@ -217,7 +217,7 @@ pipeline {
                   def defaultBranch =
                     new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
                   def args = [
-                    '-Dsonar.login=$SONAR_TOKEN',
+                    '-Dsonar.token=$SONAR_TOKEN',
                     "-Dsonar.host.url=${params.sonarqube_url}",
                     "-Dsonar.projectKey=${params.sonarqube_project_key}",
                     "-Dsonar.sources=${params.sonarqube_source_path}",
