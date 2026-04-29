@@ -302,13 +302,18 @@ pipeline {
                     "-Dsonar.dependencyCheck.jsonReportPath=${env.WORKSPACE}/dependency-check-report.json",
                     "-Dsonar.dependencyCheck.htmlReportPath=${env.WORKSPACE}/dependency-check-report.html"
                   ]
-                  if (params.git_branch == defaultBranch) {
-                    echo "Performing analysis for the default branch: ${defaultBranch}"
-                    args.add("-Dsonar.branch.name=${params.git_branch}")
-                  } else {
-                    echo "Performing analysis for a feature branch: ${params.git_branch} (does not match default branch ${defaultBranch})"
+                  if (params.git_change_id) {
+                    echo "Performing pull request analysis for change ${params.git_change_id} on branch ${params.git_branch ?: params.git_commit}"
                     args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
-                    args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
+                    args.add("-Dsonar.pullrequest.key=${params.git_change_id}")
+                  } else {
+                    def branchName = params.git_branch ?: defaultBranch
+                    if (branchName == defaultBranch) {
+                      echo "Performing analysis for the default branch: ${defaultBranch}"
+                    } else {
+                      echo "Performing branch analysis for ${branchName} (default branch is ${defaultBranch})"
+                    }
+                    args.add("-Dsonar.branch.name=${branchName}")
                   }
 
                   if (params.sonarqube_additional_arguments) {
