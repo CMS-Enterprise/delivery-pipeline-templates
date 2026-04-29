@@ -180,7 +180,10 @@ pipeline {
             }
 
             try {
-              sh "dependency-check.sh ${args.collect { \"'${it.toString().replace("'", "'\\''")}\" }.join(' ')}"
+              def quotedArgs = args.collect { arg ->
+                "'" + arg.toString().replace("'", "'\"'\"'") + "'"
+              }.join(' ')
+              sh "dependency-check.sh ${quotedArgs}"
             } finally {
               archiveArtifacts artifacts: 'dependency-check-report.json,dependency-check-report.html', allowEmptyArchive: true
             }
