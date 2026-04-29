@@ -93,13 +93,25 @@ pipeline {
               userRemoteConfigs: [[
                 url: "${params.git_repository}",
                 credentialsId: "${params.git_credentials}",
-                refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+                refspec: "+refs/heads/*:refs/remotes/origin/* +${params.git_commit}:refs/remotes/origin/HEAD"
               ]],
               extensions: [
-                cloneOption(shallow: true, honorRefspec: true, noTags: true),
-                submodule(recursiveSubmodules: true, shallow: true)
+                cloneOption(shallow: false, honorRefspec: true, noTags: true),
+                submodule(recursiveSubmodules: true, shallow: false)
               ]
             )
+
+            sh '''#!/bin/sh
+              set -e
+              # Ensure SCM metadata is complete for SonarQube blame/auto-assignment features.
+              if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+                echo "Repository is shallow. Fetching full history..."
+                git fetch --unshallow origin || git fetch --depth=2147483647 origin
+              fi
+
+              # Ensure all branch refs are available locally for PR and blame analysis.
+              git fetch --tags origin +refs/heads/*:refs/remotes/origin/*
+            '''
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               def filters = []
