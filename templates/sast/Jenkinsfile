@@ -5,7 +5,7 @@ def containerListYaml(snyk_image_tag) {
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
     - name: dependency-check
-      image: artifactory.cloud.cms.gov/docker/owasp/dependency-check:12.1.0
+      image: artifactory.cloud.cms.gov/docker/owasp/dependency-check-action:latest
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
     - name: sonarqube
@@ -183,9 +183,24 @@ pipeline {
               def quotedArgs = args.collect { arg ->
                 "'" + arg.toString().replace("'", "'\"'\"'") + "'"
               }.join(' ')
-              sh "dependency-check.sh ${quotedArgs}"
+              sh """#!/bin/sh
+                set -e
+                if command -v dependency-check.sh >/dev/null 2>&1; then
+                  DEPENDENCY_CHECK_BIN=\"\$(command -v dependency-check.sh)\"
+                elif [ -x /usr/share/dependency-check/bin/dependency-check.sh ]; then
+                  DEPENDENCY_CHECK_BIN=/usr/share/dependency-check/bin/dependency-check.sh
+                elif [ -x /usr/share/dependency-check/dependency-check.sh ]; then
+                  DEPENDENCY_CHECK_BIN=/usr/share/dependency-check/dependency-check.sh
+                else
+                  echo 'Unable to locate dependency-check.sh in the dependency-check container.' >&2
+                  echo 'Checked PATH, /usr/share/dependency-check/bin/dependency-check.sh, and /usr/share/dependency-check/dependency-check.sh.' >&2
+                  exit 127
+                fi
+
+                \"\$DEPENDENCY_CHECK_BIN\" ${quotedArgs}
+              """
             } finally {
-              archiveArtifacts artifacts: 'dependency-check-report.json,dependency-check-report.html', allowEmptyArchive: true
+              archiveArtifacts artifacts: 'dependency-check-report.*', allowEmptyArchive: true
             }
           }
         }
