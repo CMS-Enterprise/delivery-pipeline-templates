@@ -117,8 +117,6 @@ pipeline {
                 git fetch --unshallow origin || git fetch --depth=2147483647 origin
               fi
 
-              # Ensure all branch refs are available locally for PR and blame analysis.
-              git fetch --tags origin +refs/heads/*:refs/remotes/origin/*
             '''
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
