@@ -266,7 +266,10 @@ pipeline {
 
                 // No matter what, make sure the artifacts are archived
                 } finally {
-                  archiveArtifacts artifacts: "${params.snyk_source_path}/snyk-test-vulnerabilities.json", allowEmptyArchive: true
+                  def snykReportArtifactPath = params.snyk_source_path in ['.', './']
+                    ? 'snyk-test-vulnerabilities.json'
+                    : "${params.snyk_source_path}/snyk-test-vulnerabilities.json"
+                  archiveArtifacts artifacts: snykReportArtifactPath, allowEmptyArchive: true
                 }
               } // end script block
             } // end  container snyk
