@@ -103,6 +103,11 @@ pipeline {
 
             sh '''#!/bin/sh
               set -e
+              if ! command -v git >/dev/null 2>&1; then
+                echo "Git not found in fetch container. Installing git..."
+                apk add --no-cache git
+              fi
+
               # Ensure SCM metadata is complete for SonarQube blame/auto-assignment features.
               if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
                 echo "Repository is shallow. Fetching full history..."
