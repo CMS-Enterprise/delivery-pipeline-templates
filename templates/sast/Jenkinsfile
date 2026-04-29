@@ -4,6 +4,10 @@ def containerListYaml(snyk_image_tag) {
       image: artifactory.cloud.cms.gov/docker/alpine:3
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
+    - name: dependency-check
+      image: artifactory.cloud.cms.gov/docker/owasp/dependency-check:12.1.0
+      imagePullPolicy: Always
+      command: ['tail', '-f', '/dev/null']
     - name: sonarqube
       image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:12.1.0.3225_8.0.1
       imagePullPolicy: Always
@@ -53,6 +57,9 @@ pipeline {
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.')
     string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
+    booleanParam(name: 'enable_dependency_check', defaultValue: "${default_enable_dependency_check ?: true}", description: 'Run OWASP Dependency-Check before SonarQube so Sonar can ingest the generated report.')
+    string(name: 'dependency_check_source_path', defaultValue: "${default_dependency_check_source_path ?: '.'}", description: 'The relative path of the source code to scan with OWASP Dependency-Check.')
+    string(name: 'dependency_check_additional_arguments', defaultValue: "${default_dependency_check_additional_arguments ?: '[]'}", description: 'A JSON serialized array of additional arguments to pass to OWASP Dependency-Check.')
   
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
     string(name: 'snyk_image_tag', defaultValue: "${default_snyk_image_tag ?: 'alpine'}", description: 'Edit the Snyk Image Tag to reflect the project language.')
@@ -149,6 +156,38 @@ pipeline {
         }
       }
     }
+    stage("Dependency-Check") {
+      when {
+        expression { params.enable_dependency_check }
+      }
+      steps {
+        container('dependency-check') {
+          script {
+            def args = [
+              '--scan', params.dependency_check_source_path,
+              '--project', params.sonarqube_project_key ?: 'dependency-check',
+              '--format', 'JSON',
+              '--format', 'HTML',
+              '--out', env.WORKSPACE,
+              '--prettyPrint'
+            ]
+
+            if (params.dependency_check_additional_arguments) {
+              def argArray = new groovy.json.JsonSlurper().parseText(params.dependency_check_additional_arguments)
+              if (argArray.size() > 0) {
+                args.addAll(argArray)
+              }
+            }
+
+            try {
+              sh "dependency-check.sh ${args.collect { \"'${it.toString().replace("'", "'\\''")}\" }.join(' ')}"
+            } finally {
+              archiveArtifacts artifacts: 'dependency-check-report.json,dependency-check-report.html', allowEmptyArchive: true
+            }
+          }
+        }
+      }
+    }
     stage("Scan Source") {
       parallel {
         stage("Snyk: Test") {
@@ -239,7 +278,11 @@ pipeline {
                     "-Dsonar.host.url=${params.sonarqube_url}",
                     "-Dsonar.projectKey=${params.sonarqube_project_key}",
                     "-Dsonar.sources=${params.sonarqube_source_path}",
-                    "-Dsonar.qualitygate.wait=true"
+                    "-Dsonar.qualitygate.wait=true",
+                    // Override the Dependency-Check plugin default (${WORKSPACE}/dependency-check-report.json)
+                    // which SonarQube treats as a relative path, producing a garbled absolute path.
+                    "-Dsonar.dependencyCheck.jsonReportPath=${env.WORKSPACE}/dependency-check-report.json",
+                    "-Dsonar.dependencyCheck.htmlReportPath=${env.WORKSPACE}/dependency-check-report.html"
                   ]
                   if (params.git_branch == defaultBranch) {
                     echo "Performing analysis for the default branch: ${defaultBranch}"
