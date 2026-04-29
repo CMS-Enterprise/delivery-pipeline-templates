@@ -108,6 +108,9 @@ pipeline {
                 apk add --no-cache git
               fi
 
+              # Allow git to operate on the workspace regardless of UID differences between containers.
+              git config --global --add safe.directory "${WORKSPACE}"
+
               # Ensure SCM metadata is complete for SonarQube blame/auto-assignment features.
               if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
                 echo "Repository is shallow. Fetching full history..."
