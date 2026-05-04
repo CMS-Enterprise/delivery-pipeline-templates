@@ -5,7 +5,10 @@ def containerListYaml() {
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
     - name: playwright
-      image: artifactory.cloud.cms.gov/docker/mcr.microsoft.com/playwright:v1.52.0-noble
+      # Node.js Playwright image — mirror mcr.microsoft.com/playwright:v1.50.0-noble into Artifactory before use.
+      # Request: https://artifactory.cloud.cms.gov/artifactory/docker/playwright/<tag>/
+      # Do NOT use playwright/java (Java SDK) or playwright/python — this suite is TypeScript/Node.js.
+      image: artifactory.cloud.cms.gov/docker/playwright:v1.50.0-noble
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
       resources:
