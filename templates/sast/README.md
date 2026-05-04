@@ -22,6 +22,8 @@ The SAST Pipeline is a [parameterized pipeline](https://www.jenkins.io/doc/book/
 | build_retention_days           | X        | X        | The number of days to retain build logs and artifacts.                                                                                                   | 90                                        |
 | build_retention_count          | X        | X        | The number of builds to retain.                                                                                                                          | 1000                                      |
 
+Additional parameter: `git_change_author` (Pipeline + Template, optional) — SonarQube username/login of the pull request author, used to auto-assign issues detected in new code during pull request analysis.
+
 
 ### Optional Feature: Snyk Test
 | Parameter Name                   | Pipeline | Template | Description                                                                                                                          | Default Value |
@@ -119,6 +121,9 @@ pipeline {
 
               if (env.CHANGE_ID) {
                 sastParameters.add(string(name: 'git_change_id', value: "${env.CHANGE_ID}"))
+                if (env.CHANGE_AUTHOR) {
+                  sastParameters.add(string(name: 'git_change_author', value: "${env.CHANGE_AUTHOR}"))
+                }
               }
 
               build(job: 'Application SAST', wait: true, propagate: true, parameters: sastParameters)
@@ -165,6 +170,9 @@ pipeline {
 
               if (env.CHANGE_ID) {
                 sastParameters.add(string(name: 'git_change_id', value: "${env.CHANGE_ID}"))
+                if (env.CHANGE_AUTHOR) {
+                  sastParameters.add(string(name: 'git_change_author', value: "${env.CHANGE_AUTHOR}"))
+                }
               }
 
               build(job: 'App SAST', wait: true, propagate: true, parameters: sastParameters)

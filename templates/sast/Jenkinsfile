@@ -42,6 +42,36 @@ def reindent(spaces, str) {
   return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
 }
 
+def sonarApiGet(sonarToken, url) {
+  return sh(
+    script: """
+      #!/bin/sh -e
+      set +x
+      curl --location '${url}' \\
+        --header "Authorization: Bearer ${sonarToken}" \\
+        --no-progress-meter -f
+    """,
+    returnStdout: true
+  ).trim()
+}
+
+def sonarApiPost(sonarToken, url, formData) {
+  def dataArgs = formData.collect { key, value ->
+    "--data-urlencode '${key}=${value.toString().replace("'", "'\\\"'\\\"'")}'"
+  }.join(' ')
+
+  return sh(
+    script: """
+      #!/bin/sh -e
+      set +x
+      curl --location --request POST '${url}' \\
+        --header "Authorization: Bearer ${sonarToken}" \\
+        --no-progress-meter -f ${dataArgs}
+    """,
+    returnStdout: true
+  ).trim()
+}
+
 pipeline {
   parameters {
     string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.')
@@ -49,6 +79,7 @@ pipeline {
     string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
     string(name: 'git_branch', defaultValue: "", description: 'The branch that the current build is for (used when reporting results for SonarQube to identify new code and associate detected issues with the branch).')
     string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
+    string(name: 'git_change_author', defaultValue: "${default_git_change_author ?: ''}", description: '(Optional) SonarQube username/login of the pull request author. When set, SonarQube issues detected in the pull request are auto-assigned to this user.')
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
@@ -281,16 +312,7 @@ pipeline {
               withCredentials([string(credentialsId: "${sonarqube_token}", variable: 'SONAR_TOKEN')]) {
                 script {
                   def projectBranchesUrl = "${params.sonarqube_url}/api/project_branches/list?project=${params.sonarqube_project_key}"
-                  def projectBranchesJson = sh(
-                    script: """
-                      #! /bin/sh -e
-                      set +x
-                      curl --location '${projectBranchesUrl}' \
-                        --header "Authorization: Bearer \${SONAR_TOKEN}" \\
-                        --no-progress-meter -f
-                    """,
-                    returnStdout: true
-                  )
+                  def projectBranchesJson = sonarApiGet(env.SONAR_TOKEN, projectBranchesUrl)
                   echo "Fetched SonarQube project branch list: ${projectBranchesJson}"
                   def defaultBranch =
                     new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
@@ -299,7 +321,7 @@ pipeline {
                     "-Dsonar.host.url=${params.sonarqube_url}",
                     "-Dsonar.projectKey=${params.sonarqube_project_key}",
                     "-Dsonar.sources=${params.sonarqube_source_path}",
-                    "-Dsonar.qualitygate.wait=true",
+                    "-Dsonar.qualitygate.wait=false",
                     // Override the Dependency-Check plugin default (${WORKSPACE}/dependency-check-report.json)
                     // which SonarQube treats as a relative path, producing a garbled absolute path.
                     "-Dsonar.dependencyCheck.jsonReportPath=${env.WORKSPACE}/dependency-check-report.json",
@@ -309,12 +331,14 @@ pipeline {
                     echo "Performing pull request analysis for change ${params.git_change_id} on branch ${params.git_branch ?: params.git_commit}"
                     args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
                     args.add("-Dsonar.pullrequest.key=${params.git_change_id}")
+                    args.add("-Dsonar.pullrequest.base=${defaultBranch}")
                   } else {
                     def branchName = params.git_branch ?: defaultBranch
                     if (branchName == defaultBranch) {
                       echo "Performing analysis for the default branch: ${defaultBranch}"
                     } else {
                       echo "Performing branch analysis for ${branchName} (default branch is ${defaultBranch})"
+                      args.add("-Dsonar.newCode.referenceBranch=${defaultBranch}")
                     }
                     args.add("-Dsonar.branch.name=${branchName}")
                   }
@@ -326,6 +350,100 @@ pipeline {
                   }
                   withEnv(["SONAR_SCANNER_OPTS=${params.sonar_scanner_java_opts}"]) {
                     sh "sonar-scanner ${args.join(' ')}"
+                  }
+
+                  def reportTaskFilePath = "${env.WORKSPACE}/.scannerwork/report-task.txt"
+                  if (!fileExists(reportTaskFilePath)) {
+                    error "SonarQube report task file not found at ${reportTaskFilePath}. Unable to evaluate quality gate results."
+                  }
+
+                  def reportTaskFile = readFile(reportTaskFilePath)
+                  def ceTaskUrlMatcher = (reportTaskFile =~ /(?m)^ceTaskUrl=(.+)$/)
+                  if (!ceTaskUrlMatcher.find()) {
+                    error "Unable to extract ceTaskUrl from ${reportTaskFilePath}."
+                  }
+                  def ceTaskUrl = ceTaskUrlMatcher.group(1).trim()
+
+                  def ceTaskStatus = null
+                  def analysisId = null
+                  for (int attempt = 1; attempt <= 90; attempt++) {
+                    def ceTaskJson = sonarApiGet(env.SONAR_TOKEN, ceTaskUrl)
+                    def ceTask = new groovy.json.JsonSlurper().parseText(ceTaskJson).task
+                    ceTaskStatus = ceTask.status
+                    analysisId = ceTask.analysisId
+
+                    if (ceTaskStatus in ['SUCCESS', 'FAILED', 'CANCELED']) {
+                      break
+                    }
+
+                    echo "Waiting for SonarQube compute engine task to finish (attempt ${attempt}/90, status=${ceTaskStatus})"
+                    sleep time: 5, unit: 'SECONDS'
+                  }
+
+                  if (ceTaskStatus != 'SUCCESS') {
+                    error "SonarQube compute engine task did not complete successfully. Final status: ${ceTaskStatus ?: 'UNKNOWN'}."
+                  }
+
+                  if (!analysisId) {
+                    error 'SonarQube compute engine task succeeded but did not return an analysisId.'
+                  }
+
+                  def qualityGateUrl = "${params.sonarqube_url}/api/qualitygates/project_status?analysisId=${analysisId}"
+                  def qualityGateJson = sonarApiGet(env.SONAR_TOKEN, qualityGateUrl)
+                  def qualityGate = new groovy.json.JsonSlurper().parseText(qualityGateJson).projectStatus
+                  def qualityGateConditions = qualityGate.conditions ?: []
+                  def failingNewCodeConditions = qualityGateConditions.findAll {
+                    it.status == 'ERROR' && it.periodIndex != null
+                  }
+
+                  if (failingNewCodeConditions) {
+                    def failingMetrics = failingNewCodeConditions.collect {
+                      "${it.metricKey} (${it.actualValue ?: 'n/a'} vs ${it.errorThreshold ?: 'n/a'})"
+                    }.join(', ')
+                    error "SonarQube new-code quality gate failed: ${failingMetrics}"
+                  }
+
+                  echo 'SonarQube new-code quality gate passed.'
+
+                  if (params.git_change_id && params.git_change_author?.trim()) {
+                    echo "Attempting to auto-assign SonarQube pull request issues to '${params.git_change_author}'."
+                    def issueKeys = []
+                    def page = 1
+                    def pageSize = 500
+
+                    while (true) {
+                      def issueSearchUrl = "${params.sonarqube_url}/api/issues/search?componentKeys=${java.net.URLEncoder.encode(params.sonarqube_project_key, 'UTF-8')}&pullRequest=${java.net.URLEncoder.encode(params.git_change_id, 'UTF-8')}&resolved=false&p=${page}&ps=${pageSize}"
+                      def issueSearchJson = sonarApiGet(env.SONAR_TOKEN, issueSearchUrl)
+                      def issueSearch = new groovy.json.JsonSlurper().parseText(issueSearchJson)
+                      issueKeys.addAll((issueSearch.issues ?: []).collect { it.key })
+
+                      if ((issueSearch.p * issueSearch.ps) >= issueSearch.total) {
+                        break
+                      }
+                      page += 1
+                    }
+
+                    if (issueKeys) {
+                      def assignmentFailures = []
+                      issueKeys.each { issueKey ->
+                        try {
+                          sonarApiPost(env.SONAR_TOKEN, "${params.sonarqube_url}/api/issues/assign", [
+                            issue: issueKey,
+                            assignee: params.git_change_author.trim()
+                          ])
+                        } catch (err) {
+                          assignmentFailures.add("${issueKey}: ${err}")
+                        }
+                      }
+
+                      if (assignmentFailures) {
+                        echo "Unable to assign ${assignmentFailures.size()} issue(s): ${assignmentFailures.join('; ')}"
+                      } else {
+                        echo "Assigned ${issueKeys.size()} SonarQube pull request issue(s) to '${params.git_change_author}'."
+                      }
+                    } else {
+                      echo 'No open SonarQube pull request issues found to auto-assign.'
+                    }
                   }
                 }
               }
