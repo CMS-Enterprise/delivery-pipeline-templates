@@ -1,0 +1,82 @@
+version: 1
+name: PHP Unit Test Pipeline
+displayName: PHP Unit Test Pipeline
+description: >
+  Pipeline for running PHPUnit unit tests against a PHP (Composer-based) application.
+  Checks out the repository, installs Composer dependencies, executes PHPUnit tests
+  using a PHP CLI container with the pcov coverage driver, and publishes both a JUnit
+  XML trend report and a Clover XML coverage report.
+  An optional coverage gate fails the build when line coverage drops below a
+  configurable minimum percentage.
+type: pipeline-template
+parameters:
+  - name: default_php_image_tag
+    displayName: PHP Image Tag
+    description: >
+      The PHP image tag to pull from Artifactory
+      (e.g. 8.3-cli-alpine, 8.4-cli-alpine).
+      The image must have the pcov PHP extension and Composer installed, or the
+      pipeline will attempt to install them at runtime.
+      Mirror the desired tag from docker.io/library/php before use.
+    type: string
+    defaultValue: "8.3-cli-alpine"
+
+  - name: default_phpunit_config
+    displayName: PHPUnit Config File
+    description: >
+      Path to the PHPUnit configuration file relative to the project root
+      (e.g. phpunit.xml, phpunit.xml.dist, web/core/phpunit.xml.dist for Drupal).
+      Leave blank to use PHPUnit auto-discovery.
+    type: string
+    defaultValue: "phpunit.xml"
+
+  - name: default_test_suite
+    displayName: Test Suite
+    description: >
+      Name of the PHPUnit test suite to run as defined in the phpunit.xml config
+      (e.g. unit, kernel). Leave blank to run all suites.
+      Ignored when Test Path is set.
+    type: string
+
+  - name: default_test_path
+    displayName: Test Path
+    description: >
+      Optional path or glob passed directly to PHPUnit to restrict test discovery
+      (e.g. tests/Unit, web/modules/custom). When set, this overrides Test Suite.
+    type: string
+
+  - name: default_composer_install_args
+    displayName: Composer Install Arguments
+    description: "Additional arguments passed to `composer install`."
+    type: string
+    defaultValue: "--no-interaction --optimize-autoloader"
+
+  - name: default_coverage_min_percent
+    displayName: Minimum Coverage Threshold (%)
+    description: >
+      Minimum required line coverage percentage. The build fails if coverage
+      drops below this value (uses PHPUnit --coverage-min-lines-covered-percent).
+      Set to 0 to disable the gate entirely.
+    type: string
+    defaultValue: "50"
+
+  - name: default_additional_env
+    displayName: Additional Environment Variables
+    description: >
+      Optional newline-separated KEY=VALUE pairs injected as environment variables
+      before running PHPUnit (e.g. APP_ENV=testing). Do NOT embed secrets here —
+      use Jenkins credentials and reference them via the withCredentials step or a
+      separate credentials parameter.
+    type: string
+
+  - name: build_retention_days
+    displayName: Build Retention (Days)
+    description: "Number of days to retain build records in Jenkins."
+    type: string
+    defaultValue: "90"
+
+  - name: build_retention_count
+    displayName: Build Retention (Count)
+    description: "Maximum number of build records to retain in Jenkins."
+    type: string
+    defaultValue: "1000"

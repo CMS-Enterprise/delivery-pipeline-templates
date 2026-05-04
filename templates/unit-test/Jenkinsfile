@@ -1,0 +1,234 @@
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository to checkout.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to check out.')
+    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+
+    string(name: 'php_image_tag', defaultValue: "${default_php_image_tag ?: '8.3-cli-alpine'}", description: 'The PHP image tag to pull from Artifactory (e.g. 8.3-cli-alpine, 8.4-cli-alpine).')
+    string(name: 'phpunit_config', defaultValue: "${default_phpunit_config ?: 'phpunit.xml'}", description: 'Path to the PHPUnit configuration file relative to the project root.')
+    string(name: 'test_suite', defaultValue: "${default_test_suite ?: ''}", description: 'Name of the PHPUnit test suite to run (empty = run all suites in the config).')
+    string(name: 'test_path', defaultValue: "${default_test_path ?: ''}", description: 'Optional path or glob to restrict test discovery (e.g. tests/Unit). Overrides phpunit_config when set.')
+    string(name: 'composer_install_args', defaultValue: "${default_composer_install_args ?: '--no-interaction --optimize-autoloader'}", description: 'Extra arguments passed to `composer install`.')
+    string(name: 'coverage_min_percent', defaultValue: "${default_coverage_min_percent ?: '50'}", description: 'Minimum required line coverage percentage. Build fails if coverage drops below this value. Set to 0 to disable the gate.')
+    string(name: 'additional_env', defaultValue: "${default_additional_env ?: ''}", description: 'Optional newline-separated KEY=VALUE pairs injected as environment variables before running PHPUnit.')
+    string(name: 'build_retention_days', defaultValue: "${build_retention_days ?: '90'}", description: 'Number of days to retain build records.')
+    string(name: 'build_retention_count', defaultValue: "${build_retention_count ?: '1000'}", description: 'Maximum number of build records to retain.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
+      spec:
+        restartPolicy: Never
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+        containers:
+        - name: fetch
+          image: artifactory.cloud.cms.gov/docker/alpine:3
+          imagePullPolicy: Always
+          command: ['tail', '-f', '/dev/null']
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: tmp
+            mountPath: /tmp
+        - name: phpunit
+          # PHP CLI image with pcov extension for coverage.
+          # Mirror from: docker.io/library/php:8.3-cli-alpine
+          # Then install pcov + composer inside the image, or use a prebuilt variant.
+          # See: https://hub.docker.com/_/php (tags: 8.3-cli-alpine, 8.4-cli-alpine)
+          image: artifactory.cloud.cms.gov/docker/php:${params.php_image_tag}
+          imagePullPolicy: Always
+          command: ['tail', '-f', '/dev/null']
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: composer-cache
+            mountPath: /tmp/composer-cache
+          - name: tmp
+            mountPath: /tmp
+        volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: composer-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+      """
+    }
+  }
+
+  options {
+    copyArtifactPermission('*')
+    buildDiscarder(logRotator(
+      daysToKeepStr: "${params.build_retention_days}",
+      numToKeepStr:  "${params.build_retention_count}"
+    ))
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  stages {
+    stage('Fetch') {
+      steps {
+        container('fetch') {
+          sh '''
+            apk add --no-cache git openssh-client
+
+            mkdir -p /workspace/src
+            cd /workspace/src
+
+            git clone "${GIT_REPOSITORY}" .
+            git checkout "${GIT_COMMIT}"
+          '''
+        }
+      }
+      environment {
+        GIT_REPOSITORY = "${params.git_repository}"
+        GIT_COMMIT     = "${params.git_commit}"
+      }
+    }
+
+    stage('Install') {
+      steps {
+        container('phpunit') {
+          sh '''
+            # Verify pcov is available (required for coverage).
+            # If this fails, ensure the PHP image has pcov installed
+            # (docker-php-ext-install is not sufficient; use pecl install pcov).
+            php -m | grep -qE '^pcov$' || {
+              echo "[INFO] pcov extension not found — attempting to install via pecl"
+              pecl install pcov
+              echo "extension=pcov.so" > /usr/local/etc/php/conf.d/pcov.ini
+            }
+
+            # Verify Composer is available.
+            command -v composer >/dev/null 2>&1 || {
+              echo "[INFO] composer not found — downloading installer"
+              EXPECTED_CHECKSUM="$(php -r 'copy(\"https://composer.github.io/installer.sig\", \"php://stdout\");')"
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+              if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+                echo "ERROR: Composer installer checksum mismatch" >&2
+                rm composer-setup.php
+                exit 1
+              fi
+              php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+              rm composer-setup.php
+            }
+
+            cd /workspace/src
+            COMPOSER_CACHE_DIR=/tmp/composer-cache \
+              composer install ${COMPOSER_INSTALL_ARGS}
+          '''
+        }
+      }
+      environment {
+        COMPOSER_INSTALL_ARGS = "${params.composer_install_args}"
+      }
+    }
+
+    stage('Unit Test') {
+      steps {
+        container('phpunit') {
+          sh '''
+            cd /workspace/src
+            mkdir -p test-results
+
+            # Inject any caller-supplied environment variables.
+            if [ -n "${ADDITIONAL_ENV}" ]; then
+              echo "${ADDITIONAL_ENV}" | while IFS='=' read -r key value; do
+                [ -n "$key" ] && export "$key=$value"
+              done
+            fi
+
+            # Build PHPUnit invocation.
+            PHPUNIT_CMD="./vendor/bin/phpunit"
+            PHPUNIT_CMD="${PHPUNIT_CMD} --log-junit test-results/junit.xml"
+            PHPUNIT_CMD="${PHPUNIT_CMD} --coverage-clover test-results/coverage-clover.xml"
+            PHPUNIT_CMD="${PHPUNIT_CMD} --coverage-html test-results/coverage-html"
+            PHPUNIT_CMD="${PHPUNIT_CMD} -d pcov.enabled=1"
+
+            # Coverage gate — fail if line coverage drops below threshold.
+            if [ "${COVERAGE_MIN_PERCENT}" != "0" ]; then
+              PHPUNIT_CMD="${PHPUNIT_CMD} --coverage-min-lines-covered-percent=${COVERAGE_MIN_PERCENT}"
+            fi
+
+            # Test scope: explicit path takes priority over --testsuite.
+            if [ -n "${TEST_PATH}" ]; then
+              PHPUNIT_CMD="${PHPUNIT_CMD} ${TEST_PATH}"
+            elif [ -n "${TEST_SUITE}" ]; then
+              PHPUNIT_CMD="${PHPUNIT_CMD} --testsuite=${TEST_SUITE}"
+            fi
+
+            # PHPUnit config file.
+            if [ -n "${PHPUNIT_CONFIG}" ]; then
+              PHPUNIT_CMD="${PHPUNIT_CMD} --configuration=${PHPUNIT_CONFIG}"
+            fi
+
+            echo "Running: ${PHPUNIT_CMD}"
+            eval "${PHPUNIT_CMD}"
+          '''
+        }
+      }
+      environment {
+        PHPUNIT_CONFIG       = "${params.phpunit_config}"
+        TEST_SUITE           = "${params.test_suite}"
+        TEST_PATH            = "${params.test_path}"
+        COVERAGE_MIN_PERCENT = "${params.coverage_min_percent}"
+        ADDITIONAL_ENV       = "${params.additional_env}"
+      }
+    }
+  }
+
+  post {
+    always {
+      // Publish JUnit test results (visible in the Jenkins test-results trend).
+      junit allowEmptyResults: true,
+            testResults: 'test-results/junit.xml'
+
+      // Publish Clover coverage report (Jenkins Coverage plugin reads clover format).
+      // Install: https://plugins.jenkins.io/code-coverage-api/
+      publishCoverage adapters: [cloverAdapter('test-results/coverage-clover.xml')],
+                      sourceFileResolver: sourceFiles('NEVER_STORE')
+
+      // Archive the HTML coverage report and the raw XML for downstream jobs.
+      archiveArtifacts artifacts: 'test-results/coverage-clover.xml, test-results/coverage-html/**',
+                       allowEmptyArchive: true,
+                       fingerprint: true
+    }
+
+    success {
+      echo "All unit tests passed and coverage threshold met."
+    }
+
+    unstable {
+      echo "Unit tests completed with failures or skipped tests. Review the Test Results tab."
+    }
+
+    failure {
+      echo "Pipeline failed. Check the console output. If coverage dropped below ${params.coverage_min_percent}%, raise the threshold or add more tests."
+    }
+  }
+}
