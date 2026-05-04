@@ -51,6 +51,7 @@ pipeline {
     string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
+    string(name: 'sonarqube_project_version', defaultValue: "${default_sonarqube_project_version ?: ''}", description: 'The version of the project to report to SonarQube (e.g. 1.0.0, a git tag, or a build number). Shown in the SonarQube dashboard per-analysis.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
     string(name: 'sonarqube_source_path', defaultValue: "${default_sonarqube_source_path ?: '.'}", description: 'The relative path of the source code to scan for SonarQube.')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
@@ -319,6 +320,9 @@ pipeline {
                     args.add("-Dsonar.branch.name=${branchName}")
                   }
 
+                  if (params.sonarqube_project_version) {
+                    args.add("-Dsonar.projectVersion=${params.sonarqube_project_version}")
+                  }
                   if (params.sonarqube_additional_arguments) {
                     def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
                     // Add all the items in argArray to the args list

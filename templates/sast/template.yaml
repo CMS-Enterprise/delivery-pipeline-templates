@@ -19,6 +19,10 @@ parameters:
   - name: default_sonarqube_project_key
     displayName: SonarQube Project Key
     type: string
+  - name: default_sonarqube_project_version
+    displayName: SonarQube Project Version
+    description: "The version of the project to report to SonarQube (e.g. 1.0.0, a git tag, or a build number). Shown in the SonarQube dashboard per-analysis."
+    type: string
   - name: default_sonarqube_additional_arguments
     displayName: SonarQube Additional Arguments
     description: "A JSON serialized array of additional arguments to pass to the SonarQube scanner."
