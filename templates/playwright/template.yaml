@@ -1,0 +1,95 @@
+version: 1
+name: Playwright E2E Pipeline
+displayName: Playwright E2E Pipeline
+description: >
+  Pipeline for running Playwright end-to-end tests against a deployed application.
+  Checks out the test repository, installs Node dependencies, executes Playwright tests
+  using the official Playwright Docker image (with browsers pre-installed), and publishes
+  both a JUnit XML trend report and a downloadable HTML trace report.
+type: pipeline-template
+parameters:
+  - name: default_base_url
+    displayName: Base URL
+    description: >
+      The base URL of the application under test (e.g. https://myapp.cloud.cms.gov).
+      Exposed to the test run as the BASE_URL environment variable. Leave blank if
+      the URL is defined inside playwright.config.ts.
+    type: string
+
+  - name: default_test_grep
+    displayName: Test Grep Filter
+    description: >
+      An optional regular expression to filter which tests to run (passed to --grep).
+      Leave blank to run all tests discovered by the config.
+    type: string
+
+  - name: default_test_project
+    displayName: Playwright Project
+    description: >
+      The Playwright project name to execute. Must match a project name defined in
+      playwright.config.ts (e.g. chromium, firefox, webkit).
+    type: string
+    defaultValue: "chromium"
+
+  - name: default_test_timeout_ms
+    displayName: Test Timeout (ms)
+    description: "Global timeout in milliseconds applied to each individual test."
+    type: string
+    defaultValue: "120000"
+
+  - name: default_workers
+    displayName: Worker Count
+    description: >
+      Number of parallel worker processes. Set to 1 on CI to avoid resource
+      contention. Increase only if the Jenkins pod has sufficient CPU/memory.
+    type: string
+    defaultValue: "1"
+
+  - name: default_retries
+    displayName: Retry Count
+    description: "Number of times a failing test is retried before being marked failed."
+    type: string
+    defaultValue: "2"
+
+  - name: default_playwright_config
+    displayName: Playwright Config File
+    description: "Relative path to the Playwright configuration file within the repository."
+    type: string
+    defaultValue: "playwright.config.ts"
+
+  - name: default_test_dir
+    displayName: Test Directory
+    description: >
+      Optional relative path to limit test file discovery (e.g. tests/smoke/).
+      Leave blank to use the testDir defined in playwright.config.ts.
+    type: string
+
+  - name: default_additional_env
+    displayName: Additional Environment Variables
+    description: >
+      A JSON-serialized array of KEY=VALUE strings injected as environment variables
+      during the test run (e.g. ["APP_ENV=staging","FEATURE_FLAG=true"]).
+      Do NOT embed secrets here — use Jenkins credentials and reference them via
+      the withCredentials step or a separate credentials parameter.
+    type: string
+    defaultValue: "[]"
+
+  - name: default_fail_on_flaky
+    displayName: Fail on Flaky Tests
+    description: >
+      When enabled, tests that pass only after one or more retries are reported as
+      build failures rather than successes. Use this to enforce zero-flake policies.
+    type: boolean
+    defaultValue: false
+
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: "The number of days to retain build logs and artifacts."
+    type: string
+    defaultValue: "90"
+
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: "The number of builds to retain."
+    type: string
+    defaultValue: "1000"
