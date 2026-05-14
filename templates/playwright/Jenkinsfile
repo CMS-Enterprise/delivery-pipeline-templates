@@ -1,0 +1,249 @@
+def containerListYaml() {
+  return reindent(10, """
+    - name: fetch
+      image: artifactory.cloud.cms.gov/docker/alpine:3
+      imagePullPolicy: Always
+      command: ['tail', '-f', '/dev/null']
+    - name: playwright
+      # Node.js Playwright image — mirror mcr.microsoft.com/playwright:v1.50.0-noble into Artifactory before use.
+      # Request: https://artifactory.cloud.cms.gov/artifactory/docker/playwright/<tag>/
+      # Do NOT use playwright/java (Java SDK) or playwright/python — this suite is TypeScript/Node.js.
+      image: artifactory.cloud.cms.gov/docker/playwright:v1.50.0-noble
+      imagePullPolicy: Always
+      command: ['tail', '-f', '/dev/null']
+      resources:
+        limits:
+          memory: 4Gi
+          cpu: 2000m""")
+}
+
+def reindent(spaces, str) {
+  def lines = str.split('\n')
+  def indents = lines.findAll { it.trim() }.collect { (it =~ /^( *)/)[0][0].size() }
+  def minIndent = indents[0]
+  for (indent in indents) {
+    if (indent < minIndent) {
+      minIndent = indent
+    }
+  }
+  return str.split('\n').collect { it ? " " * spaces + it.substring(minIndent) : it }.join('\n')
+}
+
+pipeline {
+  parameters {
+    string(name: 'git_repository', description: 'The URL of the Git repository containing the Playwright test suite.')
+    string(name: 'git_commit', description: 'The commit hash or branch name to checkout.')
+    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.')
+    string(name: 'base_url', defaultValue: "${default_base_url ?: ''}", description: 'The base URL of the application under test (e.g. https://myapp.cms.gov). Exposed as BASE_URL environment variable.')
+    string(name: 'test_grep', defaultValue: "${default_test_grep ?: ''}", description: '(Optional) A grep pattern to filter which tests to run (passed to --grep). Leave blank to run all tests.')
+    string(name: 'test_project', defaultValue: "${default_test_project ?: 'chromium'}", description: 'The Playwright project name to run (matches a project defined in playwright.config.ts). Defaults to chromium.')
+    string(name: 'test_timeout_ms', defaultValue: "${default_test_timeout_ms ?: '120000'}", description: 'Global test timeout in milliseconds.')
+    string(name: 'workers', defaultValue: "${default_workers ?: '1'}", description: 'Number of parallel worker processes to run tests with.')
+    string(name: 'retries', defaultValue: "${default_retries ?: '2'}", description: 'Number of times to retry a failed test before marking it as failed.')
+    string(name: 'playwright_config', defaultValue: "${default_playwright_config ?: 'playwright.config.ts'}", description: 'Relative path to the Playwright config file within the repository.')
+    string(name: 'test_dir', defaultValue: "${default_test_dir ?: ''}", description: '(Optional) Relative path to limit test discovery. Leave blank to use the directory defined in playwright.config.ts.')
+    string(name: 'additional_env', defaultValue: "${default_additional_env ?: '[]'}", description: 'A JSON-serialized array of KEY=VALUE strings to inject as environment variables during the test run (e.g. ["APP_ENV=staging","FEATURE_FLAG=true"]). Secrets must be referenced via Jenkins credentials, not plain text.')
+    string(name: 'copy_artifacts_job_name', defaultValue: '', description: '(Optional) Name of the Jenkins job from which to copy build artifacts needed by the tests.')
+    string(name: 'copy_artifacts_build_number', defaultValue: '', description: '(Optional) Specific build number of artifacts to copy.')
+    string(name: 'copy_artifacts_filter', defaultValue: '', description: '(Optional) Comma-separated filemasks for artifacts to copy.')
+    booleanParam(name: 'fail_on_flaky', defaultValue: "${default_fail_on_flaky ?: false}", description: 'When enabled, tests that pass only after retries are reported as failures.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+        containers:${containerListYaml()}"""
+    }
+  }
+
+  options {
+    copyArtifactPermission('*')
+    buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
+  }
+
+  stages {
+    stage("Fetch") {
+      steps {
+        container('fetch') {
+          script {
+            checkout scmGit(
+              branches: [[ name: "${params.git_commit}" ]],
+              userRemoteConfigs: [[
+                url: "${params.git_repository}",
+                credentialsId: "${params.git_credentials}",
+                refspec: "+refs/heads/*:refs/remotes/origin/* +${params.git_commit}:refs/remotes/origin/HEAD"
+              ]],
+              extensions: [
+                cloneOption(shallow: true, honorRefspec: true, noTags: true),
+                submodule(recursiveSubmodules: true, shallow: true)
+              ]
+            )
+
+            sh '''#!/bin/sh
+              set -e
+              if ! command -v git >/dev/null 2>&1; then
+                apk add --no-cache git
+              fi
+              git config --global --add safe.directory "${WORKSPACE}"
+            '''
+
+            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+              def filters = []
+              def escaped = false
+              for (def filter in params.copy_artifacts_filter.split(',')) {
+                def next_escaped = filter.endsWith('\\') && !(filter =~ /(\\\\)+$/)
+                filter = filter.replaceAll(/\\(.)/) { _, c -> c }
+                if (next_escaped) {
+                  filter = filter.substring(0, filter.length() - 1)
+                }
+                if (escaped) {
+                  filters[-1] = filters[-1] + "," + filter
+                } else {
+                  filters << filter
+                }
+                escaped = next_escaped
+              }
+              for (def filter in filters) {
+                copyArtifacts(
+                  projectName: params.copy_artifacts_job_name,
+                  filter: filter,
+                  selector: specific(params.copy_artifacts_build_number)
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage("Install") {
+      steps {
+        container('playwright') {
+          sh '''#!/bin/bash
+            set -e
+            git config --global --add safe.directory "${WORKSPACE}"
+
+            echo "--- Node / npm versions ---"
+            node --version
+            npm --version
+
+            echo "--- Installing dependencies ---"
+            npm ci --prefer-offline
+
+            echo "--- Playwright version ---"
+            npx playwright --version
+          '''
+        }
+      }
+    }
+
+    stage("Test") {
+      steps {
+        container('playwright') {
+          script {
+            // Build the playwright test command arguments
+            def playwrightArgs = [
+              '--config', params.playwright_config,
+              '--project', params.test_project,
+              '--workers', params.workers,
+              '--retries', params.retries,
+              '--timeout', params.test_timeout_ms,
+              '--reporter', 'html,junit'
+            ]
+
+            if (params.test_grep?.trim()) {
+              playwrightArgs.addAll(['--grep', params.test_grep])
+            }
+
+            if (params.test_dir?.trim()) {
+              playwrightArgs << params.test_dir
+            }
+
+            if (params.fail_on_flaky) {
+              playwrightArgs << '--forbid-only'
+            }
+
+            def quotedArgs = playwrightArgs.collect { arg ->
+              "'" + arg.toString().replace("'", "'\"'\"'") + "'"
+            }.join(' ')
+
+            // Parse additional environment variables
+            def envList = []
+            if (params.additional_env?.trim() && params.additional_env.trim() != '[]') {
+              def parsed = new groovy.json.JsonSlurper().parseText(params.additional_env)
+              envList = parsed.collect { it.toString() }
+            }
+            if (params.base_url?.trim()) {
+              envList << "BASE_URL=${params.base_url}"
+            }
+            envList << "CI=true"
+            envList << "PLAYWRIGHT_JUNIT_OUTPUT_NAME=test-results/junit.xml"
+
+            withEnv(envList) {
+              def exitCode = sh(
+                script: """#!/bin/bash
+                  set -e
+                  git config --global --add safe.directory "\${WORKSPACE}"
+                  mkdir -p test-results playwright-report
+
+                  echo "--- Running Playwright tests ---"
+                  echo "  Config:  ${params.playwright_config}"
+                  echo "  Project: ${params.test_project}"
+                  echo "  Workers: ${params.workers}"
+                  echo "  Retries: ${params.retries}"
+                  echo "  Base URL: \${BASE_URL:-<not set>}"
+
+                  npx playwright test ${quotedArgs} || exit \$?
+                """,
+                returnStatus: true
+              )
+
+              if (exitCode != 0) {
+                // Mark the build unstable (tests ran but some failed) rather than erroring
+                // the pipeline outright, so reports are still published.
+                currentBuild.result = 'UNSTABLE'
+                echo "Playwright tests completed with failures (exit code ${exitCode}). Build marked UNSTABLE."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      // Publish JUnit XML results to the Jenkins test trend graph
+      junit(
+        testResults: 'test-results/junit.xml',
+        allowEmptyResults: true,
+        skipPublishingChecks: false
+      )
+
+      // Archive the HTML report so it can be downloaded from the build page
+      archiveArtifacts(
+        artifacts: 'playwright-report/**',
+        allowEmptyArchive: true,
+        fingerprint: true
+      )
+
+      // Archive JUnit XML alongside the HTML report for downstream consumers
+      archiveArtifacts(
+        artifacts: 'test-results/junit.xml',
+        allowEmptyArchive: true
+      )
+    }
+
+    failure {
+      echo "Pipeline failed — check the archived playwright-report/ for a full trace."
+    }
+
+    unstable {
+      echo "One or more Playwright tests failed — open the playwright-report/ HTML report for details."
+    }
+  }
+}
