@@ -1,0 +1,68 @@
+version: 1
+name: DAST Pipeline
+displayName: DAST Pipeline
+description: Pipeline for Dynamic Application Security Testing (DAST) against a deployed application endpoint.
+type: pipeline-template
+parameters:
+  - name: default_target_url
+    displayName: Target URL
+    description: The HTTP(S) URL to scan.
+    type: string
+  - name: default_zap_image
+    displayName: ZAP Scanner Image
+    description: The container image used to run OWASP ZAP (must be pinned to an immutable digest for supply chain security).
+    type: string
+    defaultValue: "artifactory.cloud.cms.gov/docker/zaproxy/zaproxy:stable@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  - name: default_scan_type
+    displayName: Scan Type
+    description: Type of ZAP scan to run.
+    type: string
+    defaultValue: "baseline"
+    allowedValues:
+      - baseline
+      - full
+  - name: default_spider_minutes
+    displayName: Spider Minutes
+    description: Maximum minutes for ZAP spidering during the scan.
+    type: string
+    defaultValue: "3"
+  - name: default_fail_on_severity
+    displayName: Fail On Severity
+    description: Minimum severity that will fail the pipeline when findings are present (low, medium, high, critical).
+    type: string
+    defaultValue: "high"
+    allowedValues:
+      - low
+      - medium
+      - high
+      - critical
+  - name: default_max_allowed_high
+    displayName: Max Allowed High Findings
+    description: Maximum high-severity findings allowed before failing the build. This gate is non-bypassable per TRA BR-OR-1.
+    type: number
+    defaultValue: 0
+  - name: default_max_allowed_medium
+    displayName: Max Allowed Medium Findings
+    description: Maximum medium-severity findings allowed before failing the build. This gate is non-bypassable per TRA BR-OR-1.
+    type: number
+    defaultValue: 0
+  - name: default_report_base_name
+    displayName: Report Base Name
+    description: Base filename to use for generated DAST artifacts.
+    type: string
+    defaultValue: "zap-dast-report"
+  - name: default_zap_additional_arguments
+    displayName: ZAP Additional Arguments
+    description: A JSON serialized array of additional arguments to pass to the ZAP script.
+    type: string
+    defaultValue: "[]"
+  - name: build_retention_days
+    displayName: Build Log Retention Days
+    description: The number of days to retain build logs and artifacts.
+    type: string
+    defaultValue: "90"
+  - name: build_retention_count
+    displayName: Build Log Retention Count
+    description: The number of builds to retain.
+    type: string
+    defaultValue: "1000"

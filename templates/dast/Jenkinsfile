@@ -1,0 +1,214 @@
+pipeline {
+  parameters {
+    string(name: 'target_url', defaultValue: "${default_target_url ?: ''}", description: 'The HTTP(S) URL to scan.')
+    string(name: 'zap_image', defaultValue: "${default_zap_image ?: 'artifactory.cloud.cms.gov/docker/zaproxy/zaproxy:stable'}", description: 'The container image used to run OWASP ZAP.')
+    string(name: 'scan_type', defaultValue: "${default_scan_type ?: 'baseline'}", description: 'Type of ZAP scan to run (baseline, full).')
+    string(name: 'spider_minutes', defaultValue: "${default_spider_minutes ?: '3'}", description: 'Maximum minutes for ZAP spidering during the scan.')
+    string(name: 'fail_on_severity', defaultValue: "${default_fail_on_severity ?: 'high'}", description: 'Minimum severity that fails the pipeline (low, medium, high, critical).')
+    string(name: 'max_allowed_high', defaultValue: "${default_max_allowed_high ?: 0}", description: 'Maximum number of high-severity findings allowed before failing the build.')
+    string(name: 'max_allowed_medium', defaultValue: "${default_max_allowed_medium ?: 0}", description: 'Maximum number of medium-severity findings allowed before failing the build.')
+    string(name: 'report_base_name', defaultValue: "${default_report_base_name ?: 'zap-dast-report'}", description: 'Base filename to use for generated DAST artifacts.')
+    string(name: 'zap_additional_arguments', defaultValue: "${default_zap_additional_arguments ?: '[]'}", description: 'A JSON serialized array of additional arguments to pass to the ZAP script.')
+  }
+
+  agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          com.cloudbees.sidecar-injector/inject: no
+      spec:
+        restartPolicy: Never
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        containers:
+        - name: zap
+          image: ${params.zap_image}
+          imagePullPolicy: IfNotPresent
+          command: ['tail', '-f', '/dev/null']
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+              - ALL
+          volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+          - name: home
+            mountPath: /home/zap
+        volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: home
+          emptyDir: {}
+      """
+    }
+  }
+
+  options {
+    buildDiscarder(logRotator(daysToKeepStr: "${build_retention_days}", numToKeepStr: "${build_retention_count}"))
+  }
+
+  stages {
+    stage('Validate Parameters') {
+      steps {
+        script {
+          if (!params.target_url?.trim()) {
+            error 'target_url is required.'
+          }
+
+          if (!(params.target_url ==~ /^https?:\/\/.+/)) {
+            error "target_url must start with http:// or https://. Received: ${params.target_url}"
+          }
+
+          def allowedScanTypes = ['baseline', 'full']
+          if (!allowedScanTypes.contains(params.scan_type)) {
+            error "scan_type must be one of ${allowedScanTypes}. Received: ${params.scan_type}"
+          }
+
+          def allowedThresholds = ['low', 'medium', 'high', 'critical']
+          if (!allowedThresholds.contains(params.fail_on_severity)) {
+            error "fail_on_severity must be one of ${allowedThresholds}. Received: ${params.fail_on_severity}"
+          }
+
+          // Verify that ZAP image is pinned to an immutable digest (TRA BR-SBI-2)
+          if (!params.zap_image.contains('@sha256:')) {
+            error "ZAP image must be pinned to an immutable digest. Current: ${params.zap_image}. Use format: image:tag@sha256:<digest>"
+          }
+        }
+      }
+    }
+
+    stage('DAST Scan') {
+      steps {
+        container('zap') {
+          script {
+            def reportBaseName = params.report_base_name?.trim() ?: 'zap-dast-report'
+            def jsonReportPath = "${reportBaseName}.json"
+            def htmlReportPath = "${reportBaseName}.html"
+            def mdReportPath = "${reportBaseName}.md"
+
+            def scanScript = params.scan_type == 'full' ? 'zap-full-scan.py' : 'zap-baseline.py'
+            def args = [
+              '-t', params.target_url,
+              '-J', jsonReportPath,
+              '-r', htmlReportPath,
+              '-w', mdReportPath,
+              '-m', params.spider_minutes
+            ]
+
+            if (params.zap_additional_arguments) {
+              def parsedAdditionalArgs = new groovy.json.JsonSlurper().parseText(params.zap_additional_arguments)
+              if (parsedAdditionalArgs instanceof List && parsedAdditionalArgs.size() > 0) {
+                args.addAll(parsedAdditionalArgs.collect { it.toString() })
+              }
+            }
+
+            def quotedArgs = args.collect { arg ->
+              "'" + arg.toString().replace("'", "'\"'\"'") + "'"
+            }.join(' ')
+
+            def scanExitCode = sh(
+              script: """#!/bin/sh
+                set +e
+                if ! command -v ${scanScript} >/dev/null 2>&1; then
+                  echo '${scanScript} is not available in the configured ZAP image.' >&2
+                  exit 127
+                fi
+
+                ${scanScript} ${quotedArgs}
+                exit \$?
+              """,
+              returnStatus: true
+            )
+
+            echo "ZAP script exit code: ${scanExitCode}"
+
+            if (!fileExists(jsonReportPath)) {
+              error "ZAP did not produce the expected JSON report: ${jsonReportPath}"
+            }
+
+            def severityRank = [
+              informational: 0,
+              low: 1,
+              medium: 2,
+              high: 3,
+              critical: 4
+            ]
+
+            def findingsBySeverity = [
+              high: 0,
+              medium: 0,
+              low: 0,
+              informational: 0
+            ]
+
+            def reportJson = new groovy.json.JsonSlurperClassic().parseText(readFile(file: jsonReportPath))
+            for (def site in (reportJson?.site ?: [])) {
+              for (def alert in (site?.alerts ?: [])) {
+                def alertCount = (alert?.alertcount ?: '0').toString().isInteger() ? alert.alertcount.toInteger() : 0
+                def severityKey = 'informational'
+
+                switch ((alert?.riskcode ?: '0').toString()) {
+                  case '3':
+                    severityKey = 'high'
+                    break
+                  case '2':
+                    severityKey = 'medium'
+                    break
+                  case '1':
+                    severityKey = 'low'
+                    break
+                  default:
+                    severityKey = 'informational'
+                    break
+                }
+
+                findingsBySeverity[severityKey] = findingsBySeverity[severityKey] + alertCount
+              }
+            }
+
+            echo "DAST findings summary: high=${findingsBySeverity.high}, medium=${findingsBySeverity.medium}, low=${findingsBySeverity.low}, informational=${findingsBySeverity.informational}"
+
+            def threshold = (params.fail_on_severity ?: 'high').toLowerCase()
+            def thresholdRank = severityRank[threshold]
+
+            def hasThresholdViolation = (
+              (thresholdRank <= severityRank.high && findingsBySeverity.high > 0) ||
+              (thresholdRank <= severityRank.medium && findingsBySeverity.medium > 0) ||
+              (thresholdRank <= severityRank.low && findingsBySeverity.low > 0)
+            )
+
+            def maxAllowedHigh = params.max_allowed_high.toString().toInteger()
+            def maxAllowedMedium = params.max_allowed_medium.toString().toInteger()
+
+            def exceedsHighLimit = findingsBySeverity.high > maxAllowedHigh
+            def exceedsMediumLimit = findingsBySeverity.medium > maxAllowedMedium
+
+            if (scanExitCode == 127) {
+              error 'DAST scan failed because the configured ZAP image does not contain required scan scripts.'
+            }
+
+            // TRA BR-OR-1: Non-bypassable security gate. Findings exceeding threshold or limit always fail the build.
+            // Exception path requires signed risk acceptance (not implemented here; see REMEDIATION_BACKLOG.md).
+            if (hasThresholdViolation || exceedsHighLimit || exceedsMediumLimit) {
+              error "DAST gate failed (TRA BR-OR-1): fail_on_severity=${threshold}, max_allowed_high=${maxAllowedHigh}, max_allowed_medium=${maxAllowedMedium}, findings=${findingsBySeverity}"
+            }
+          }
+        }
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: '*.json, *.html, *.md', allowEmptyArchive: true
+        }
+      }
+    }
+  }
+}
