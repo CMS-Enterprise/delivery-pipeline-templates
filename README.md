@@ -9,6 +9,7 @@ This resource was co developed with other IUSG cloud engineering contractors suc
 The following pipeline templates are available in this catalog:
 
 * [SAST Scan](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/sast/README.md) - Runs Static Application Security Testing (SAST) scans on the application code (using SonarQube).
+* [DAST Scan](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/dast/README.md) - Runs Dynamic Application Security Testing (DAST) scans against deployed application endpoints (using OWASP ZAP). **TRA BR-OR-1 & BR-SBI-2 compliant with non-bypassable security gate and pinned image digest.**
 * [Delivery Pipeline](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/delivery/README.md) - Runs container build and scan steps and publishes the resulting container image to the CMS container registry (Artifactory).
 * [GitOps Deployment](https://github.com/CMS-Enterprise/delivery-pipeline-templates/blob/419aec7ae2da320b57a139d8331c96015f08708a/templates/deployment/README.md) - Runs steps to deploy the container image to a Kubernetes cluster by updating the image tag in Kubernetes manifests.
 
@@ -28,6 +29,7 @@ The pipeline templates in this catalog are designed to be used by invoking them 
 | Test       | Unit Test          | Application Specific (e.g. JUnit, Jest, Pytest)      |
 | Test       | Lint               | Application Specific (e.g. ESLint, Pylint)           |
 | SAST       | Scan Source        | SonarQube & Snyk (Dependency Vulnerabilities)        |
+| DAST       | Scan Runtime       | OWASP ZAP                                            |
 | Delivery   | Build Image        | BuildKit (Kubernetes Driver)                         |
 | Delivery   | Vulnerability Scan | Snyk Container Scan                                  |
 | Delivery   | Malware Scan       | ClamAV                                               |
