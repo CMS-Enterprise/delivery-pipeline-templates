@@ -1,0 +1,119 @@
+def is_main = env.BRANCH_NAME ==~ /^(main|master)$/
+def is_tag = env.TAG_NAME ==~ /^v\d+\.\d+\.\d+$/
+def notifyConfig = [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"]
+
+node {
+    // ─── Pull Request: CI only ───
+    if (!is_main && !is_tag) {
+        stage("Build") {
+            if ("${build_tool}" == 'npm') {
+                buildNpm(node_version: "${node_version}")
+            } else {
+                buildGradle()
+            }
+        }
+        stage("Unit Test") {
+            if ("${build_tool}" == 'npm') {
+                unitTestNpm(node_version: "${node_version}")
+            } else {
+                unitTestGradle()
+            }
+        }
+        stage("Static Analysis") {
+            snykCodeScan(
+                org: "${snyk_org}",
+                token_credential: "${snyk_token_credential}",
+                severity_threshold: "${snyk_severity_threshold}"
+            )
+        }
+        return
+    }
+
+    // ─── Tag: release publish ───
+    if (is_tag) {
+        try {
+            stage("Release") {
+                if ("${build_tool}" == 'npm') {
+                    buildNpm(node_version: "${node_version}")
+                    podTemplate(containers: [
+                        containerTemplate(
+                            name: 'node',
+                            image: "artifactory.cloud.cms.gov/docker/node:${node_version}",
+                            command: 'cat',
+                            ttyEnabled: true
+                        )
+                    ]) {
+                        node(POD_LABEL) {
+                            unstash "workspace"
+                            container('node') {
+                                withCredentials([string(credentialsId: "${npm_token_credential}", variable: 'NPM_TOKEN')]) {
+                                    sh """
+                                        echo "//npm.internal.example.com/:_authToken=\${NPM_TOKEN}" > .npmrc
+                                        npm publish --registry ${npm_registry} --tag latest
+                                    """
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    buildGradle(build_task: 'publish')
+                }
+            }
+            stage("Notify") {
+                slackNotify(notifyConfig, "Released ${env.TAG_NAME}")
+            }
+        } catch (err) {
+            slackNotify(notifyConfig, "FAILED release ${env.TAG_NAME}. Error: ${err.message}")
+            throw err
+        }
+        return
+    }
+
+    // ─── Main branch: publish pre-release ───
+    try {
+        stage("Build") {
+            if ("${build_tool}" == 'npm') {
+                buildNpm(node_version: "${node_version}")
+            } else {
+                buildGradle()
+            }
+        }
+        stage("Unit Test") {
+            if ("${build_tool}" == 'npm') {
+                unitTestNpm(node_version: "${node_version}")
+            } else {
+                unitTestGradle()
+            }
+        }
+        stage("Publish Artifact") {
+            if ("${build_tool}" == 'npm') {
+                podTemplate(containers: [
+                    containerTemplate(
+                        name: 'node',
+                        image: "artifactory.cloud.cms.gov/docker/node:${node_version}",
+                        command: 'cat',
+                        ttyEnabled: true
+                    )
+                ]) {
+                    node(POD_LABEL) {
+                        unstash "workspace"
+                        container('node') {
+                            withCredentials([string(credentialsId: "${npm_token_credential}", variable: 'NPM_TOKEN')]) {
+                                sh """
+                                    echo "//npm.internal.example.com/:_authToken=\${NPM_TOKEN}" > .npmrc
+                                    npm publish --registry ${npm_registry} --tag next
+                                """
+                            }
+                        }
+                    }
+                }
+            } else {
+                buildGradle(build_task: 'publish')
+            }
+        }
+        slackNotify(notifyConfig, "Published from ${env.BRANCH_NAME}")
+    } catch (err) {
+        slackNotify(notifyConfig, "FAILED publish from ${env.BRANCH_NAME}. Error: ${err.message}")
+        throw err
+    }
+}

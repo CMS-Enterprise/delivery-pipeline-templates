@@ -1,0 +1,115 @@
+version: 1
+type: pipeline-template
+name: jfrog-secure
+displayName: JFrog Secure Delivery Pipeline
+description: Build, push to JFrog staging repo, Xray scan, promote to prod repo, and deploy through environments.
+templateType: MULTIBRANCH
+multibranch:
+  branchSource:
+    github:
+      repoOwner: ${github_org}
+      repository: ${github_repo}
+      credentialsId: ${github_credential}
+parameters:
+  - name: github_org
+    displayName: GitHub Organization
+    type: string
+  - name: github_repo
+    displayName: GitHub Repository
+    type: string
+  - name: github_credential
+    displayName: GitHub Credentials ID
+    type: credentials
+    defaultValue: github-org-token
+  - name: build_tool
+    displayName: Build Tool
+    description: "Which build tool to use: npm or gradle"
+    type: string
+    defaultValue: npm
+    allowedValues:
+      - npm
+      - gradle
+  - name: node_version
+    displayName: Node.js Version (npm only)
+    type: string
+    defaultValue: "20"
+  - name: gradle_build_task
+    displayName: Gradle Build Task (gradle only)
+    type: string
+    defaultValue: shadowJar
+  - name: jfrog_url
+    displayName: JFrog Artifactory URL
+    type: string
+    defaultValue: https://artifactory.example.com/artifactory
+  - name: jfrog_registry
+    displayName: JFrog Docker Registry
+    type: string
+    defaultValue: docker.artifactory.example.com
+  - name: jfrog_credential
+    displayName: JFrog Credentials ID
+    type: credentials
+    defaultValue: jfrog-credentials
+  - name: jfrog_server_id
+    displayName: JFrog Server ID
+    type: string
+    defaultValue: jfrog-main
+  - name: jfrog_staging_repo
+    displayName: JFrog Staging Repository
+    type: string
+    defaultValue: docker-staging-local
+  - name: jfrog_prod_repo
+    displayName: JFrog Production Repository
+    type: string
+    defaultValue: docker-release-local
+  - name: image_name
+    displayName: Container Image Name
+    type: string
+  - name: snyk_org
+    displayName: Snyk Organization
+    type: string
+  - name: snyk_token_credential
+    displayName: Snyk Token Credential
+    type: credentials
+    defaultValue: snyk-api-token
+  - name: snyk_severity_threshold
+    displayName: Snyk Severity Threshold
+    type: string
+    defaultValue: high
+    allowedValues:
+      - low
+      - medium
+      - high
+      - critical
+  - name: snyk_monitor
+    displayName: Enable Snyk Monitoring
+    type: boolean
+    defaultValue: false
+  - name: cosign_kms_key_arn
+    displayName: Cosign KMS Key ARN
+    description: "AWS KMS key ARN for image signing (leave empty to skip signing)"
+    type: string
+  - name: deploy_namespaces_dev
+    displayName: Kubernetes Namespace (Dev)
+    type: string
+  - name: deploy_namespaces_staging
+    displayName: Kubernetes Namespace (Staging)
+    type: string
+  - name: deploy_namespaces_prod
+    displayName: Kubernetes Namespace (Prod)
+    type: string
+  - name: health_endpoint
+    displayName: Health Check Endpoint
+    type: string
+    defaultValue: /health
+  - name: smoke_retries
+    displayName: Smoke Test Retries
+    type: number
+    defaultValue: 3
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#ci-notifications"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

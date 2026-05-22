@@ -1,0 +1,329 @@
+import com.cloudbees.plugins.credentials.CredentialsScope
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider
+import com.cloudbees.plugins.credentials.domains.Domain
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl
+import hudson.util.Secret
+
+def credentialStore = SystemCredentialsProvider.instance.store
+
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+                spec:
+                  serviceAccountName: jenkins-role
+                  containers:
+                    - name: aws-cli
+                      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+                      command: ['cat']
+                      tty: true
+            """
+        }
+    }
+
+    triggers {
+        cron('H 3 1,15 * *')
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    parameters {
+        choice(name: 'ROTATION_SCOPE', choices: ['all', 'snyk', 'jfrog', 'slack', 'npm', 'sonarqube', 'argocd', 'terraform', 'jira', 'github'], description: 'Which credentials to rotate (default: all)')
+        booleanParam(name: 'DRY_RUN', defaultValue: ${dry_run}, description: 'Validate Secrets Manager connectivity without updating Jenkins credentials')
+        booleanParam(name: 'FORCE', defaultValue: ${force}, description: 'Rotate even if credential has not expired')
+        string(name: 'AWS_REGION', defaultValue: "${aws_region}", description: 'AWS region for Secrets Manager')
+    }
+
+    environment {
+        AWS_REGION = "${params.AWS_REGION ?: '${aws_region}'}"
+    }
+
+    stages {
+        stage('Assume Role') {
+            steps {
+                container('aws-cli') {
+                    script {
+                        def account_id = ''
+                        withCredentials([string(credentialsId: "${aws_account_credential}", variable: 'ACCOUNT_ID')]) {
+                            account_id = env.ACCOUNT_ID
+                        }
+                        def role_arn = "arn:aws:iam::${account_id}:role/jenkins-secrets-rotation-role"
+                        def creds = sh(
+                            script: """
+                                aws sts assume-role \
+                                    --role-arn ${role_arn} \
+                                    --role-session-name jenkins-credential-rotation-${env.BUILD_NUMBER} \
+                                    --duration-seconds 1800 \
+                                    --region ${AWS_REGION} \
+                                    --output json
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        def parsed = readJSON text: creds
+                        env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId
+                        env.AWS_SECRET_ACCESS_KEY = parsed.Credentials.SecretAccessKey
+                        env.AWS_SESSION_TOKEN = parsed.Credentials.SessionToken
+                    }
+                }
+            }
+        }
+
+        stage('Validate Connectivity') {
+            steps {
+                container('aws-cli') {
+                    script {
+                        sh """
+                            aws secretsmanager list-secrets \
+                                --region ${AWS_REGION} \
+                                --filters Key=name,Values=ci/ \
+                                --max-results 1 \
+                                --query 'SecretList[0].Name' \
+                                --output text
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Rotate Snyk Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'snyk'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'snyk-api-token', fetchSecret('ci/snyk', 'api_token'), 'Snyk API token')
+                        ['frontend', 'backend', 'mobile'].each { team ->
+                            def value = fetchSecret("ci/snyk/teams/${team}", 'api_token')
+                            if (value) {
+                                rotateStringCredential(credentialStore, "snyk-${team}-token", value, "Snyk token for ${team}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Rotate JFrog Credentials') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'jfrog'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        def jfrogCreds = fetchSecretJson('ci/jfrog')
+                        rotateUsernamePassword(credentialStore, 'jfrog-credentials', jfrogCreds.username, jfrogCreds.password, 'JFrog Artifactory credentials')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate Slack Webhook') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'slack'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'slack-webhook-url', fetchSecret('ci/slack', 'webhook_url'), 'Slack incoming webhook URL')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate npm Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'npm'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'npm-publish-token', fetchSecret('ci/npm', 'publish_token'), 'npm registry publish token')
+                        def platformToken = fetchSecret('ci/npm/platform', 'publish_token')
+                        if (platformToken) {
+                            rotateStringCredential(credentialStore, 'platform-npm-token', platformToken, 'Platform npm publish token')
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Rotate SonarQube Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'sonarqube'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'sonarqube-token', fetchSecret('ci/sonarqube', 'token'), 'SonarQube authentication token')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate ArgoCD Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'argocd'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'argocd-auth-token', fetchSecret('ci/argocd', 'auth_token'), 'ArgoCD authentication token')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate Terraform Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'terraform'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'terraform-token', fetchSecret('ci/terraform', 'api_token'), 'Terraform Cloud/Enterprise API token')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate Jira Credentials') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'jira'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        def jiraCreds = fetchSecretJson('ci/jira')
+                        rotateUsernamePassword(credentialStore, 'jira-credentials', jiraCreds.username, jiraCreds.password, 'Jira service account credentials')
+                    }
+                }
+            }
+        }
+
+        stage('Rotate GitHub Token') {
+            when { expression { params.ROTATION_SCOPE in ['all', 'github'] } }
+            steps {
+                container('aws-cli') {
+                    script {
+                        rotateStringCredential(credentialStore, 'github-org-token', fetchSecret('ci/github', 'org_token'), 'GitHub organization token')
+                    }
+                }
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                script {
+                    def allCreds = SystemCredentialsProvider.instance.credentials
+                    def tracked = [
+                        'snyk-api-token', 'jfrog-credentials', 'slack-webhook-url',
+                        'npm-publish-token', 'sonarqube-token', 'argocd-auth-token',
+                        'terraform-token', 'jira-credentials', 'github-org-token'
+                    ]
+                    def existing = allCreds.collect { it.id }
+                    def missing = []
+
+                    echo "=== Credential Rotation Summary ==="
+                    tracked.each { id ->
+                        def status = existing.contains(id) ? "OK" : "MISSING"
+                        echo "  ${id}: ${status}"
+                        if (!existing.contains(id)) missing.add(id)
+                    }
+                    echo "===================================="
+
+                    if (missing && !params.DRY_RUN) {
+                        unstable("Missing credentials after rotation: ${missing.join(', ')}")
+                    }
+                }
+            }
+        }
+
+        stage('Notify') {
+            steps {
+                script {
+                    def scope = params.ROTATION_SCOPE
+                    def mode = params.DRY_RUN ? " (DRY RUN)" : ""
+                    slackNotify([channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"],
+                        "Credential rotation [${scope}]${mode}: ${currentBuild.currentResult}")
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                slackNotify([channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"],
+                    "CREDENTIAL ROTATION FAILED — manual intervention required. Scope: ${params.ROTATION_SCOPE}")
+            }
+        }
+    }
+}
+
+def fetchSecret(String secretName, String key) {
+    if (params.DRY_RUN) {
+        echo "[DRY RUN] Would fetch ${secretName}#${key}"
+        return null
+    }
+    def response = sh(
+        script: """
+            aws secretsmanager get-secret-value \
+                --secret-id ${secretName} \
+                --region ${AWS_REGION} \
+                --query SecretString \
+                --output text
+        """,
+        returnStdout: true
+    ).trim()
+    def parsed = readJSON text: response
+    return parsed[key] ?: null
+}
+
+def fetchSecretJson(String secretName) {
+    if (params.DRY_RUN) {
+        echo "[DRY RUN] Would fetch ${secretName}"
+        return [username: 'dry-run', password: 'dry-run']
+    }
+    def response = sh(
+        script: """
+            aws secretsmanager get-secret-value \
+                --secret-id ${secretName} \
+                --region ${AWS_REGION} \
+                --query SecretString \
+                --output text
+        """,
+        returnStdout: true
+    ).trim()
+    return readJSON(text: response)
+}
+
+def rotateStringCredential(store, String id, String value, String description) {
+    if (!value) {
+        echo "Skipped ${id} (no value returned from Secrets Manager)"
+        return
+    }
+    if (params.DRY_RUN) {
+        echo "[DRY RUN] Would rotate: ${id}"
+        return
+    }
+    def domain = Domain.global()
+    def existing = store.getCredentials(domain).find { it.id == id }
+    def cred = new StringCredentialsImpl(CredentialsScope.GLOBAL, id, description, Secret.fromString(value))
+    if (existing) {
+        store.updateCredentials(domain, existing, cred)
+        echo "Rotated: ${id}"
+    } else {
+        store.addCredentials(domain, cred)
+        echo "Created (new): ${id}"
+    }
+}
+
+def rotateUsernamePassword(store, String id, String username, String password, String description) {
+    if (!username || !password) {
+        echo "Skipped ${id} (incomplete credentials from Secrets Manager)"
+        return
+    }
+    if (params.DRY_RUN) {
+        echo "[DRY RUN] Would rotate: ${id}"
+        return
+    }
+    def domain = Domain.global()
+    def existing = store.getCredentials(domain).find { it.id == id }
+    def cred = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, id, description, username, password)
+    if (existing) {
+        store.updateCredentials(domain, existing, cred)
+        echo "Rotated: ${id}"
+    } else {
+        store.addCredentials(domain, cred)
+        echo "Created (new): ${id}"
+    }
+}

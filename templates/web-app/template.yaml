@@ -1,0 +1,79 @@
+version: 1
+type: pipeline-template
+name: web-app
+displayName: Web Application Pipeline
+description: Build, test, scan, and deploy a containerized web application through dev/staging/prod environments.
+templateType: MULTIBRANCH
+multibranch:
+  branchSource:
+    github:
+      repoOwner: ${github_org}
+      repository: ${github_repo}
+      credentialsId: ${github_credential}
+parameters:
+  - name: github_org
+    displayName: GitHub Organization
+    type: string
+  - name: github_repo
+    displayName: GitHub Repository
+    type: string
+  - name: github_credential
+    displayName: GitHub Credentials ID
+    type: credentials
+    defaultValue: github-org-token
+  - name: build_tool
+    displayName: Build Tool
+    description: "Which build tool to use: npm or gradle"
+    type: string
+    defaultValue: npm
+    allowedValues:
+      - npm
+      - gradle
+  - name: node_version
+    displayName: Node.js Version (npm only)
+    type: string
+    defaultValue: "20"
+  - name: gradle_build_task
+    displayName: Gradle Build Task (gradle only)
+    type: string
+    defaultValue: assemble
+  - name: registry
+    displayName: Container Registry
+    type: string
+    defaultValue: registry.internal.example.com
+  - name: image_name
+    displayName: Container Image Name
+    type: string
+  - name: deploy_namespaces_dev
+    displayName: Kubernetes Namespace (Dev)
+    type: string
+  - name: deploy_namespaces_staging
+    displayName: Kubernetes Namespace (Staging)
+    type: string
+  - name: deploy_namespaces_prod
+    displayName: Kubernetes Namespace (Prod)
+    type: string
+  - name: trivy_severity
+    displayName: Trivy Severity Threshold
+    type: string
+    defaultValue: "CRITICAL,HIGH"
+  - name: trivy_fail_on_vulnerability
+    displayName: Fail Build on Vulnerability
+    type: boolean
+    defaultValue: true
+  - name: health_endpoint
+    displayName: Health Check Endpoint
+    type: string
+    defaultValue: /health
+  - name: smoke_retries
+    displayName: Smoke Test Retries
+    type: number
+    defaultValue: 5
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#ci-notifications"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

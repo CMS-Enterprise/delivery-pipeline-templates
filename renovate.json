@@ -1,0 +1,86 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":automergeDigest",
+    "schedule:weekly"
+  ],
+  "labels": ["dependencies", "automated"],
+  "prConcurrentLimit": 5,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Container images pinned by digest via Artifactory proxy (DockerHub origin)",
+      "fileMatch": [
+        "vars/.+\\.groovy$",
+        "templates/.+/Jenkinsfile$",
+        "resources/pods/.+\\.yaml$"
+      ],
+      "matchStrings": [
+        "artifactory\\.cloud\\.cms\\.gov/docker/(?<depName>[a-z0-9][a-z0-9/._-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "currentValueTemplate": "latest"
+    },
+    {
+      "customType": "regex",
+      "description": "Container images pinned by digest via Artifactory proxy (versioned tags)",
+      "fileMatch": [
+        "vars/.+\\.groovy$",
+        "templates/.+/Jenkinsfile$",
+        "resources/pods/.+\\.yaml$"
+      ],
+      "matchStrings": [
+        "artifactory\\.cloud\\.cms\\.gov/docker/(?<depName>node):(?<currentValue>[a-zA-Z0-9._-]+)",
+        "artifactory\\.cloud\\.cms\\.gov/docker/(?<depName>python):(?<currentValue>[a-zA-Z0-9._-]+)",
+        "artifactory\\.cloud\\.cms\\.gov/docker/(?<depName>gradle):(?<currentValue>[a-zA-Z0-9._-]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io"
+    },
+    {
+      "customType": "regex",
+      "description": "JFrog CLI container image pinned by digest",
+      "fileMatch": ["vars/.+\\.groovy$", "templates/.+/Jenkinsfile$"],
+      "matchStrings": [
+        "releases-docker\\.jfrog\\.io/(?<depName>jfrog/jfrog-cli-v2)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://releases-docker.jfrog.io",
+      "currentValueTemplate": "latest"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group all container digest updates into a single PR",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest"],
+      "groupName": "container-digests",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "Pin JFrog CLI updates to their own PR for visibility",
+      "matchPackageNames": ["jfrog/jfrog-cli-v2"],
+      "groupName": "jfrog-cli"
+    },
+    {
+      "description": "Do not automerge major version bumps",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change"]
+    },
+    {
+      "description": "Security updates bypass schedule",
+      "matchCategories": ["security"],
+      "schedule": ["at any time"],
+      "automerge": true,
+      "prPriority": 10
+    }
+  ]
+}

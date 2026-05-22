@@ -1,0 +1,61 @@
+version: 1
+type: pipeline-template
+name: library-publish
+displayName: Library / Package Publish Pipeline
+description: Build, test, and publish internal libraries (npm, Maven, PyPI) with tag-based releases.
+templateType: MULTIBRANCH
+multibranch:
+  branchSource:
+    github:
+      repoOwner: ${github_org}
+      repository: ${github_repo}
+      credentialsId: ${github_credential}
+parameters:
+  - name: github_org
+    displayName: GitHub Organization
+    type: string
+  - name: github_repo
+    displayName: GitHub Repository
+    type: string
+  - name: github_credential
+    displayName: GitHub Credentials ID
+    type: credentials
+    defaultValue: github-org-token
+  - name: build_tool
+    displayName: Build Tool
+    type: string
+    defaultValue: npm
+    allowedValues:
+      - npm
+      - gradle
+  - name: node_version
+    displayName: Node.js Version (npm only)
+    type: string
+    defaultValue: "20"
+  - name: npm_registry
+    displayName: npm Registry URL
+    type: string
+    defaultValue: https://npm.internal.example.com
+  - name: npm_token_credential
+    displayName: npm Publish Token Credential
+    type: credentials
+    defaultValue: npm-publish-token
+  - name: snyk_org
+    displayName: Snyk Organization
+    type: string
+  - name: snyk_token_credential
+    displayName: Snyk Token Credential
+    type: credentials
+    defaultValue: snyk-api-token
+  - name: snyk_severity_threshold
+    displayName: Snyk Severity Threshold
+    type: string
+    defaultValue: high
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#platform-releases"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

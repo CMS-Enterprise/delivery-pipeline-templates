@@ -1,0 +1,114 @@
+def deployed_env = null
+def is_main = env.BRANCH_NAME ==~ /^(main|master)$/
+
+def jfrogConfig = [
+    url: "${jfrog_url}",
+    registry: "${jfrog_registry}",
+    credential: "${jfrog_credential}",
+    server_id: "${jfrog_server_id}",
+    staging_repo: "${jfrog_staging_repo}",
+    prod_repo: "${jfrog_prod_repo}",
+    image_name: "${image_name}",
+    kms_key_arn: "${cosign_kms_key_arn}"
+]
+def snykConfig = [
+    org: "${snyk_org}",
+    token_credential: "${snyk_token_credential}",
+    severity_threshold: "${snyk_severity_threshold}",
+    monitor: ${snyk_monitor}
+]
+def deployConfig = [
+    namespaces: [
+        dev: "${deploy_namespaces_dev}",
+        staging: "${deploy_namespaces_staging}",
+        prod: "${deploy_namespaces_prod}"
+    ]
+]
+def notifyConfig = [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"]
+
+node {
+    // ─── Pull Request: CI checks only ───
+    if (!is_main) {
+        try {
+            stage("Build") {
+                if ("${build_tool}" == 'npm') {
+                    buildNpm(node_version: "${node_version}")
+                    unitTestNpm(node_version: "${node_version}")
+                } else {
+                    buildGradle(build_task: "${gradle_build_task}")
+                    unitTestGradle()
+                }
+            }
+            stage("Snyk Code Scan") {
+                snykCodeScan(snykConfig)
+            }
+            stage("Dependency Scan") {
+                snykDependencyScan(snykConfig)
+            }
+        } catch (err) {
+            slackNotify(notifyConfig, "FAILED during CI. Error: ${err.message}")
+            throw err
+        }
+        return
+    }
+
+    // ─── Main branch: full delivery pipeline ───
+    try {
+        stage("Build & Push to Staging") {
+            if ("${build_tool}" == 'npm') {
+                buildNpm(node_version: "${node_version}")
+                unitTestNpm(node_version: "${node_version}")
+            } else {
+                buildGradle(build_task: "${gradle_build_task}")
+                unitTestGradle()
+            }
+            jfrogBuild(jfrogConfig)
+        }
+        stage("Snyk Code Scan") {
+            snykCodeScan(snykConfig)
+        }
+        stage("Xray Scan") {
+            jfrogScan(jfrogConfig)
+        }
+        stage("Promote Image") {
+            jfrogPromote(jfrogConfig)
+        }
+
+        deployed_env = 'dev'
+        stage("Deploy to Dev") {
+            deployToK8s(deployConfig, 'dev')
+        }
+        stage("Integration Test") {
+            smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries})
+        }
+
+        deployed_env = 'staging'
+        stage("Deploy to Staging") {
+            deployToK8s(deployConfig, 'staging')
+        }
+        stage("Smoke Test") {
+            smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries})
+        }
+
+        input "Promote to production?"
+
+        deployed_env = 'prod'
+        stage("Deploy to Prod") {
+            deployToK8s(deployConfig, 'prod')
+        }
+
+        slackNotify(notifyConfig, "Deployed to production")
+    } catch (err) {
+        if (deployed_env) {
+            try {
+                rollbackK8s(deployConfig, deployed_env)
+                slackNotify(notifyConfig, "FAILED in ${deployed_env} — rolled back. Error: ${err.message}")
+            } catch (rollbackErr) {
+                slackNotify(notifyConfig, "FAILED in ${deployed_env} — rollback also failed! Manual intervention required. Error: ${err.message}")
+            }
+        } else {
+            slackNotify(notifyConfig, "FAILED during CI/security gates. Error: ${err.message}")
+        }
+        throw err
+    }
+}

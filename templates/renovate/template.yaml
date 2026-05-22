@@ -1,0 +1,23 @@
+version: 1
+type: pipeline-template
+name: renovate
+displayName: Renovate Dependency Updates
+description: Runs Renovate to automatically update container image pins and dependencies.
+parameters:
+  - name: github_token_credential
+    displayName: GitHub Token Credential
+    type: credentials
+    defaultValue: github-org-token
+  - name: artifactory_token_credential
+    displayName: Artifactory Token Credential
+    type: credentials
+    defaultValue: artifactory-token
+  - name: jfrog_credential
+    displayName: JFrog Credentials ID
+    type: credentials
+    defaultValue: jfrog-credentials
+  - name: renovate_repositories
+    displayName: Repositories to Update
+    description: "JSON array of repository names"
+    type: string
+    defaultValue: "[\"your-org/delivery-pipelines\"]"

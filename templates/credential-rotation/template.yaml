@@ -1,0 +1,48 @@
+version: 1
+type: pipeline-template
+name: credential-rotation
+displayName: Credential Rotation Pipeline
+description: Pulls secrets from AWS Secrets Manager and updates Jenkins credentials. Runs on a schedule.
+parameters:
+  - name: rotation_scope
+    displayName: Rotation Scope
+    description: "Which credentials to rotate"
+    type: string
+    defaultValue: all
+    allowedValues:
+      - all
+      - snyk
+      - jfrog
+      - slack
+      - npm
+      - sonarqube
+      - argocd
+      - terraform
+      - jira
+      - github
+  - name: dry_run
+    displayName: Dry Run
+    description: "Validate Secrets Manager connectivity without updating Jenkins credentials"
+    type: boolean
+    defaultValue: false
+  - name: force
+    displayName: Force Rotation
+    description: "Rotate even if credential has not expired"
+    type: boolean
+    defaultValue: false
+  - name: aws_region
+    displayName: AWS Region
+    type: string
+    defaultValue: us-east-1
+  - name: aws_account_credential
+    displayName: AWS Account ID Credential
+    type: credentials
+    defaultValue: aws-account-id-prod
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#platform-security"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

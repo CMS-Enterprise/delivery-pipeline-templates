@@ -1,0 +1,47 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+                spec:
+                  containers:
+                    - name: renovate
+                      image: artifactory.cloud.cms.gov/docker/renovate/renovate@sha256:f3a2c7d8e1b9a4c6d5e8f0a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2
+                      command: ['cat']
+                      tty: true
+            """
+        }
+    }
+
+    triggers {
+        cron('H 5 * * 1')
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 60, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Renovate') {
+            steps {
+                container('renovate') {
+                    withCredentials([
+                        string(credentialsId: "${github_token_credential}", variable: 'RENOVATE_TOKEN'),
+                        string(credentialsId: "${artifactory_token_credential}", variable: 'ARTIFACTORY_TOKEN'),
+                        usernamePassword(credentialsId: "${jfrog_credential}", usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_PASS')
+                    ]) {
+                        sh '''
+                            export RENOVATE_PLATFORM=github
+                            export RENOVATE_REPOSITORIES='''' + "${renovate_repositories}" + ''''
+                            export RENOVATE_HOST_RULES='[
+                                {"matchHost":"artifactory.cloud.cms.gov","token":"'"$ARTIFACTORY_TOKEN"'"},
+                                {"matchHost":"releases-docker.jfrog.io","username":"'"$JFROG_USER"'","password":"'"$JFROG_PASS"'"}
+                            ]'
+                            renovate
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}

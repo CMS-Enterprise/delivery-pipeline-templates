@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://missing.cloudbees.com/template.schema.json",
+  "$id": "https://delivery-pipelines.internal/template.schema.json",
   "title": "CloudBees Pipeline Template Schema",
-  "required": ["version","name", "displayName", "type"],
+  "required": ["version", "name", "displayName", "type"],
   "type": "object",
   "properties": {
     "version": {
@@ -24,9 +24,7 @@
     "type": {
       "type": "string",
       "description": "The type of the template",
-      "enum": [
-        "pipeline-template"
-      ]
+      "enum": ["pipeline-template"]
     },
     "templateFile": {
       "type": "string",
@@ -34,11 +32,43 @@
     },
     "templateType": {
       "type": "string",
-      "description": "The type of the template",
-      "enum": [
-        "MULTIBRANCH",
-        "SCRIPTED"
-      ]
+      "description": "MULTIBRANCH for multibranch pipelines, SCRIPTED for single-run jobs",
+      "enum": ["MULTIBRANCH", "SCRIPTED"]
+    },
+    "multibranch": {
+      "type": "object",
+      "description": "Multibranch pipeline configuration",
+      "properties": {
+        "branchSource": {
+          "type": "object",
+          "properties": {
+            "github": {
+              "type": "object",
+              "properties": {
+                "repoOwner": { "type": "string" },
+                "repository": { "type": "string" },
+                "credentialsId": { "type": "string" },
+                "apiUri": { "type": "string" }
+              }
+            },
+            "git": {
+              "type": "object",
+              "properties": {
+                "remote": { "type": "string" },
+                "credentialsId": { "type": "string" }
+              }
+            }
+          }
+        },
+        "markerFile": { "type": "string" },
+        "orphanedItemStrategy": {
+          "type": "object",
+          "properties": {
+            "daysToKeep": { "type": "number" }
+          }
+        },
+        "scanRepositoryInterval": { "type": "string" }
+      }
     },
     "parameters": {
       "type": "array",
@@ -62,27 +92,16 @@
           "type": {
             "type": "string",
             "description": "The type of the parameter",
-            "enum": [
-              "string",
-              "boolean",
-              "number",
-              "credentials"
-            ]
+            "enum": ["string", "boolean", "number", "credentials"]
           },
-          "default": {
-            "type": [
-              "string",
-              "boolean",
-              "number"
-            ],
+          "defaultValue": {
+            "type": ["string", "boolean", "number"],
             "description": "The default value of the parameter"
           },
           "allowedValues": {
             "type": "array",
-            "description": "An array containing the list of values allowed for the parameter.",
-            "items": {
-              "type": "string"
-            }
+            "description": "An array containing the list of values allowed for the parameter",
+            "items": { "type": "string" }
           }
         }
       }

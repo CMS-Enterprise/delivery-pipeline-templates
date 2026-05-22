@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: kubectl
+      image: artifactory.cloud.cms.gov/docker/bitnami/kubectl@sha256:13dc27afebffa1065bf7602d72a2d2e77019647fc11e591cead5e68304c8e914
+      command: ['cat']
+      tty: true

@@ -1,0 +1,180 @@
+def is_feature = env.BRANCH_NAME ==~ /${feature_pattern}/
+def is_release = env.BRANCH_NAME ==~ /${release_pattern}/
+def is_hotfix  = env.BRANCH_NAME ==~ /${hotfix_pattern}/
+def is_main    = env.BRANCH_NAME ==~ /^(main|master)$/
+def is_develop = env.BRANCH_NAME ==~ /^develop$/
+
+def buildConfig = [:]
+def deployConfig = [
+    namespaces: [
+        dev: "${deploy_namespaces_dev}",
+        staging: "${deploy_namespaces_staging}",
+        prod: "${deploy_namespaces_prod}"
+    ]
+]
+def notifyConfig = [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"]
+
+def doBuild() {
+    if ("${build_tool}" == 'npm') {
+        buildNpm(node_version: "${node_version}")
+    } else {
+        buildGradle(build_task: "${gradle_build_task}")
+    }
+}
+
+def doUnitTest() {
+    if ("${build_tool}" == 'npm') {
+        unitTestNpm(node_version: "${node_version}")
+    } else {
+        unitTestGradle()
+    }
+}
+
+def doIntegrationTest() {
+    if ("${build_tool}" == 'npm') {
+        unitTestNpm(node_version: "${node_version}")
+    } else {
+        unitTestGradle(test_task: "${gradle_test_task}")
+    }
+}
+
+// ─── Feature branches: fast feedback ───
+if (is_feature) {
+    node {
+        stage("Build") { doBuild() }
+        stage("Unit Test") { doUnitTest() }
+        if (${feature_integration_tests}) {
+            stage("Integration Test") { doIntegrationTest() }
+        }
+    }
+}
+
+// ─── Develop: integration gate ───
+if (is_develop) {
+    def deployed_env = null
+    node {
+        try {
+            stage("Build") { doBuild() }
+            stage("Unit Test") { doUnitTest() }
+            stage("Integration Test") { doIntegrationTest() }
+            if (${deploy_develop}) {
+                deployed_env = 'dev'
+                deployToK8s(deployConfig, 'dev')
+                stage("Smoke Test") { smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries}) }
+            }
+        } catch (err) {
+            if (deployed_env) {
+                try {
+                    rollbackK8s(deployConfig, deployed_env)
+                    slackNotify(notifyConfig, "FAILED deploying develop to ${deployed_env} — rolled back. Error: ${err.message}")
+                } catch (rollbackErr) {
+                    slackNotify(notifyConfig, "FAILED deploying develop to ${deployed_env} — rollback also failed! Error: ${err.message}")
+                }
+            } else {
+                slackNotify(notifyConfig, "FAILED on develop branch. Error: ${err.message}")
+            }
+            throw err
+        }
+    }
+}
+
+// ─── Release branches: full pipeline to staging ───
+if (is_release) {
+    def deployed_env = null
+    node {
+        try {
+            stage("Build") { doBuild() }
+            stage("Unit Test") { doUnitTest() }
+            stage("Integration Test") { doIntegrationTest() }
+
+            deployed_env = 'staging'
+            deployToK8s(deployConfig, 'staging')
+            stage("Smoke Test") { smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries}) }
+
+            if (${notify_on_release_candidate}) {
+                slackNotify(notifyConfig, "Release candidate ready in staging: ${env.BRANCH_NAME}")
+            }
+        } catch (err) {
+            if (deployed_env) {
+                try {
+                    rollbackK8s(deployConfig, deployed_env)
+                    slackNotify(notifyConfig, "FAILED release ${env.BRANCH_NAME} in ${deployed_env} — rolled back. Error: ${err.message}")
+                } catch (rollbackErr) {
+                    slackNotify(notifyConfig, "FAILED release ${env.BRANCH_NAME} in ${deployed_env} — rollback also failed! Error: ${err.message}")
+                }
+            } else {
+                slackNotify(notifyConfig, "FAILED release ${env.BRANCH_NAME} during CI. Error: ${err.message}")
+            }
+            throw err
+        }
+    }
+}
+
+// ─── Hotfix: expedited path to prod ───
+if (is_hotfix) {
+    def deployed_env = null
+    node {
+        try {
+            stage("Build") { doBuild() }
+            stage("Unit Test") { doUnitTest() }
+
+            deployed_env = 'staging'
+            deployToK8s(deployConfig, 'staging')
+            stage("Smoke Test") { smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries}) }
+
+            input "Deploy hotfix to production?"
+
+            deployed_env = 'prod'
+            deployToK8s(deployConfig, 'prod')
+            slackNotify(notifyConfig, "Hotfix deployed: ${env.BRANCH_NAME}")
+        } catch (err) {
+            if (deployed_env) {
+                try {
+                    rollbackK8s(deployConfig, deployed_env)
+                    slackNotify(notifyConfig, "FAILED hotfix ${env.BRANCH_NAME} in ${deployed_env} — rolled back. Error: ${err.message}")
+                } catch (rollbackErr) {
+                    slackNotify(notifyConfig, "FAILED hotfix ${env.BRANCH_NAME} in ${deployed_env} — rollback also failed! Error: ${err.message}")
+                }
+            } else {
+                slackNotify(notifyConfig, "FAILED hotfix ${env.BRANCH_NAME} during CI. Error: ${err.message}")
+            }
+            throw err
+        }
+    }
+}
+
+// ─── Main: deploy to production ───
+if (is_main) {
+    def deployed_env = null
+    node {
+        try {
+            stage("Build") { doBuild() }
+            stage("Unit Test") { doUnitTest() }
+            stage("Integration Test") { doIntegrationTest() }
+
+            deployed_env = 'staging'
+            deployToK8s(deployConfig, 'staging')
+            stage("Smoke Test") { smokeTest(health_endpoint: "${health_endpoint}", retries: ${smoke_retries}) }
+
+            if (${manual_prod_approval}) {
+                input "Promote to production?"
+            }
+
+            deployed_env = 'prod'
+            deployToK8s(deployConfig, 'prod')
+            slackNotify(notifyConfig, "Deployed to production from ${env.BRANCH_NAME}")
+        } catch (err) {
+            if (deployed_env) {
+                try {
+                    rollbackK8s(deployConfig, deployed_env)
+                    slackNotify(notifyConfig, "FAILED in ${deployed_env} from ${env.BRANCH_NAME} — rolled back. Error: ${err.message}")
+                } catch (rollbackErr) {
+                    slackNotify(notifyConfig, "FAILED in ${deployed_env} from ${env.BRANCH_NAME} — rollback also failed! Error: ${err.message}")
+                }
+            } else {
+                slackNotify(notifyConfig, "FAILED main branch CI. Error: ${err.message}")
+            }
+            throw err
+        }
+    }
+}

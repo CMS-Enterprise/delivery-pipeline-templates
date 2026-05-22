@@ -1,4 +1,4 @@
-version: 1
+version: 2
 type: pipeline-template-catalog
 name: cms-delivery-pipelines
 displayName: CMS Delivery Pipelines

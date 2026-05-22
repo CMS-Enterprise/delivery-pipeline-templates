@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: curl
+      image: artifactory.cloud.cms.gov/docker/curlimages/curl@sha256:eb411f0a02b75f2c2342dbc2f6579905979dd65f61f1b3047067829bb553d149
+      command: ['cat']
+      tty: true

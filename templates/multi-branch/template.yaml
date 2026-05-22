@@ -1,0 +1,107 @@
+version: 1
+type: pipeline-template
+name: multi-branch
+displayName: Multi-Branch Pipeline
+description: Branch-aware pipeline adapting behavior for feature, develop, release, hotfix, and main branches.
+templateType: MULTIBRANCH
+multibranch:
+  branchSource:
+    github:
+      repoOwner: ${github_org}
+      repository: ${github_repo}
+      credentialsId: ${github_credential}
+parameters:
+  - name: github_org
+    displayName: GitHub Organization
+    type: string
+  - name: github_repo
+    displayName: GitHub Repository
+    type: string
+  - name: github_credential
+    displayName: GitHub Credentials ID
+    type: credentials
+    defaultValue: github-org-token
+  - name: build_tool
+    displayName: Build Tool
+    description: "Which build tool to use: npm or gradle"
+    type: string
+    defaultValue: gradle
+    allowedValues:
+      - npm
+      - gradle
+  - name: node_version
+    displayName: Node.js Version (npm only)
+    type: string
+    defaultValue: "20"
+  - name: gradle_build_task
+    displayName: Gradle Build Task (gradle only)
+    type: string
+    defaultValue: assemble
+  - name: gradle_test_task
+    displayName: Gradle Integration Test Task
+    type: string
+    defaultValue: integrationTest
+  - name: registry
+    displayName: Container Registry
+    type: string
+    defaultValue: registry.internal.example.com
+  - name: image_name
+    displayName: Container Image Name
+    type: string
+  - name: deploy_namespaces_dev
+    displayName: Kubernetes Namespace (Dev)
+    type: string
+  - name: deploy_namespaces_staging
+    displayName: Kubernetes Namespace (Staging)
+    type: string
+  - name: deploy_namespaces_prod
+    displayName: Kubernetes Namespace (Prod)
+    type: string
+  - name: trivy_severity
+    displayName: Trivy Severity Threshold
+    type: string
+    defaultValue: "CRITICAL,HIGH"
+  - name: feature_integration_tests
+    displayName: Run Integration Tests on Feature Branches
+    type: boolean
+    defaultValue: false
+  - name: deploy_develop
+    displayName: Deploy Develop Branch to Dev
+    type: boolean
+    defaultValue: true
+  - name: notify_on_release_candidate
+    displayName: Notify on Release Candidate
+    type: boolean
+    defaultValue: true
+  - name: manual_prod_approval
+    displayName: Require Manual Prod Approval
+    type: boolean
+    defaultValue: true
+  - name: feature_pattern
+    displayName: Feature Branch Pattern
+    type: string
+    defaultValue: "^feature/.*"
+  - name: release_pattern
+    displayName: Release Branch Pattern
+    type: string
+    defaultValue: "^release/.*"
+  - name: hotfix_pattern
+    displayName: Hotfix Branch Pattern
+    type: string
+    defaultValue: "^hotfix/.*"
+  - name: health_endpoint
+    displayName: Health Check Endpoint
+    type: string
+    defaultValue: /health
+  - name: smoke_retries
+    displayName: Smoke Test Retries
+    type: number
+    defaultValue: 5
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#ci-notifications"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url
