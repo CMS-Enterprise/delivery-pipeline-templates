@@ -30,7 +30,8 @@ pipeline {
                         string(credentialsId: "${artifactory_token_credential}", variable: 'ARTIFACTORY_TOKEN'),
                         usernamePassword(credentialsId: "${jfrog_credential}", usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_PASS')
                     ]) {
-                        sh '''
+                      script {
+                        sh """
                             export RENOVATE_PLATFORM=github
                             export RENOVATE_REPOSITORIES='''' + "${renovate_repositories}" + ''''
                             export RENOVATE_HOST_RULES='[
@@ -38,7 +39,8 @@ pipeline {
                                 {"matchHost":"releases-docker.jfrog.io","username":"'"$JFROG_USER"'","password":"'"$JFROG_PASS"'"}
                             ]'
                             renovate
-                        '''
+                        """
+                      }
                     }
                 }
             }
