@@ -33,8 +33,8 @@ pipeline {
 
     parameters {
         choice(name: 'ROTATION_SCOPE', choices: ['all', 'snyk', 'jfrog', 'slack', 'npm', 'sonarqube', 'argocd', 'terraform', 'jira', 'github'], description: 'Which credentials to rotate (default: all)')
-        booleanParam(name: 'DRY_RUN', defaultValue: ${dry_run}, description: 'Validate Secrets Manager connectivity without updating Jenkins credentials')
-        booleanParam(name: 'FORCE', defaultValue: ${force}, description: 'Rotate even if credential has not expired')
+        booleanParam(name: 'DRY_RUN', defaultValue: dry_run, description: 'Validate Secrets Manager connectivity without updating Jenkins credentials')
+        booleanParam(name: 'FORCE', defaultValue: force, description: 'Rotate even if credential has not expired')
         string(name: 'AWS_REGION', defaultValue: "${aws_region}", description: 'AWS region for Secrets Manager')
     }
 
