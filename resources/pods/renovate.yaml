@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-role
+  containers:
+    - name: renovate
+      image: artifactory.cloud.cms.gov/docker/renovate/renovate@sha256:f3a2c7d8e1b9a4c6d5e8f0a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2
+      command: ["cat"]
+      tty: true

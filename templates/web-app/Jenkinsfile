@@ -6,9 +6,21 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '20'))
         timeout(time: 60, unit: 'MINUTES')
+        skipDefaultCheckout true
     }
 
     stages {
+        stage("Checkout") {
+            steps {
+              checkout([$class: "GitSCM",
+                branches: [[name: "${branchName}"]],
+                doGenerateSubmoduleConfigureations: false,
+                extensions: [],
+                submoduleCfs: [],
+                userRemoteConfigs: [[credentialsId: "${gitCredentials}", url: "${repoUrl}"]]]
+              )
+            }
+          }
         stage('CI') {
             steps {
                 script {

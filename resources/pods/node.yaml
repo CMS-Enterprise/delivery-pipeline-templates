@@ -1,6 +1,7 @@
 apiVersion: v1
 kind: Pod
 spec:
+  serviceAccountName: jenkins-role
   containers:
     - name: node
       image: artifactory.cloud.cms.gov/docker/node@sha256:980c5420a7a2ddcb44037726977f2a349e5c7b64217516c7488dce4c74d71583

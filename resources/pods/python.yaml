@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-role
+  containers:
+    - name: python
+      image: artifactory.cloud.cms.gov/docker/python:3.14
+      command: ["cat"]
+      tty: true

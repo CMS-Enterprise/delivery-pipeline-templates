@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-role
+  containers:
+    - name: aws-cli
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+      command: ["cat"]
+      tty: true
+    - name: alpine
+      image: artifactory.cloud.cms.gov/docker/alpine:3
+      command: ["cat"]
+      tty: true

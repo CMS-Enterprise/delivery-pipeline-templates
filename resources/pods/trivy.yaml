@@ -1,8 +1,9 @@
 apiVersion: v1
 kind: Pod
 spec:
+  serviceAccountName: jenkins-role
   containers:
     - name: trivy
       image: artifactory.cloud.cms.gov/docker/aquasec/trivy@sha256:b9e3d0c3e0c3f9d6a8e5a7c2f1b0a4d8e6c9f2a5b8d1e4f7a0c3b6d9e2f5a8b1
-      command: ['cat']
+      command: ["cat"]
       tty: true
