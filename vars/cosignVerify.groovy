@@ -5,13 +5,10 @@ def call(Map config = [:]) {
         return
     }
 
-    def cosign_image = config.cosign_image ?: 'artifactory.cloud.cms.gov/docker/sigstore/cosign@sha256:c1b2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2'
     def image = env.IMAGE_TAG ?: error("IMAGE_TAG not set")
 
     stage("Cosign Verify") {
-        podTemplate(containers: [
-            containerTemplate(name: 'cosign', image: cosign_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
             node(POD_LABEL) {
                 container('cosign') {
                     sh """

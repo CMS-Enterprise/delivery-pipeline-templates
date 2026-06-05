@@ -1,0 +1,179 @@
+version: 1
+type: pipeline-template
+name: pod-pipeline
+displayName: Pod DevSecOps Pipeline
+description: Full DevSecOps pipeline that scans, tests, builds, and deploys all demo services (nextjs, vue, sveltekit, django, go, maven) as a pod through dev/staging/production environments.
+templateType: MULTIBRANCH
+multibranch:
+  branchSource:
+    github:
+      repoOwner: ${github_org}
+      repository: ${github_repo}
+      credentialsId: ${github_credential}
+parameters:
+  - name: github_org
+    displayName: GitHub Organization
+    type: string
+  - name: github_repo
+    displayName: GitHub Repository
+    type: string
+  - name: github_credential
+    displayName: GitHub Credentials ID
+    type: credentials
+    defaultValue: github-org-token
+
+  # ─── JFrog / Container Registry ───
+  - name: jfrog_url
+    displayName: JFrog Artifactory URL
+    type: string
+    defaultValue: https://artifactory.cloud.cms.gov/artifactory
+  - name: jfrog_registry
+    displayName: JFrog Docker Registry
+    type: string
+    defaultValue: docker.artifactory.cloud.cms.gov
+  - name: jfrog_credential
+    displayName: JFrog Credentials ID
+    type: credentials
+    defaultValue: jfrog-credentials
+  - name: jfrog_server_id
+    displayName: JFrog Server ID
+    type: string
+    defaultValue: jfrog-artifactory
+  - name: jfrog_staging_repo
+    displayName: JFrog Staging Repository
+    type: string
+    defaultValue: docker-staging-local
+  - name: jfrog_prod_repo
+    displayName: JFrog Verified/Production Repository
+    type: string
+    defaultValue: docker-release-local
+
+  # ─── Image Signing ───
+  - name: cosign_kms_key_arn
+    displayName: Cosign KMS Key ARN
+    description: "AWS KMS key ARN for image signing (leave empty to skip signing)"
+    type: string
+
+  # ─── Code Quality (SonarQube) ───
+  - name: sonarqube_url
+    displayName: SonarQube URL
+    type: string
+    defaultValue: https://sonarqube.cloud.cms.gov
+  - name: sonarqube_project_key
+    displayName: SonarQube Project Key
+    type: string
+  - name: sonarqube_token_credential
+    displayName: SonarQube Token Credential
+    type: credentials
+    defaultValue: sonarqube-token
+
+  # ─── Code Security (Snyk) ───
+  - name: snyk_org
+    displayName: Snyk Organization
+    type: string
+  - name: snyk_token_credential
+    displayName: Snyk Token Credential
+    type: credentials
+    defaultValue: snyk-api-token
+  - name: snyk_severity_threshold
+    displayName: Snyk Severity Threshold
+    type: string
+    defaultValue: high
+    allowedValues:
+      - low
+      - medium
+      - high
+      - critical
+
+  # ─── OPA Policy ───
+  - name: opa_policy_path
+    displayName: OPA Policy Path
+    description: "Path to Rego policy files for Conftest"
+    type: string
+    defaultValue: policy/
+
+  # ─── GitOps / Manifest Repo ───
+  - name: manifest_repo
+    displayName: GitOps Manifest Repository
+    description: "Git URL for the deployment manifests repository (without https://)"
+    type: string
+  - name: git_credential
+    displayName: Git Credential for Manifest Repo
+    type: credentials
+    defaultValue: github-org-token
+  - name: manifest_path_dev
+    displayName: Manifest Path (Dev)
+    type: string
+    defaultValue: overlays/dev
+  - name: manifest_path_staging
+    displayName: Manifest Path (Staging)
+    type: string
+    defaultValue: overlays/staging
+  - name: manifest_path_prod
+    displayName: Manifest Path (Production)
+    type: string
+    defaultValue: overlays/prod
+
+  # ─── Kubernetes ───
+  - name: kubeconfig_dev
+    displayName: Kubeconfig Credential (Dev)
+    type: credentials
+    defaultValue: kubeconfig-dev
+  - name: namespace_dev
+    displayName: Kubernetes Namespace (Dev)
+    type: string
+    defaultValue: pod-dev
+
+  # ─── JMeter / Load Testing ───
+  - name: jmeter_threads
+    displayName: JMeter Threads (Dev)
+    type: number
+    defaultValue: 10
+  - name: jmeter_ramp_up
+    displayName: JMeter Ramp-Up (Dev, seconds)
+    type: number
+    defaultValue: 30
+  - name: jmeter_duration
+    displayName: JMeter Duration (Dev, seconds)
+    type: number
+    defaultValue: 60
+  - name: load_test_threads
+    displayName: Load Test Threads (Staging)
+    type: number
+    defaultValue: 50
+  - name: load_test_ramp_up
+    displayName: Load Test Ramp-Up (Staging, seconds)
+    type: number
+    defaultValue: 60
+  - name: load_test_duration
+    displayName: Load Test Duration (Staging, seconds)
+    type: number
+    defaultValue: 300
+
+  # ─── Environment URLs ───
+  - name: dev_base_url
+    displayName: Dev Base URL
+    description: "Base URL for the dev environment (used for DAST scanning)"
+    type: string
+    defaultValue: https://dev.example.com
+  - name: staging_base_url
+    displayName: Staging Base URL
+    description: "Base URL for the staging environment (used for validation)"
+    type: string
+    defaultValue: https://staging.example.com
+
+  # ─── Health Checks ───
+  - name: smoke_retries
+    displayName: Smoke Test Retries
+    type: number
+    defaultValue: 5
+
+  # ─── Notifications ───
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#ci-notifications"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

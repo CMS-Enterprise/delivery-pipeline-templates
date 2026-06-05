@@ -1,13 +1,10 @@
 def call(Map config = [:]) {
-    def hadolint_image = config.hadolint_image ?: 'artifactory.cloud.cms.gov/docker/hadolint/hadolint@sha256:c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3'
     def dockerfile = config.dockerfile ?: 'Dockerfile'
     def fail_on_error = config.fail_on_error != false
     def trusted_registries = config.trusted_registries ?: 'artifactory.cloud.cms.gov'
 
     stage("Hadolint Dockerfile Lint") {
-        podTemplate(containers: [
-            containerTemplate(name: 'hadolint', image: hadolint_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/hadolint.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('hadolint') {

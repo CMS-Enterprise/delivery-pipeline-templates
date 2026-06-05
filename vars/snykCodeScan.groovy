@@ -1,13 +1,10 @@
 def call(Map config = [:]) {
-    def snyk_image = config.snyk_image ?: 'artifactory.cloud.cms.gov/docker/snyk/snyk@sha256:9d890769442afa9bd185403e7c199a60ea70b6784865e9ed0df2380f45e1c028'
     def severity_threshold = config.severity_threshold ?: 'high'
     def org = config.org ?: env.SNYK_ORG
     def project_name = config.project_name ?: env.REPO_NAME
 
     stage("Snyk Code Scan") {
-        podTemplate(containers: [
-            containerTemplate(name: 'snyk', image: snyk_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/snyk.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('snyk') {

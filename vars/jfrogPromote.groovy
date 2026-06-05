@@ -1,15 +1,12 @@
 def call(Map config = [:], String target = null) {
     def target_repo = target ?: config.prod_repo ?: 'docker-prod-local'
-    def jfrog_cli_image = config.jfrog_cli_image ?: 'releases-docker.jfrog.io/jfrog/jfrog-cli-v2@sha256:4a7d5c8e9f2b1d6a3c8e5f7b0d2a4e6c9f1b3d5a7c9e2f4b6d8a0c3e5f7a9b1d'
     def server_id = config.server_id ?: 'jfrog-artifactory'
     def source_repo = config.staging_repo ?: 'docker-staging-local'
     def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/artifactory'
     def copy = config.copy ?: false
 
     stage("Promote to ${target_repo}") {
-        podTemplate(containers: [
-            containerTemplate(name: 'jfrog-cli', image: jfrog_cli_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
             node(POD_LABEL) {
                 container('jfrog-cli') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_PASS')]) {

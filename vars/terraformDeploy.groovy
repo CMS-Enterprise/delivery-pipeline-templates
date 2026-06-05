@@ -1,32 +1,36 @@
 def call(Map config = [:], String environment) {
-    def base_image = config.base_image ?: 'artifactory.cloud.cms.gov/docker/alpine:3'
-    def tfenv_repo = config.tfenv_repo ?: 'https://github.com/tfutils/tfenv.git'
     def tf_version = config.tf_version ?: ''
     def terraform_dir = config.terraform_dir ?: 'terraform/environments'
     def auto_approve = config.auto_approve ?: false
     def var_file = config.var_file ?: "${environment}.tfvars"
 
     stage("Terraform Deploy (${environment})") {
-        podTemplate(containers: [
-            containerTemplate(name: 'tfenv', image: base_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/terraform.yaml')) {
             node(POD_LABEL) {
                 checkout scm
-                container('tfenv') {
-                    withCredentials([string(credentialsId: config.token_credential ?: 'terraform-token', variable: 'TF_TOKEN')]) {
-                        sh """
-                            apk add --no-cache git bash curl unzip
-                            git clone --depth 1 ${tfenv_repo} /opt/tfenv
-                            export PATH="/opt/tfenv/bin:\$PATH"
-                            ln -s /opt/tfenv/bin/* /usr/local/bin/ 2>/dev/null || true
-                        """
+                container('alpine') {
+                    def freshclam_mirror = config.freshclam_mirror ?: "https://artifactory.cloud.cms.gov/clamav-db"
+                    sh """
+                        apk add --no-cache git bash curl unzip clamav clamav-libunrar
+                        freshclam --quiet --DatabaseMirror=${freshclam_mirror}
 
-                        dir("${terraform_dir}/${environment}") {
+                        git clone --depth 1 https://github.com/tfutils/tfenv.git /opt/tfenv
+                        clamscan -r --infected /opt/tfenv
+                        if [ \$? -eq 1 ]; then echo "ClamAV detected malware in tfenv" && exit 1; fi
+
+                        export PATH="/opt/tfenv/bin:\$PATH"
+                        cd ${terraform_dir}/${environment}
+                        ${tf_version ? "tfenv install ${tf_version} && tfenv use ${tf_version}" : 'tfenv install && tfenv use'}
+
+                        clamscan -r --infected ~/.tfenv/versions/ 2>/dev/null || true
+                    """
+                }
+                container('aws-cli') {
+                    dir("${terraform_dir}/${environment}") {
+                        withCredentials([string(credentialsId: config.token_credential ?: 'terraform-token', variable: 'TF_TOKEN')]) {
                             sh """
                                 export PATH="/opt/tfenv/bin:\$PATH"
                                 export TF_TOKEN_app_terraform_io=\$TF_TOKEN
-
-                                ${tf_version ? "tfenv install ${tf_version} && tfenv use ${tf_version}" : 'tfenv install && tfenv use'}
 
                                 terraform --version
                                 terraform init -input=false

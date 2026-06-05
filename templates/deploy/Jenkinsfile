@@ -1,0 +1,85 @@
+pipeline {
+    agent none
+
+    parameters {
+        string(name: 'image', description: 'Fully qualified container image name to deploy.', trim: true)
+        string(name: 'tag', description: 'Image tag to deploy.', trim: true)
+        choice(name: 'environment', choices: ['dev', 'staging', 'production'], description: 'Target deployment environment.')
+        booleanParam(name: 'skip_signature_check', defaultValue: false, description: 'Skip cosign signature verification (not recommended).')
+        booleanParam(name: 'skip_smoke_test', defaultValue: false, description: 'Skip post-deploy smoke test.')
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Verify Image Signature') {
+            when {
+                expression { !params.skip_signature_check }
+            }
+            steps {
+                script {
+                    env.IMAGE_TAG = "${params.image}:${params.tag}"
+                    cosignVerify(kms_key_arn: "${cosign_kms_key_arn}")
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    def environment_path = "${manifest_path_prefix}/${params.environment}"
+                    gitopsPromote([
+                        manifest_repo: "${manifest_repo}",
+                        git_credential: "${git_credential}",
+                        environment_path: environment_path,
+                        image_overrides: [(params.image): "${params.image}:${params.tag}"]
+                    ], params.environment)
+                }
+            }
+        }
+
+        stage('Smoke Test') {
+            when {
+                expression { !params.skip_smoke_test }
+            }
+            steps {
+                script {
+                    def base_urls = [
+                        dev: "${dev_base_url}",
+                        staging: "${staging_base_url}",
+                        production: "${prod_base_url}"
+                    ]
+                    smokeTest(
+                        url: "${base_urls[params.environment]}/health",
+                        retries: 5
+                    )
+                }
+            }
+        }
+
+        stage('Notify') {
+            steps {
+                script {
+                    slackNotify(
+                        [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"],
+                        "Deployed ${params.image}:${params.tag} to ${params.environment}"
+                    )
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                slackNotify(
+                    [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}", color: "danger"],
+                    "FAILED to deploy ${params.image}:${params.tag} to ${params.environment}"
+                )
+            }
+        }
+    }
+}

@@ -3,12 +3,9 @@ def call(Map config = [:], String environment) {
     def region = config.region ?: 'us-east-1'
     def account_id = config.account_ids?."${environment}" ?: error("No account_id configured for ${environment}")
     def role_arn = "arn:aws:iam::${account_id}:role/${role_name}"
-    def aws_image = config.aws_image ?: 'artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046'
 
     stage("Assume Role (${environment})") {
-        podTemplate(containers: [
-            containerTemplate(name: 'aws-cli', image: aws_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/aws-cli.yaml')) {
             node(POD_LABEL) {
                 container('aws-cli') {
                     def creds = sh(

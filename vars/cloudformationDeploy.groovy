@@ -1,5 +1,4 @@
 def call(Map config = [:], String environment) {
-    def aws_image = config.aws_image ?: 'artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046'
     def stack_name = config.stack_name ?: "${env.REPO_NAME}-${environment}"
     def template_file = config.template_file ?: 'cloudformation/template.yaml'
     def parameters_file = config.parameters_file ?: "cloudformation/params-${environment}.json"
@@ -7,9 +6,7 @@ def call(Map config = [:], String environment) {
     def capabilities = config.capabilities ?: 'CAPABILITY_IAM CAPABILITY_NAMED_IAM'
 
     stage("CloudFormation Deploy (${environment})") {
-        podTemplate(containers: [
-            containerTemplate(name: 'aws-cli', image: aws_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/aws-cli.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('aws-cli') {

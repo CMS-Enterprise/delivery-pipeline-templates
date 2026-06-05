@@ -1,13 +1,10 @@
 def call(Map config = [:]) {
-    def golang_image = config.golang_image ?: 'artifactory.cloud.cms.gov/docker/golangci/golangci-lint@sha256:a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3'
     def config_file = config.config_file ?: '.golangci.yml'
     def timeout = config.timeout ?: '5m'
     def fail_on_error = config.fail_on_error != false
 
     stage("golangci-lint") {
-        podTemplate(containers: [
-            containerTemplate(name: 'golangci-lint', image: golang_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/golangci-lint.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('golangci-lint') {

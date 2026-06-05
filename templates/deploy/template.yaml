@@ -1,0 +1,52 @@
+version: 1
+type: pipeline-template
+name: deploy
+displayName: Deploy-Only Pipeline
+description: Lightweight pipeline for promoting an already-built and scanned image to an environment. Use for hotfixes, rollbacks, or re-deploys without rebuilding.
+templateType: PIPELINE
+
+parameters:
+  # ─── Image Signing ───
+  - name: cosign_kms_key_arn
+    displayName: Cosign KMS Key ARN
+    description: "AWS KMS key ARN for image signature verification (leave empty to skip)"
+    type: string
+
+  # ─── GitOps / Manifest Repo ───
+  - name: manifest_repo
+    displayName: GitOps Manifest Repository
+    description: "Git URL for the deployment manifests repository (without https://)"
+    type: string
+  - name: git_credential
+    displayName: Git Credential for Manifest Repo
+    type: credentials
+    defaultValue: github-org-token
+  - name: manifest_path_prefix
+    displayName: Manifest Path Prefix
+    description: "Base path for environment overlays (e.g. 'overlays' yields 'overlays/dev', 'overlays/staging', 'overlays/production')"
+    type: string
+    defaultValue: overlays
+
+  # ─── Environment URLs ───
+  - name: dev_base_url
+    displayName: Dev Base URL
+    type: string
+    defaultValue: https://dev.example.com
+  - name: staging_base_url
+    displayName: Staging Base URL
+    type: string
+    defaultValue: https://staging.example.com
+  - name: prod_base_url
+    displayName: Production Base URL
+    type: string
+    defaultValue: https://prod.example.com
+
+  # ─── Notifications ───
+  - name: slack_channel
+    displayName: Slack Notification Channel
+    type: string
+    defaultValue: "#ci-notifications"
+  - name: slack_webhook_credential
+    displayName: Slack Webhook Credential
+    type: credentials
+    defaultValue: slack-webhook-url

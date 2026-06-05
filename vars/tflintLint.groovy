@@ -1,13 +1,10 @@
 def call(Map config = [:]) {
-    def tflint_image = config.tflint_image ?: 'artifactory.cloud.cms.gov/docker/ghcr/terraform-linters/tflint@sha256:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'
     def terraform_dir = config.terraform_dir ?: 'terraform/'
     def fail_on_error = config.fail_on_error != false
     def minimum_severity = config.minimum_severity ?: 'warning'
 
     stage("TFLint") {
-        podTemplate(containers: [
-            containerTemplate(name: 'tflint', image: tflint_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/tflint.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('tflint') {

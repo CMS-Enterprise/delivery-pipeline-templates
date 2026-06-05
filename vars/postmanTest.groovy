@@ -1,12 +1,9 @@
 def call(Map config = [:]) {
-    def node_image = config.node_image ?: "artifactory.cloud.cms.gov/docker/node:${config.node_version ?: '20'}"
     def collection = config.collection ?: 'tests/api-contracts.postman_collection.json'
     def environment_file = config.environment_file ?: ''
 
     stage("Postman/Newman API Test") {
-        podTemplate(containers: [
-            containerTemplate(name: 'node', image: node_image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
                 checkout scm
                 container('node') {

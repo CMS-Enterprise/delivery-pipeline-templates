@@ -1,10 +1,6 @@
 def call(Map config = [:]) {
-    def image = config.node_image ?: "artifactory.cloud.cms.gov/docker/node:${config.node_version ?: '20'}"
-
     stage("npm Test") {
-        podTemplate(containers: [
-            containerTemplate(name: 'node', image: image, command: 'cat', ttyEnabled: true)
-        ]) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('node') {

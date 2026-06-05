@@ -1,0 +1,430 @@
+def is_main = env.BRANCH_NAME ==~ /^(main|master)$/
+
+def services = [
+    [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
+    [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
+    [name: 'sveltekit', buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm run check'],
+    [name: 'django',    buildTool: 'python', pod: 'python.yaml',        container: 'python',        buildCmd: 'pip install -r requirements.txt && python manage.py collectstatic --noinput', testCmd: 'pip install -r requirements.txt && python manage.py test'],
+    [name: 'go',        buildTool: 'go',     pod: 'golangci-lint.yaml', container: 'golangci-lint', buildCmd: 'go build -o go-site .',                                testCmd: 'go test ./...'],
+    [name: 'maven',     buildTool: 'maven',  pod: 'gradle.yaml',       container: 'gradle',        buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
+]
+
+def jfrogConfig = [
+    url: "${jfrog_url}",
+    registry: "${jfrog_registry}",
+    credential: "${jfrog_credential}",
+    server_id: "${jfrog_server_id}",
+    staging_repo: "${jfrog_staging_repo}",
+    prod_repo: "${jfrog_prod_repo}",
+    kms_key_arn: "${cosign_kms_key_arn}"
+]
+
+def snykConfig = [
+    org: "${snyk_org}",
+    token_credential: "${snyk_token_credential}",
+    severity_threshold: "${snyk_severity_threshold}"
+]
+
+def gitopsConfig = [
+    manifest_repo: "${manifest_repo}",
+    git_credential: "${git_credential}",
+]
+
+def notifyConfig = [channel: "${slack_channel}", webhook_credential: "${slack_webhook_credential}"]
+
+def imageTags = [:]
+
+def lintService(svc) {
+    switch (svc.buildTool) {
+        case 'npm':
+            eslintLint(paths: "demos/${svc.name}/src/", working_dir: "demos/${svc.name}")
+            break
+        case 'python':
+            pylintLint(paths: 'mysite/ pages/', working_dir: "demos/${svc.name}", min_score: '7.0')
+            break
+        case 'go':
+            golangciLint(working_dir: "demos/${svc.name}")
+            break
+        case 'maven':
+            checkstyleLint(working_dir: "demos/${svc.name}")
+            break
+    }
+}
+
+pipeline {
+    agent none
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 90, unit: 'MINUTES')
+        skipDefaultCheckout true
+    }
+
+    stages {
+        // ─── Fetch Source ───
+        stage('Fetch Source') {
+            agent { label 'jenkins-agent' }
+            steps {
+                checkout scm
+                stash name: 'source', includes: '**'
+            }
+        }
+
+        // ─── Lint ───
+        stage('Lint') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Lint: ${svc.name}", { lintService(svc) }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Security Scans (Code Quality, Code Security, Secret Detection, Source Malware) ───
+        stage('Security Scans') {
+            steps {
+                script {
+                    parallel(
+                        'Code Quality Scan': {
+                            sonarqubeScan(
+                                project_key: "${sonarqube_project_key}",
+                                url: "${sonarqube_url}",
+                                token_credential: "${sonarqube_token_credential}",
+                                source_path: 'demos/'
+                            )
+                        },
+                        'Code Security Scan': {
+                            snykCodeScan(snykConfig)
+                        },
+                        'Secret Detection Scan': {
+                            trufflehogScan(scan_path: '.')
+                        },
+                        'Source Malware Scan': {
+                            clamavScan(scan_path: '.')
+                        }
+                    )
+                }
+            }
+        }
+
+        // ─── Build ───
+        stage('Build') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Build: ${svc.name}", {
+                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
+                                node(POD_LABEL) {
+                                    unstash 'source'
+                                    container(svc.container) {
+                                        dir("demos/${svc.name}") {
+                                            sh svc.buildCmd
+                                        }
+                                    }
+                                    stash name: "build-${svc.name}", includes: "demos/${svc.name}/**"
+                                }
+                            }
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Test ───
+        stage('Test') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Test: ${svc.name}", {
+                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
+                                node(POD_LABEL) {
+                                    unstash "build-${svc.name}"
+                                    container(svc.container) {
+                                        dir("demos/${svc.name}") {
+                                            sh svc.testCmd
+                                        }
+                                    }
+                                }
+                            }
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Verify Base Image Signatures ───
+        stage('Verify Base Images') {
+            steps {
+                script {
+                    cosignVerify(jfrogConfig)
+                }
+            }
+        }
+
+        // ─── Build Container Images ───
+        stage('Build Images') {
+            agent {
+                kubernetes {
+                    yaml readTrusted('resources/pods/podman.yaml')
+                    defaultContainer 'podman'
+                }
+            }
+            steps {
+                unstash 'source'
+                script {
+                    def tag = env.GIT_COMMIT?.take(7) ?: env.BUILD_NUMBER
+                    services.each { svc ->
+                        container('podman') {
+                            sh "podman build -t ${jfrog_registry}/${jfrog_staging_repo}/${svc.name}:${tag} demos/${svc.name}/"
+                        }
+                        imageTags[svc.name] = "${jfrog_registry}/${jfrog_staging_repo}/${svc.name}:${tag}"
+                    }
+                }
+            }
+        }
+
+        // ─── Publish Images to Staging Repo ───
+        stage('Publish Images to Staging') {
+            steps {
+                script {
+                    jfrogBuild(jfrogConfig)
+                }
+            }
+        }
+
+        // ─── Sign Published Images ───
+        stage('Sign Images') {
+            steps {
+                script {
+                    imageTags.each { name, image ->
+                        env.IMAGE_TAG = image
+                        cosignSign(jfrogConfig)
+                    }
+                }
+            }
+        }
+
+        // ─── Image Scans (Xray, Vulnerability, Container Security, Malware, OPA Policy) ───
+        stage('Image Scans') {
+            steps {
+                script {
+                    parallel(
+                        'Xray Scan': {
+                            jfrogScan(jfrogConfig)
+                        },
+                        'Vulnerability Scan': {
+                            trivyScan(
+                                severity: 'CRITICAL,HIGH',
+                                fail_on_vulnerability: true,
+                                kms_key_arn: "${cosign_kms_key_arn}"
+                            )
+                        },
+                        'Container Security Scan': {
+                            imageTags.each { name, image ->
+                                snykContainerScan(snykConfig + [
+                                    image: image,
+                                    output_name: "snyk-container-${name}"
+                                ])
+                            }
+                        },
+                        'Container Malware Scan': {
+                            clamavScan(scan_path: 'demos/')
+                        },
+                        'OPA Policy Scan': {
+                            opaPolicyScan(
+                                policy_path: "${opa_policy_path}",
+                                input_paths: 'demos/'
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // ─── Generate SBOMs ───
+        stage('Generate SBOMs') {
+            steps {
+                script {
+                    parallel(
+                        'JFrog SBOM': {
+                            jfrogSbom(jfrogConfig + [output_name: 'jfrog-sbom'])
+                        },
+                        'Snyk SBOM': {
+                            imageTags.each { name, image ->
+                                snykContainerScan(snykConfig + [
+                                    image: image,
+                                    output_name: "snyk-sbom-${name}",
+                                    generate_sbom: true,
+                                    severity_threshold: 'critical'
+                                ])
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        // ─── Promote Images to Verified Repo ───
+        stage('Promote to Verified Repo') {
+            steps {
+                script {
+                    jfrogPromote(jfrogConfig)
+                    imageTags.each { name, image ->
+                        imageTags[name] = image.replace("${jfrog_staging_repo}", "${jfrog_prod_repo}")
+                    }
+                }
+            }
+        }
+
+        // ─── Update Image Tags in GitOps Manifest ───
+        stage('Update Image Tags') {
+            steps {
+                script {
+                    gitopsPromote(gitopsConfig + [
+                        environment_path: "${manifest_path_dev}",
+                        image_overrides: imageTags
+                    ], 'dev')
+                }
+            }
+        }
+
+        // ─── Deploy to Dev ───
+        stage('Deploy to Dev') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    kustomizeDeploy(
+                        overlay_path: "${manifest_path_dev}",
+                        namespaces: [dev: "${namespace_dev}"],
+                        'dev'
+                    )
+                }
+            }
+        }
+
+        // ─── JMeter Tests (Dev) ───
+        stage('JMeter Tests') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    services.each { svc ->
+                        jmeterTest(
+                            test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+                            threads: "${jmeter_threads}",
+                            ramp_up: "${jmeter_ramp_up}",
+                            duration: "${jmeter_duration}"
+                        )
+                    }
+                }
+            }
+        }
+
+        // ─── DAST Security Test ───
+        stage('DAST Security Test') {
+            when { expression { return is_main } }
+            agent {
+                kubernetes {
+                    yaml readTrusted('resources/pods/zap.yaml')
+                }
+            }
+            steps {
+                container('zap') {
+                    sh """
+                        zap-baseline.py -t ${dev_base_url} \
+                            -r zap-report.html \
+                            -J zap-report.json
+                    """
+                }
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'zap-report.*'
+            }
+        }
+
+        // ─── Deploy to Staging ───
+        stage('Deploy to Staging') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    gitopsPromote(gitopsConfig + [
+                        environment_path: "${manifest_path_staging}",
+                        image_overrides: imageTags
+                    ], 'staging')
+                }
+            }
+        }
+
+        // ─── Load Test (Staging) ───
+        stage('Load Test') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    services.each { svc ->
+                        jmeterTest(
+                            test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+                            threads: "${load_test_threads}",
+                            ramp_up: "${load_test_ramp_up}",
+                            duration: "${load_test_duration}"
+                        )
+                    }
+                }
+            }
+        }
+
+        // ─── Final Validation ───
+        stage('Validation') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    services.each { svc ->
+                        smokeTest(
+                            url: "${staging_base_url}/${svc.name}/health",
+                            retries: ${smoke_retries}
+                        )
+                    }
+                }
+            }
+        }
+
+        // ─── Production Gate ───
+        stage('Production Gate') {
+            when { expression { return is_main } }
+            steps {
+                input message: 'Go / No-Go to Production?', ok: 'Deploy to Production'
+            }
+        }
+
+        // ─── Deploy to Production ───
+        stage('Deploy to Production') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    gitopsPromote(gitopsConfig + [
+                        environment_path: "${manifest_path_prod}",
+                        image_overrides: imageTags
+                    ], 'production')
+                }
+            }
+        }
+
+        // ─── Post Production ───
+        stage('Post Production') {
+            when { expression { return is_main } }
+            steps {
+                script {
+                    slackNotify(notifyConfig, "Pod pipeline deployed to production — build ${env.BUILD_NUMBER}")
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                slackNotify(notifyConfig, "Pod pipeline FAILED — build ${env.BUILD_NUMBER} on ${env.BRANCH_NAME}")
+            }
+        }
+    }
+}

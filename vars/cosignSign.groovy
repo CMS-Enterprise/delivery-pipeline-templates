@@ -5,20 +5,15 @@ def call(Map config = [:]) {
         return
     }
 
+    def image = config.image ?: env.IMAGE_TAG ?: error("IMAGE_TAG not set")
     def role_name = config.role_name ?: 'deploy-role'
     def region = config.region ?: 'us-east-1'
-    def account_id = config.account_ids?. error
+    def account_id = config.account_id ?: error("account_id is required for cosign signing")
     def role_arn = "arn:aws:iam::${account_id}:role/${role_name}"
 
-    def cosignYaml = config.cosign_yaml ?: readTrusted 'resources/pods/cosign.yaml'
-    def awsYaml = config.aws_yaml ?: readTrusted 'resources/pods/aws-cli.yaml'
-
-
-
     stage("Cosign Sign") {
-        podTemplate(yaml: cosignYaml) {
-           podTemplate(yaml: awsYaml){
-             node(POD_LABEL) {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
+            node(POD_LABEL) {
                 container('aws-cli') {
                     def creds = sh(
                         script: """
@@ -42,8 +37,7 @@ def call(Map config = [:]) {
                             ${image}
                     """
                 }
-             }
-           }
+            }
         }
     }
 }

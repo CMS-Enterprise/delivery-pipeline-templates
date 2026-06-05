@@ -1,0 +1,470 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<!-- start the processing -->
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./../docs/css/style.css"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="author" value="JMeter developers">
+<meta name="email" value="dev AT jmeter.apache.org">
+
+<title>Apache JMeter - Changes</title>
+<style>
+  .code { font-weight: bold; }
+</style>
+</head>
+
+<body bgcolor="#ffffff" text="#000000" link="#525D76">
+<table border="0" cellspacing="0">
+<tr>
+<td align="left">
+<a href="http://www.apache.org"><img style="margin: 0px 30px 0px 0px" title="Apache Software Foundation" width="261" height="106" src="./../docs/images/asf-logo.png" border="0"/></a>
+</td>
+<td align="right">
+<a href="http://jmeter.apache.org/"><img width="259" height="88" src="./../docs/images/jmeter.png" alt="Apache JMeter" title="Apache JMeter" border="0"/></a>
+</td>
+</tr>
+</table>
+<table border="0" cellspacing="4">
+<tr><td>
+<hr noshade size="1"/>
+</td></tr>
+<tr>
+<td align="left" valign="top">
+<br>
+<table border="0" cellspacing="0" cellpadding="2" width="100%">
+<tr><td bgcolor="#525D76">
+<font color="#ffffff" face="arial,helvetica,sanserif">
+<strong>Changes</strong></font>
+</td></tr>
+<tr><td>
+<blockquote>
+<style type="text/css">
+h2 { color: #960000; }
+h3 { color: #960000; }
+</style><p>
+<table border="1" bgcolor="#bbbb00" width="50%" cellspacing="0" cellpadding="2">
+<tr><td>
+<b>This page details the changes made in the current version only.</b>
+<br>
+
+Earlier changes are detailed in the <a href="changes_history.html">History of Previous Changes</a>.
+</td></tr>
+</table>
+</p>
+<br>
+<p>
+<table border="1" bgcolor="#bbbb00" width="50%" cellspacing="0" cellpadding="2">
+<tr><td>
+JMeter 5.6.x requires Java 8 or later for execution (Java 17 or later recommended).
+<br>
+
+<b>The next major release would require Java 17 or later.</b>
+</td></tr>
+</table>
+</p>
+<h1>Version 5.6.3 </h1><p>
+Summary
+</p><ul>
+<li><a href="#Bug fixes">Bug fixes</a></li>
+</ul><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Improvements">Improvements</a></big></big></b></font></td></tr></table><br/>
+<h3>General</h3><ul>
+    <li><a href="https://github.com/apache/jmeter/pull/6199">Pull request #6199</a> - Enable use of <tt class="code">${...}</tt> expressions for <tt class="code">TransactionController</tt> &quot;generate parent sample&quot;, and &quot;include timers&quot; checkboxes</li>
+    <li><a href="https://github.com/apache/jmeter/pull/6199">Pull request #6199</a> - Enable use of <tt class="code">${...}</tt> expressions for <tt class="code">ThreadGroupGui</tt> &quot;scheduler&quot; checkbox</li>
+    <li><a href="https://github.com/apache/jmeter/pull/6199">Pull request #6199</a> - Enable use of <tt class="code">${...}</tt> expressions for <tt class="code">HTTP Request</tt> &quot;retrieve embedded resources&quot;, &quot;download resources concurrently&quot;, and &quot;store as MD5&quot; checkboxes</li>
+  </ul><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Bug fixes">Bug fixes</a></big></big></b></font></td></tr></table><br/>
+<h3>General</h3><ul>
+  <li><a href="https://github.com/apache/jmeter/issues/6043">Issue #6043</a><a href="https://github.com/apache/jmeter/pull/6044">Pull request #6044</a> - JMeter 5.6 shows 0 as a min response time in summary report</li>
+  <li>Restored binary API compatibility with pre-5.6.2: restore public methods to non-static as they were before 5.6.2 <tt class="code">JavaSamplerContext.getJMeterVariables</tt>,
+    <tt class="code">JavaSamplerContext.getJMeterProperties</tt>, <tt class="code">BoundaryExtractor.extractAll</tt>,
+    <tt class="code">AuthManager.setupCredentials</tt>, <tt class="code">HttpRequestHdr.getMultipartConfig</tt>, (regression since 5.6.2)</li>
+  <li><a href="https://github.com/apache/jmeter/issues/6165">Issue #6165</a><a href="https://github.com/apache/jmeter/pull/6192">Pull request #6192</a> - The Constant Throughput Timer is throwing a NullPointerException when using variables (vars.get) in &quot;Target Throughput&quot;-field</li>
+  <li><a href="https://github.com/apache/jmeter/issues/6162">Issue #6162</a>The Constant Timer is throwing a NullPointerException when using variables (vars.get) in &quot;delay&quot;-field</li>
+  <li><a href="https://github.com/apache/jmeter/pull/6193">Pull request #6193</a> - Log errors happening while JMeter starts the test (previously, errors from TestStateListener.testStarted were not logged)</li>
+  <li><a href="https://github.com/apache/jmeter/pull/6216">Pull request #6216</a> - Pass JDBCSampler.maxRows to Statement.setMaxRows so the driver does not fetch extra rows from the database</li>
+</ul><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Non-functional changes">Non-functional changes</a></big></big></b></font></td></tr></table><br/>
+<ul>
+  <li><a href="https://github.com/apache/jmeter/pull/6166">Pull request #6166</a> - Use Gradle to 8.5 for building JMeter</li>
+  <li>Require Java 17 for building JMeter </li>
+  <li><a href="https://github.com/apache/jmeter/pull/6199">Pull request #6199</a> - Improved API for programmatic test plan creation, see default implementations of <tt class="code">createTestElement</tt>, <tt class="code">modifyTestElement</tt>,
+    and new <tt class="code">makeTestElement</tt> and <tt class="code">assignDefaultValues</tt> methods in <tt class="code">JMeterGUIComponent</tt>.
+    <tt class="code">AbstractJMeterGuiComponent.configureTestElement</tt> is now discouraged</li>
+  <li><a href="https://github.com/apache/jmeter/pull/6212">Pull request #6212</a> - Refactor: migrate existing Groovy tests to Kotlin, remove Groovy compiler from the build pipeline</li>
+  <li><a href="https://github.com/apache/jmeter/pull/6214">Pull request #6214</a> - Refactor JUnit 3 and JUnit 4 tests to JUnit 5, remove JUnit 4 test dependency</li>
+</ul><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Dependency upgrades">Dependency upgrades</a></big></big></b></font></td></tr></table><br/>
+<ul>
+    <li>Update com.fasterxml.jackson.core:jackson-annotations to 2.16.1 (was 2.15.2)</li>
+    <li>Update com.fasterxml.jackson.core:jackson-core to 2.16.1 (was 2.15.2)</li>
+    <li>Update com.fasterxml.jackson.core:jackson-databind to 2.16.1 (was 2.15.2)</li>
+    <li>Update com.fifesoft:rsyntaxtextarea to 3.3.4 (was 3.3.3)</li>
+    <li>Update com.google.errorprone:error_prone_annotations to 2.24.0 (was 2.20.0)</li>
+    <li>Update commons-codec:commons-codec to 1.16.0 (was 1.15)</li>
+    <li>Update commons-io:commons-io to 2.15.1 (was 2.12.0)</li>
+    <li>Update commons-logging:commons-logging to 1.3.0 (was 1.2)</li>
+    <li>Update commons-net:commons-net to 3.9.0 (was 3.10.0)</li>
+    <li>Update io.burt:jmespath-core to 0.6.0 (was 0.5.1)</li>
+    <li>Update io.burt:jmespath-jackson to 0.6.0 (was 0.5.1)</li>
+    <li>Update net.minidev:accessors-smart to 2.5.0 (was 2.4.11)</li>
+    <li>Update net.minidev:json-smart to 2.5.0 (was 2.4.11)</li>
+    <li>Update net.sf.saxon:Saxon-HE to 11.6 (was 11.5)</li>
+    <li>Update org.apache.commons:commons-lang3 to 3.14.0 (was 3.12.0)</li>
+    <li>Update org.apache.commons:commons-pool2 to 2.12.0 (was 2.11.1)</li>
+    <li>Update org.apache.commons:commons-text to 1.11.0 (was 1.10.0)</li>
+    <li>Update org.apache.httpcomponents.client5:httpclient5 to 5.3 (was 5.2.1)</li>
+    <li>Update org.apache.httpcomponents.core5:httpcore5-h2 to 5.2.4 (was 5.2)</li>
+    <li>Update org.apache.httpcomponents.core5:httpcore5 to 5.2.4 (was 5.2)</li>
+    <li>Update org.apache.logging.log4j:log4j-1.2-api to 2.22.1 (was 2.20.0)</li>
+    <li>Update org.apache.logging.log4j:log4j-api to 2.22.1 (was 2.20.0)</li>
+    <li>Update org.apache.logging.log4j:log4j-core to 2.22.1 (was 2.20.0)</li>
+    <li>Update org.apache.logging.log4j:log4j-slf4j-impl to 2.22.1 (was 2.20.0)</li>
+    <li>Update org.apache.xmlgraphics:xmlgraphics-commons to 2.9 (was 2.8)</li>
+    <li>Update org.checkerframework:checker-qual to 3.42.0 (was 3.35.0)</li>
+    <li>Update org.codehaus.groovy:groovy-datetime to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-dateutil to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-jmx to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-json to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-jsr223 to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-sql to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-templates to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy-xml to 3.0.20 (was 3.0.17)</li>
+    <li>Update org.codehaus.groovy:groovy to 3.0.20 (was 3.0.17)</li>
+    <li>Remove org.jetbrains.kotlin:kotlin-stdlib-common:1.8.22</li>
+    <li>Update org.jetbrains.kotlin:kotlin-stdlib-jdk7 to 1.9.10 (was 1.8.22)</li>
+    <li>Update org.jetbrains.kotlin:kotlin-stdlib-jdk8 to 1.9.10 (was 1.8.22)</li>
+    <li>Update org.jetbrains.kotlin:kotlin-stdlib to 1.9.22 (was 1.8.22)</li>
+    <li>Update org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm to 1.7.3 (was 1.7.1)</li>
+    <li>Update org.jetbrains.kotlinx:kotlinx-coroutines-swing to 1.7.3 (was 1.7.1)</li>
+    <li>Update org.jetbrains.lets-plot:base-portable-jvm to 4.1.0 (was 3.2.0)</li>
+    <li>Update org.jetbrains.lets-plot:lets-plot-common to 4.1.0 (was 3.2.0)</li>
+    <li>Update org.jetbrains.lets-plot:lets-plot-kotlin-jvm to 4.5.0 (was 4.4.1)</li>
+    <li>Update org.jetbrains.lets-plot:plot-common-portable-jvm to 4.1.0 (was 3.2.0)</li>
+    <li>Update org.jetbrains:annotations to 24.1.0 (was 24.0.1)</li>
+    <li>Update org.jsoup:jsoup to 1.17.1 (was 1.16.1)</li>
+    <li>Update org.mongodb:mongo-java-driver to 2.14.3 (was 2.11.3)</li>
+    <li>Update org.neo4j.driver:neo4j-java-driver to 4.4.13 (was 4.4.11)</li>
+    <li>Update org.ow2.asm:asm to 9.6 (was 9.5)</li>
+    <li>Update org.xmlresolver:xmlresolver to 5.2.1 (was 4.6.4)</li>
+    <li>Update org.xmlresolver:xmlresolver:data to 5.2.1 (was 4.6.4)</li>
+  </ul><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Thanks">Thanks</a></big></big></b></font></td></tr></table><br/>
+<p>We thank all contributors mentioned in bug and improvement sections above:
+</p><ul>
+</ul><p>We also thank bug reporters who helped us improve JMeter.</p><ul>
+</ul><p>
+Apologies if we have omitted anyone else.
+</p><br/><br/><table width="100%" cellpadding="3" cellspacing="2" bgcolor="#525D76" border="0">
+<tr><td><font color="white" face="Helvetica, Arial, sans-serif"><b><big><big><a name="Known problems and workarounds">Known problems and workarounds</a></big></big></b></font></td></tr></table><br/>
+<ul>
+<li>The Once Only controller behaves correctly under a Thread Group or Loop Controller,
+but otherwise its behaviour is not consistent (or clearly specified).</li>
+
+<li>
+The numbers that appear to the left of the green box are the number of active threads / total number of threads,
+the total number of threads only applies to a locally run test, otherwise it will show <tt class="code">0</tt> (see <a href="https://bz.apache.org/bugzilla/show_bug.cgi?id=55510">Bug 55510</a>
+).
+</li>
+
+<li>
+Note that under some windows systems you may have this WARNING:
+<div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>
+java.util.prefs.WindowsPreferences
+WARNING: Could not open/create prefs root node Software\JavaSoft\Prefs at root 0
+x80000002. Windows RegCreateKeyEx(…) returned error code 5.
+</pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+The fix is to run JMeter as Administrator, it will create the registry key for you, then you can restart JMeter as a normal user and you won't have the warning anymore.
+</li>
+
+<li>
+You may encounter the following error:
+<div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>java.security.cert.CertificateException: Certificates does not conform to algorithm constraints</pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+ if you run a HTTPS request on a web site with a SSL certificate (itself or one of SSL certificates in its chain of trust) with a signature
+ algorithm using MD2 (like <tt class="code">md2WithRSAEncryption</tt>) or with a SSL certificate with a size lower than 1024 bits.
+This error is related to increased security in Java 8+.
+<br>
+
+To allow you to perform your HTTPS request, you can downgrade the security of your Java installation by editing
+the Java <tt class="code">jdk.certpath.disabledAlgorithms</tt> property. Remove the MD2 value or the constraint on size, depending on your case.
+<br>
+
+This property is in this file:
+<div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>JAVA_HOME/jre/lib/security/java.security</pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+See  <a href="https://bz.apache.org/bugzilla/show_bug.cgi?id=56357">Bug 56357</a>
+ for details.
+</li>
+
+<li>
+Under Mac OSX Aggregate Graph will show wrong values due to mirroring effect on numbers.
+This is due to a known Java bug, see Bug <a href="https://bugs.openjdk.java.net/browse/JDK-8065373">JDK-8065373</a>
+The fix is to use JDK8_u45 or later.
+</li>
+
+<li>
+View Results Tree may fail to display some HTML code under HTML renderer, see <a href="https://bz.apache.org/bugzilla/show_bug.cgi?id=54586">Bug 54586</a>
+.
+This is due to a known Java bug which fails to parse &quot;<tt class="code">px</tt>&quot; units in row/col attributes.
+See Bug <a href="https://bugs.openjdk.java.net/browse/JDK-8031109">JDK-8031109</a>
+The fix is to use JDK9 b65 or later.
+</li>
+
+<li>
+JTable selection with keyboard (<span class="keycombo"><span class="keysym">SHIFT</span>&nbsp;+&nbsp;<span class="keysym">up/down</span></span>) is totally unusable with Java 7 on Mac OSX.
+This is due to a known Java bug <a href="https://bugs.openjdk.java.net/browse/JDK-8025126">JDK-8025126</a>
+The fix is to use JDK 8 b132 or later.
+</li>
+
+<li>
+Since Java 11 the JavaScript implementation <a href="https://openjdk.java.net/jeps/335">Nashorn has been deprecated</a>.
+Java will emit the following deprecation warnings, if you are using JavaScript based on Nashorn.
+<div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>
+Warning: Nashorn engine is planned to be removed from a future JDK release
+</pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+To silence these warnings, add <tt class="code">-Dnashorn.args=--no-deprecation-warning</tt> to your Java arguments.
+That can be achieved by setting the enviroment variable <tt class="code">JVM_ARGS</tt>
+<div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>
+export JVM_ARGS=&quot;-Dnashorn.args=--no-deprecation-warning&quot;
+</pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+</li>
+
+<li>
+With Java 15 the JavaScript implementation <a href="https://openjdk.java.net/jeps/372">Nashorn has been removed</a>. To add back a JSR-223 compatible JavaScript engine you have two options:
+  <dl>
+    <dt>Use Mozilla Rhino</dt>
+    <dd>Copy <a href="https://github.com/mozilla/rhino/releases/download/Rhino1_7_14_Release/rhino-engine-1.7.14.jar">rhino-engine-1.7.14.jar</a> into <tt class="code">$JMETER_HOME/lib/ext</tt>.</dd>
+    <dt>Use OpenJDK Nashorn</dt>
+    <dd>
+      The OpenJDK Nashorn implementation comes as a module. To use it, you will have to download it and add it to the module path. A hacky way to download the version 15.0 (or later) and its dependencies and set the module path is outlined below:
+      <div align="left">
+<table cellspacing="4" cellpadding="0" border="0">
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#ffffff"><pre>
+mkdir lib/modules
+pushd lib/modules
+wget https://repo1.maven.org/maven2/org/openjdk/nashorn/nashorn-core/15.4/nashorn-core-15.4.jar
+wget https://repo1.maven.org/maven2/org/ow2/asm/asm/9.6/asm-9.6.jar
+wget https://repo1.maven.org/maven2/org/ow2/asm/asm-commons/9.6/asm-commons-9.6.jar
+wget https://repo1.maven.org/maven2/org/ow2/asm/asm-util/9.6/asm-util-9.6.jar
+wget https://repo1.maven.org/maven2/org/ow2/asm/asm-tree/9.6/asm-tree-9.6.jar
+wget https://repo1.maven.org/maven2/org/ow2/asm/asm-analysis/9.6/asm-analysis-9.6.jar
+popd
+export JVM_ARGS=&quot;--module-path $PWD/lib/modules&quot;
+./bin/jmeter
+      </pre></td>
+<td bgcolor="#023264" width="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+<tr>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+<td bgcolor="#023264" width="1" height="1"><img src="/images/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/></td>
+</tr>
+</table>
+</div>
+
+    </dd>
+  </dl>
+</li>
+
+</ul></blockquote>
+</p>
+</td></tr>
+<tr><td><br></td></tr>
+</table>
+<br>
+</td>
+</tr>
+<tr><td>
+<hr noshade size="1"/>
+</td></tr>
+<tr>
+<td>
+<table width=100%>
+<tr>
+<td align="center">
+<font color="#525D76" size="-1"><em>
+Copyright &copy; 1999-2023, Apache Software Foundation
+</em></font>
+</td>
+</tr>
+<tr><td colspan="2">
+<div align="center"><font color="#525D76" size="-1">
+Apache, Apache JMeter, JMeter, the Apache feather, and the Apache JMeter logo are
+trademarks of the Apache Software Foundation.
+</font>
+</div>
+</td></tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>
+<!-- end the processing -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
