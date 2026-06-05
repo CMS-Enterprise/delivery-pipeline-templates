@@ -1,0 +1,11 @@
+  metadata:
+        labels:
+          jenkins-agent: "true"
+      spec:
+        nodeSelector:
+          node-pool: agent
+        terminationGracePeriodSeconds: 30
+  
+        securityContext:
+          runAsUser: 1000
+        restartPolicy: Never

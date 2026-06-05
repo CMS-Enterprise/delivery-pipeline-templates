@@ -8,6 +8,6 @@ spec:
       command: ["cat"]
       tty: true
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/docker/sigstore/cosign@sha256:c1b2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
       command: ["cat"]
       tty: true

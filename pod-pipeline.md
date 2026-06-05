@@ -4,17 +4,17 @@
 ---
 
 config:
-theme: 'base'
-themeVariables:
-lineColor: '#F8B229'
+    theme: 'base'
+    themeVariables:
+        lineColor: '#F8B229'
 
 ---
 
 graph LR
-subgraph mbp["Multi Branch Pipeline"]
-main["main"]
-feature["feature/example"]
-end
+    subgraph mbp["Multi Branch Pipeline"]
+        main["main"]
+        feature["feature/example"]
+    end
 
     mbp -- "Triggers" --> fetch_src
 
