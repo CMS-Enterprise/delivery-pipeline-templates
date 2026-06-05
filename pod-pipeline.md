@@ -1,11 +1,20 @@
 # DevSecOps Pipeline
 
 ```mermaid
+---
+
+config:
+theme: 'base'
+themeVariables:
+lineColor: '#F8B229'
+
+---
+
 graph LR
-    subgraph mbp["Multi Branch Pipeline"]
-        main["main"]
-        feature["feature/example"]
-    end
+subgraph mbp["Multi Branch Pipeline"]
+main["main"]
+feature["feature/example"]
+end
 
     mbp -- "Triggers" --> fetch_src
 
@@ -26,7 +35,7 @@ graph LR
     container_scan["Container Security Scan (Snyk)"]
     malware_scan["Container Malware Scan"]
     opa_scan["OPA Policy Scan"]
-    generate_sbom["Generate and Validate SBOMs"]
+    generate_sbom["Generate / Validate SBOMs"]
     promote["Promote Image to Verified Repo"]
     update_tags["Update Image Tags"]
     dev_push["Deploy to Dev"]
