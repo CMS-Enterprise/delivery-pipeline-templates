@@ -1,0 +1,59 @@
+
+up to date in 40s
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+> vue-site@0.1.0 dev
+> vite --port 3001
+
+
+  VITE v5.4.21  ready in 183 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
+
+up to date, audited 48 packages in 2s
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+5 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> vue-site@0.1.0 dev
+> vite --port 3001
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+Re-optimizing dependencies because vite config has changed
+
+  VITE v5.4.21  ready in 420 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
+
+up to date, audited 48 packages in 930ms
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+5 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> vue-site@0.1.0 dev
+> vite --port 3001
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+  VITE v5.4.21  ready in 156 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose

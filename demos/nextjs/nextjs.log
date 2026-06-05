@@ -1,0 +1,53 @@
+
+up to date in 40s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+> nextjs-site@0.1.0 dev
+> next dev -p 3000
+
+[?25h
+
+up to date, audited 30 packages in 3s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+2 vulnerabilities (1 moderate, 1 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> nextjs-site@0.1.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1429ms
+[?25h
+
+up to date, audited 30 packages in 1s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+2 vulnerabilities (1 moderate, 1 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> nextjs-site@0.1.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 970ms

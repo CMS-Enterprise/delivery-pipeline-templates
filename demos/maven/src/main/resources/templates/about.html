@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head(${pageTitle})}">
+    <title>About</title>
+</head>
+<body>
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main>
+    <section class="page-header">
+        <div class="container">
+            <h1>About RoboCare Health</h1>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <div class="container">
+            <div class="content-card">
+                <h2>Our Mission</h2>
+                <p>We exist to make advanced robotic healthcare accessible to every patient, everywhere. By combining precision engineering with clinical intelligence, we build systems that help healthcare teams deliver better outcomes with less physical strain and fewer errors.</p>
+            </div>
+
+            <div class="content-card">
+                <h2>What We Build</h2>
+                <ul class="tech-list">
+                    <li><strong>Surgical Robots</strong> — Multi-arm platforms for orthopedic, cardiac, and neurological procedures</li>
+                    <li><strong>Logistics Bots</strong> — Autonomous couriers for medications, specimens, and sterile supplies</li>
+                    <li><strong>Rehab Exoskeletons</strong> — Adaptive wearable devices for motor recovery therapy</li>
+                    <li><strong>Diagnostic AI</strong> — Deep learning models for radiology, pathology, and dermatology</li>
+                </ul>
+            </div>
+
+            <div class="content-card">
+                <h2>Safety & Compliance</h2>
+                <p>All RoboCare products are FDA 510(k) cleared and carry the CE mark for EU deployment. We maintain ISO 13485 certification for medical device quality management and follow IEC 62304 for software lifecycle processes.</p>
+                <p>Our robots include redundant safety systems: force-limiting joints, real-time collision avoidance, and fail-safe power-down protocols that activate within 50 milliseconds of detecting an anomaly.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>

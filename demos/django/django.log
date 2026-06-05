@@ -1,0 +1,7 @@
+Requirement already satisfied: django<5.0,>=4.2 in ./venv/lib/python3.13/site-packages (from -r requirements.txt (line 1)) (4.2.30)
+Requirement already satisfied: gunicorn>=21.2.0 in ./venv/lib/python3.13/site-packages (from -r requirements.txt (line 2)) (26.0.0)
+Requirement already satisfied: asgiref<4,>=3.6.0 in ./venv/lib/python3.13/site-packages (from django<5.0,>=4.2->-r requirements.txt (line 1)) (3.11.1)
+Requirement already satisfied: sqlparse>=0.3.1 in ./venv/lib/python3.13/site-packages (from django<5.0,>=4.2->-r requirements.txt (line 1)) (0.5.5)
+Requirement already satisfied: packaging in ./venv/lib/python3.13/site-packages (from gunicorn>=21.2.0->-r requirements.txt (line 2)) (26.2)
+run.sh: line 6: /home/vboxuser/src/delivery-pipeline-templates/demos/django/venv/bin/pip: cannot execute: required file not found
+Watching for file changes with StatReloader

@@ -1,0 +1,8 @@
+go-site
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out

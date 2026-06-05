@@ -1,0 +1,57 @@
+
+up to date in 40s
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+> sveltekit-site@0.1.0 dev
+> vite dev --port 3002
+
+
+  VITE v5.4.21  ready in 553 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose
+
+up to date, audited 94 packages in 3s
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+10 vulnerabilities (3 low, 7 moderate)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> sveltekit-site@0.1.0 dev
+> vite dev --port 3002
+
+Re-optimizing dependencies because vite config has changed
+
+  VITE v5.4.21  ready in 818 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose
+
+up to date, audited 94 packages in 2s
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+10 vulnerabilities (3 low, 7 moderate)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> sveltekit-site@0.1.0 dev
+> vite dev --port 3002
+
+
+  VITE v5.4.21  ready in 499 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose

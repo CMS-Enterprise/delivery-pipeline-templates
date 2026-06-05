@@ -10,8 +10,8 @@ def call(Map config = [:]) {
     def account_id = config.account_ids?. error
     def role_arn = "arn:aws:iam::${account_id}:role/${role_name}"
 
-    def cosignYaml = config.cosign_yaml ?: readTrusted("resources/pods/cosign.yaml")
-    def awsYaml = config.aws_yaml ?: readTrusted("resources/pods/aws-cli.yaml")
+    def cosignYaml = config.cosign_yaml ?: readTrusted 'resources/pods/cosign.yaml'
+    def awsYaml = config.aws_yaml ?: readTrusted 'resources/pods/aws-cli.yaml'
 
 
 

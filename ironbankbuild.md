@@ -1,0 +1,1 @@
+ironbank style builds run squid to restrict to only one website, in our case artifactory.cloud.cms.gov, and setup podman to use it as a proxy. They also disallow COPY commands in Dockerfiles. Any outside artifacts are pulled in explicitly at an earlier step from s3 or from an artifactory repository. Everything is scanned before installed or built.

@@ -1,0 +1,21 @@
+export default function About() {
+  return (
+    <section className="page-content">
+      <h1>About RoboCare Health</h1>
+      <p>
+        Founded in 2019, RoboCare Health is a medical robotics company dedicated to transforming patient outcomes through intelligent automation. Our team of engineers, clinicians, and AI researchers work together to build systems that augment — not replace — healthcare professionals.
+      </p>
+      <p>
+        Our mission is simple: make world-class surgical precision and diagnostic accuracy accessible to every hospital, regardless of size or location. From major trauma centers to rural clinics, our robotic platforms adapt to the needs of each facility.
+      </p>
+      <h2>Our Technology</h2>
+      <p>
+        We combine advanced robotics with deep learning to create systems that learn from every procedure. Our surgical arms use force-feedback haptics so surgeons feel tissue resistance through the controls. Our diagnostic AI trains on anonymized datasets from partner hospitals across 30 countries.
+      </p>
+      <h2>Leadership</h2>
+      <p>
+        Led by CEO Dr. Maya Chen (former head of robotic surgery at Johns Hopkins) and CTO Raj Patel (ex-Boston Dynamics), our team brings decades of experience in both clinical medicine and robotics engineering.
+      </p>
+    </section>
+  );
+}
