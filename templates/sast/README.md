@@ -28,7 +28,7 @@ Additional parameter: `git_change_author` (Pipeline + Template, optional) — So
 
 | Parameter Name | Pipeline | Template | Description | Default Value |
 | --- | --- | --- | --- | --- |
-| enable_dependency_check | X | X | Toggle this to run OWASP Dependency-Check before SonarQube so Sonar can ingest dependency findings. | True |
+| enable_dependency_check | X | X | Toggle this to run OWASP Dependency-Check before SonarQube so Sonar can ingest dependency findings. Disabled by default to avoid long NVD update runtimes unless explicitly needed. | False |
 | dependency_check_continue_on_error | X | X | When true, Dependency-Check failures (such as NVD API rate limiting/HTTP 429) mark the build UNSTABLE and let the rest of the pipeline continue. | True |
 | dependency_check_source_path | X | X | The relative path of the source code to scan with OWASP Dependency-Check. | . |
 | dependency_check_additional_arguments | X | X | A JSON serialized array of additional arguments to pass to OWASP Dependency-Check. | [] |
