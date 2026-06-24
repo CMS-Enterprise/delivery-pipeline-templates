@@ -19,6 +19,10 @@ parameters:
   - name: default_sonarqube_project_key
     displayName: SonarQube Project Key
     type: string
+  - name: default_sonarqube_project_version
+    displayName: SonarQube Project Version
+    description: "The version of the project to report to SonarQube (e.g. 1.0.0, a git tag, or a build number). Shown in the SonarQube dashboard per-analysis."
+    type: string
   - name: default_sonarqube_additional_arguments
     displayName: SonarQube Additional Arguments
     description: "A JSON serialized array of additional arguments to pass to the SonarQube scanner."
@@ -28,7 +32,27 @@ parameters:
     displayName: Sonar Scanner Java Opts
     description: "Java options for the SonarQube scanner."
     type: string
-    defaultValue: "-Xmx512m"
+    defaultValue: "-Xmx1g"
+  - name: default_enable_dependency_check
+    displayName: Enable OWASP Dependency-Check
+    description: "When enabled, the pipeline will run OWASP Dependency-Check before SonarQube and publish its report for Sonar ingestion."
+    type: boolean
+    defaultValue: false
+  - name: default_dependency_check_continue_on_error
+    displayName: Continue on Dependency-Check Error
+    description: "When true, Dependency-Check failures (for example NVD API rate limiting) mark the build UNSTABLE and allow the pipeline to continue."
+    type: boolean
+    defaultValue: true
+  - name: default_dependency_check_source_path
+    displayName: Dependency-Check Source Path
+    description: "The relative path of the source code to scan with OWASP Dependency-Check."
+    type: string
+    defaultValue: "."
+  - name: default_dependency_check_additional_arguments
+    displayName: Dependency-Check Additional Arguments
+    description: "A JSON serialized array of additional arguments to pass to OWASP Dependency-Check."
+    type: string
+    defaultValue: "[]"
   - name: default_enable_snyk_test
     displayName: Enable Snyk Test
     description: "When enabled, the pipeline will run Sonarqube and Snyk Test in parallel."

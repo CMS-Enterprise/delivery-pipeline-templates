@@ -4,14 +4,18 @@ def containerListYaml(snyk_image_tag) {
       image: artifactory.cloud.cms.gov/docker/alpine:3
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
+    - name: dependency-check
+      image: artifactory.cloud.cms.gov/docker/owasp/dependency-check-action:latest
+      imagePullPolicy: Always
+      command: ['tail', '-f', '/dev/null']
     - name: sonarqube
-      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:5
+      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli:12.1.0.3225_8.0.1
       imagePullPolicy: Always
       command: ['tail', '-f', '/dev/null']
       resources:
         limits:
-          memory: 3Gi
-          cpu: 1500m""");
+          memory: 4Gi
+          cpu: 2000m""");
 
   if (params.enable_snyk_test) {
     containerListYaml += reindent(10, """
@@ -47,12 +51,17 @@ pipeline {
     string(name: 'git_change_id', defaultValue: "", description: '(Optional) A unique identifier for a pull request (used by SonarQube to track issues detected in new code).')
     string(name: 'sonarqube_url', defaultValue: "${default_sonarqube_url ?: ''}", description: 'The URL of the SonarQube server.')
     string(name: 'sonarqube_project_key', defaultValue: "${default_sonarqube_project_key ?: ''}", description: 'The SonarQube project key to use when reporting issues.')
+    string(name: 'sonarqube_project_version', defaultValue: "${default_sonarqube_project_version ?: ''}", description: 'The version of the project to report to SonarQube (e.g. 1.0.0, a git tag, or a build number). Shown in the SonarQube dashboard per-analysis.')
     string(name: 'sonarqube_additional_arguments', defaultValue: "${default_sonarqube_additional_arguments ?: ''}", description: 'A JSON serialized array of additional arguments to pass to the SonarQube scanner.')
     string(name: 'sonarqube_source_path', defaultValue: "${default_sonarqube_source_path ?: '.'}", description: 'The relative path of the source code to scan for SonarQube.')
     string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.')
     string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.')
     string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.')
     string(name: 'sonar_scanner_java_opts', defaultValue: "${default_sonar_scanner_java_opts}", description: 'Java options for the SonarQube scanner.')
+    booleanParam(name: 'enable_dependency_check', defaultValue: "${default_enable_dependency_check == null ? true : default_enable_dependency_check}", description: 'Run OWASP Dependency-Check before SonarQube so Sonar can ingest the generated report.')
+    booleanParam(name: 'dependency_check_continue_on_error', defaultValue: "${default_dependency_check_continue_on_error == null ? true : default_dependency_check_continue_on_error}", description: 'If true, Dependency-Check failures (such as NVD API rate limiting) will mark the build UNSTABLE and continue. If false, the pipeline fails on Dependency-Check errors.')
+    string(name: 'dependency_check_source_path', defaultValue: "${default_dependency_check_source_path ?: '.'}", description: 'The relative path of the source code to scan with OWASP Dependency-Check.')
+    string(name: 'dependency_check_additional_arguments', defaultValue: "${default_dependency_check_additional_arguments ?: '[]'}", description: 'A JSON serialized array of additional arguments to pass to OWASP Dependency-Check.')
   
     booleanParam(name: 'enable_snyk_test', defaultValue: "${default_enable_snyk_test ?: false}", description: 'Enable Snyk to test code statically.')
     string(name: 'snyk_image_tag', defaultValue: "${default_snyk_image_tag ?: 'alpine'}", description: 'Edit the Snyk Image Tag to reflect the project language.')
@@ -93,13 +102,31 @@ pipeline {
               userRemoteConfigs: [[
                 url: "${params.git_repository}",
                 credentialsId: "${params.git_credentials}",
-                refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+                refspec: "+refs/heads/*:refs/remotes/origin/* +${params.git_commit}:refs/remotes/origin/HEAD"
               ]],
               extensions: [
-                cloneOption(shallow: true, honorRefspec: true, noTags: true),
-                submodule(recursiveSubmodules: true, shallow: true)
+                cloneOption(shallow: false, honorRefspec: true, noTags: true),
+                submodule(recursiveSubmodules: true, shallow: false)
               ]
             )
+
+            sh '''#!/bin/sh
+              set -e
+              if ! command -v git >/dev/null 2>&1; then
+                echo "Git not found in fetch container. Installing git..."
+                apk add --no-cache git
+              fi
+
+              # Allow git to operate on the workspace regardless of UID differences between containers.
+              git config --global --add safe.directory "${WORKSPACE}"
+
+              # Ensure SCM metadata is complete for SonarQube blame/auto-assignment features.
+              if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+                echo "Repository is shallow. Fetching full history..."
+                git fetch --unshallow origin || git fetch --depth=2147483647 origin
+              fi
+
+            '''
 
             if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
               def filters = []
@@ -126,6 +153,72 @@ pipeline {
                   selector: specific(params.copy_artifacts_build_number)
                 )
               }
+            }
+          }
+        }
+      }
+    }
+    stage("Dependency-Check") {
+      when {
+        expression { false } // Emergency hard-disable: skip OWASP Dependency-Check entirely
+      }
+      steps {
+        container('dependency-check') {
+          script {
+            def args = [
+              '--scan', params.dependency_check_source_path,
+              '--project', params.sonarqube_project_key ?: 'dependency-check',
+              '--format', 'JSON',
+              '--format', 'HTML',
+              '--out', env.WORKSPACE,
+              '--prettyPrint'
+            ]
+
+            if (params.dependency_check_additional_arguments) {
+              def argArray = new groovy.json.JsonSlurper().parseText(params.dependency_check_additional_arguments)
+              if (argArray.size() > 0) {
+                args.addAll(argArray)
+              }
+            }
+
+            try {
+              def quotedArgs = args.collect { arg ->
+                "'" + arg.toString().replace("'", "'\"'\"'") + "'"
+              }.join(' ')
+              sh """#!/bin/sh
+                set -e
+                if command -v dependency-check.sh >/dev/null 2>&1; then
+                  DEPENDENCY_CHECK_BIN=\"\$(command -v dependency-check.sh)\"
+                elif [ -x /usr/share/dependency-check/bin/dependency-check.sh ]; then
+                  DEPENDENCY_CHECK_BIN=/usr/share/dependency-check/bin/dependency-check.sh
+                elif [ -x /usr/share/dependency-check/dependency-check.sh ]; then
+                  DEPENDENCY_CHECK_BIN=/usr/share/dependency-check/dependency-check.sh
+                else
+                  echo 'Unable to locate dependency-check.sh in the dependency-check container.' >&2
+                  echo 'Checked PATH, /usr/share/dependency-check/bin/dependency-check.sh, and /usr/share/dependency-check/dependency-check.sh.' >&2
+                  exit 127
+                fi
+
+                \"\$DEPENDENCY_CHECK_BIN\" ${quotedArgs}
+              """
+            } catch (err) {
+              def errorMessage = err?.toString() ?: 'Unknown Dependency-Check error'
+              def looksLikeNvdRateLimit = (
+                errorMessage ==~ /(?s).*(nvd|NVD).*(429|rate\s*limit|too\s*many\s*requests).*/ ||
+                errorMessage ==~ /(?s).*(429|rate\s*limit|too\s*many\s*requests).*(nvd|NVD).*/
+              )
+
+              if (params.dependency_check_continue_on_error) {
+                if (looksLikeNvdRateLimit) {
+                  unstable('Dependency-Check hit NVD rate limiting (HTTP 429). Continuing pipeline with UNSTABLE status.')
+                } else {
+                  unstable("Dependency-Check failed but is configured to continue on error. Reason: ${errorMessage}")
+                }
+              } else {
+                error "Dependency-Check failed and dependency_check_continue_on_error=false. Reason: ${errorMessage}"
+              }
+            } finally {
+              archiveArtifacts artifacts: 'dependency-check-report.*', allowEmptyArchive: true
             }
           }
         }
@@ -191,7 +284,10 @@ pipeline {
 
                 // No matter what, make sure the artifacts are archived
                 } finally {
-                  archiveArtifacts artifacts: "${params.snyk_source_path}/snyk-test-vulnerabilities.json", allowEmptyArchive: true
+                  def snykReportArtifactPath = params.snyk_source_path in ['.', './']
+                    ? 'snyk-test-vulnerabilities.json'
+                    : "${params.snyk_source_path}/snyk-test-vulnerabilities.json"
+                  archiveArtifacts artifacts: snykReportArtifactPath, allowEmptyArchive: true
                 }
               } // end script block
             } // end  container snyk
@@ -208,7 +304,7 @@ pipeline {
                       #! /bin/sh -e
                       set +x
                       curl --location '${projectBranchesUrl}' \
-                        --header "Authorization: Basic \$(echo -n \${SONAR_TOKEN}: | base64)" \
+                        --header "Authorization: Bearer \${SONAR_TOKEN}" \\
                         --no-progress-meter -f
                     """,
                     returnStdout: true
@@ -217,21 +313,33 @@ pipeline {
                   def defaultBranch =
                     new groovy.json.JsonSlurper().parseText(projectBranchesJson).branches.find { it.isMain }?.name ?: 'main'
                   def args = [
-                    '-Dsonar.login=$SONAR_TOKEN',
+                    '-Dsonar.token=$SONAR_TOKEN',
                     "-Dsonar.host.url=${params.sonarqube_url}",
                     "-Dsonar.projectKey=${params.sonarqube_project_key}",
                     "-Dsonar.sources=${params.sonarqube_source_path}",
-                    "-Dsonar.qualitygate.wait=true"
+                    "-Dsonar.qualitygate.wait=true",
+                    // Override the Dependency-Check plugin default (${WORKSPACE}/dependency-check-report.json)
+                    // which SonarQube treats as a relative path, producing a garbled absolute path.
+                    "-Dsonar.dependencyCheck.jsonReportPath=${env.WORKSPACE}/dependency-check-report.json",
+                    "-Dsonar.dependencyCheck.htmlReportPath=${env.WORKSPACE}/dependency-check-report.html"
                   ]
-                  if (params.git_branch == defaultBranch) {
-                    echo "Performing analysis for the default branch: ${defaultBranch}"
-                    args.add("-Dsonar.branch.name=${params.git_branch}")
-                  } else {
-                    echo "Performing analysis for a feature branch: ${params.git_branch} (does not match default branch ${defaultBranch})"
+                  if (params.git_change_id) {
+                    echo "Performing pull request analysis for change ${params.git_change_id} on branch ${params.git_branch ?: params.git_commit}"
                     args.add("-Dsonar.pullrequest.branch=${params.git_branch ?: params.git_commit}")
-                    args.add("-Dsonar.pullrequest.key=${params.git_change_id ?: (params.git_branch ?: params.git_commit)}")
+                    args.add("-Dsonar.pullrequest.key=${params.git_change_id}")
+                  } else {
+                    def branchName = params.git_branch ?: defaultBranch
+                    if (branchName == defaultBranch) {
+                      echo "Performing analysis for the default branch: ${defaultBranch}"
+                    } else {
+                      echo "Performing branch analysis for ${branchName} (default branch is ${defaultBranch})"
+                    }
+                    args.add("-Dsonar.branch.name=${branchName}")
                   }
 
+                  if (params.sonarqube_project_version) {
+                    args.add("-Dsonar.projectVersion=${params.sonarqube_project_version}")
+                  }
                   if (params.sonarqube_additional_arguments) {
                     def argArray = new groovy.json.JsonSlurper().parseText(params.sonarqube_additional_arguments)
                     // Add all the items in argArray to the args list
