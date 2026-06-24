@@ -38,6 +38,11 @@ parameters:
     description: "When enabled, the pipeline will run OWASP Dependency-Check before SonarQube and publish its report for Sonar ingestion."
     type: boolean
     defaultValue: true
+  - name: default_dependency_check_continue_on_error
+    displayName: Continue on Dependency-Check Error
+    description: "When true, Dependency-Check failures (for example NVD API rate limiting) mark the build UNSTABLE and allow the pipeline to continue."
+    type: boolean
+    defaultValue: true
   - name: default_dependency_check_source_path
     displayName: Dependency-Check Source Path
     description: "The relative path of the source code to scan with OWASP Dependency-Check."
