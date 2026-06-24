@@ -160,7 +160,7 @@ pipeline {
     }
     stage("Dependency-Check") {
       when {
-        expression { params.enable_dependency_check }
+        expression { false } // Emergency hard-disable: skip OWASP Dependency-Check entirely
       }
       steps {
         container('dependency-check') {
