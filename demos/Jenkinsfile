@@ -37,7 +37,16 @@ pipeline {
     stages {
         // ─── Fetch Source ───
         stage('Fetch Source') {
-            agent none
+            agent {
+    kubernetes {
+      yaml """
+      apiVersion: v1
+      kind: Pod
+      spec:
+        restartPolicy: Never
+      """
+    } }
+
             steps {
                 checkout scm
                 stash name: 'source', includes: '**'
