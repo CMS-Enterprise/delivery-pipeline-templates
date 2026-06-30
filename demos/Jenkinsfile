@@ -1,3 +1,5 @@
+@Library('delivery-pipeline-templates') _
+
 def services = [
     [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
     [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
