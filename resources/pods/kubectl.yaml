@@ -10,12 +10,19 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   restartPolicy: Never
   containers:
     - name: kubectl
       image: artifactory.cloud.cms.gov/docker/bitnami/kubectl@sha256:13dc27afebffa1065bf7602d72a2d2e77019647fc11e591cead5e68304c8e914
       command: ["cat"]
       tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       resources:
         requests:
           cpu: "500m"

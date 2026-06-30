@@ -10,12 +10,19 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   restartPolicy: Never
   containers:
     - name: python
       image: artifactory.cloud.cms.gov/docker/python:3.14
       command: ["cat"]
       tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       resources:
         requests:
           cpu: "1"

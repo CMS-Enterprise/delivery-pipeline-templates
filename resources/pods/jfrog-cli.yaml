@@ -9,13 +9,20 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1000
+    runAsUser: 1030
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   restartPolicy: Never
   containers:
     - name: jfrog-cli
       image: releases-docker.jfrog.io/jfrog/jfrog-cli-v2@sha256:4a7d5c8e9f2b1d6a3c8e5f7b0d2a4e6c9f1b3d5a7c9e2f4b6d8a0c3e5f7a9b1d
       command: ["cat"]
       tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       resources:
         requests:
           cpu: "500m"

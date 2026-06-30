@@ -10,12 +10,19 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   restartPolicy: Never
   containers:
     - name: aws-cli
       image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
       command: ['cat']
       tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       resources:
         requests:
           cpu: "500m"

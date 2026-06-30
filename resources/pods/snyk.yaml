@@ -10,12 +10,19 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   restartPolicy: Never
   containers:
     - name: snyk
       image: artifactory.cloud.cms.gov/docker/snyk/snyk@sha256:9d890769442afa9bd185403e7c199a60ea70b6784865e9ed0df2380f45e1c028
       command: ["cat"]
       tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       resources:
         requests:
           cpu: "1"

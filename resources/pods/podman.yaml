@@ -4,18 +4,27 @@ metadata:
   labels:
     jenkins-agent: "true"
 spec:
-  serviceAccountName: jenkins-role
   nodeSelector:
     node-pool: agent
+  serviceAccountName: jenkins-role
   terminationGracePeriodSeconds: 30
+  hostUsers: false
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: Unconfined
+      #type: RuntimeDefault # This breaks podman
   restartPolicy: Never
   containers:
     - name: podman
       image: artifactory.cloud.cms.gov/docker/podman/stable@sha256:d6f571f9dba42c692281715f4402bdd78884ff16707b08293ebe4cfdea31dbcb
-      command: ["cat"]
-      tty: true
+      command:
+        - sleep
+      args:
+        - infinity
       resources:
         requests:
           cpu: "4"
@@ -25,3 +34,10 @@ spec:
           cpu: "4"
           memory: "4Gi"
           ephemeral-storage: "20Gi"
+      securityContext:
+        allowPrivilegeEscalation: true # false breaks podman. allows for calling a suid program
+        privileged: false
+        capabilities:
+          add:
+            - CAP_SETUID # Needed by podman
+            - CAP_SETGID # Needed by podman

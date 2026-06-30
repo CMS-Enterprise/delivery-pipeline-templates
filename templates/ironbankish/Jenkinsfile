@@ -44,10 +44,18 @@ pipeline {
         nodeSelector:
           node-pool: agent
         terminationGracePeriodSeconds: 30
-  
         securityContext:
           runAsUser: 1000
         restartPolicy: Never
+        volumes:
+        - name: squid-config
+          emptyDir: {}
+        - name: squid-spool
+          emptyDir: {}
+        - name: squid-log
+          emptyDir: {}
+        - name: clamav-db
+          emptyDir: {}
         containers:
         - name: squid
           image: artifactory.cloud.cms.gov/docker/ubuntu/squid:latest
@@ -67,6 +75,13 @@ pipeline {
             http_access deny all
             EOF
             squid -N
+          volumeMounts:
+          - name: squid-config
+            mountPath: /etc/squid
+          - name: squid-spool
+            mountPath: /var/spool/squid
+          - name: squid-log
+            mountPath: /var/log/squid
         - name: setup
           image: artifactory.cloud.cms.gov/docker/alpine:latest
           imagePullPolicy: Always
@@ -82,6 +97,9 @@ pipeline {
           image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+          - name: clamav-db
+            mountPath: /var/lib/clamav
           resources:
             limits:
               memory: "5Gi"
