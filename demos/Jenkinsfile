@@ -1,0 +1,82 @@
+def services = [
+    [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
+    [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
+    [name: 'sveltekit', buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm run check'],
+    [name: 'django',    buildTool: 'python', pod: 'python.yaml',        container: 'python',        buildCmd: 'pip install -r requirements.txt && python manage.py collectstatic --noinput', testCmd: 'pip install -r requirements.txt && python manage.py test'],
+    [name: 'go',        buildTool: 'go',     pod: 'golangci-lint.yaml', container: 'golangci-lint', buildCmd: 'go build -o go-site .',                                testCmd: 'go test ./...'],
+    [name: 'maven',     buildTool: 'maven',  pod: 'gradle.yaml',       container: 'gradle',        buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
+]
+
+
+def lintService(svc) {
+    switch (svc.buildTool) {
+        case 'npm':
+            eslintLint(paths: "demos/${svc.name}/src/", working_dir: "demos/${svc.name}")
+            break
+        case 'python':
+            pylintLint(paths: 'mysite/ pages/', working_dir: "demos/${svc.name}", min_score: '7.0')
+            break
+        case 'go':
+            golangciLint(working_dir: "demos/${svc.name}")
+            break
+        case 'maven':
+            checkstyleLint(working_dir: "demos/${svc.name}")
+            break
+    }
+}
+
+pipeline {
+    agent none
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 90, unit: 'MINUTES')
+        skipDefaultCheckout true
+    }
+
+    stages {
+        // ─── Fetch Source ───
+        stage('Fetch Source') {
+            agent { label 'jenkins-agent' }
+            steps {
+                checkout scm
+                stash name: 'source', includes: '**'
+            }
+        }
+
+        // ─── Lint ───
+        stage('Lint') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Lint: ${svc.name}", { lintService(svc) }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Build ───
+        stage('Build') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Build: ${svc.name}", {
+                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
+                                node(POD_LABEL) {
+                                    unstash 'source'
+                                    container(svc.container) {
+                                        dir("demos/${svc.name}") {
+                                            sh svc.buildCmd
+                                        }
+                                    }
+                                    stash name: "build-${svc.name}", includes: "demos/${svc.name}/**"
+                                }
+                            }
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+}
