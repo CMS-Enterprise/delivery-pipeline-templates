@@ -9,8 +9,10 @@ def call(Map config = [:]) {
                 checkout scm
                 container('python') {
                     sh """
-                        pip install pylint
-                        [ -f ${requirements_file} ] && pip install -r ${requirements_file}
+                        source /home/python/.bash_profile
+                        source python-env/bin/activate
+                        pip3 install pylint
+                        [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
                             --fail-under=${min_score}
