@@ -37,7 +37,7 @@ pipeline {
     stages {
         // ─── Fetch Source ───
         stage('Fetch Source') {
-            agent { label 'jenkins-agent' }
+            agent none
             steps {
                 checkout scm
                 stash name: 'source', includes: '**'
