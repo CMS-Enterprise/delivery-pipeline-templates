@@ -5,7 +5,6 @@ def call(Map config = [:]) {
     stage("ESLint") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('node') {
                     def exit_code = sh(
                         script: "npx eslint ${paths} --format json --output-file eslint-results.json",
