@@ -7,7 +7,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('gradle') {
-                    sh "./gradlew checkstyleMain checkstyleTest --no-daemon"
+                    sh "gradle checkstyleMain checkstyleTest --no-daemon"
                 }
                 recordIssues(
                     tools: [checkStyle(pattern: '**/build/reports/checkstyle/*.xml')],

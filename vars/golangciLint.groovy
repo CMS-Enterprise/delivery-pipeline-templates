@@ -13,7 +13,7 @@ def call(Map config = [:]) {
                             golangci-lint run \
                                 --config ${config_file} \
                                 --timeout ${timeout} \
-                                --out.json.path golangci-lint-results.json
+                                --output.json.path golangci-lint-results.json
                         """,
                         returnStatus: true
                     )
