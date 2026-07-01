@@ -1,0 +1,23 @@
+def call(Map config = [:]) {
+    def paths = config.paths ?: 'src/'
+    def fail_on_error = config.fail_on_error != false
+
+    stage("ESLintVue") {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
+            node(POD_LABEL) {
+                unstash "workspace"
+                container('node') {
+                    sh "npm install --save-dev eslint eslint-plugin-svelte @eslint/js typescript-eslint @sveltejs/eslint-config globals"
+                    def exit_code = sh(
+                        script: "npx eslint ${paths} --format json --output-file eslint-results.json",
+                        returnStatus: true
+                    )
+                    if (exit_code != 0 && fail_on_error) {
+                        error "ESLint found violations"
+                    }
+                }
+                archiveArtifacts allowEmptyArchive: true, artifacts: "eslint-results.json"
+            }
+        }
+    }
+}

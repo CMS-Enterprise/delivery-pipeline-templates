@@ -11,11 +11,17 @@ def services = [
 
 
 def lintService(svc) {
-    switch (svc.buildTool) {
-        case 'npm':
+    switch (svc.name) {
+        case 'nextjs':
             eslintLint(paths: "demos/${svc.name}/src/", working_dir: "demos/${svc.name}")
             break
-        case 'python':
+        case 'vue':
+            eslintVueLint(paths: "demos/${svc.name}/src/", working_dir: "demos/${svc.name}")
+            break
+        case 'sveltekit':
+            eslintSvelteLint(paths: "demos/${svc.name}/src/", working_dir: "demos/${svc.name}")
+            break
+        case 'django':
             pylintLint(paths: 'mysite/ pages/', working_dir: "demos/${svc.name}", min_score: '7.0')
             break
         case 'go':
