@@ -7,6 +7,7 @@ def call(Map config = [:]) {
     stage("OPA Policy Check") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/conftest.yaml')) {
             node(POD_LABEL) {
+                unstash "workspace"
                 container('conftest') {
                     sh """
                         conftest test ${input_paths} \

@@ -51,7 +51,7 @@ pipeline {
 
             steps {
                 checkout scm
-                stash name: 'source', includes: '**'
+                stash name: 'workspace', includes: '**'
             }
         }
 
@@ -75,7 +75,7 @@ pipeline {
                         ["Build: ${svc.name}", {
                             podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
                                 node(POD_LABEL) {
-                                    unstash 'source'
+                                    unstash 'workspace'
                                     container(svc.container) {
                                         dir("demos/${svc.name}") {
                                             sh svc.buildCmd

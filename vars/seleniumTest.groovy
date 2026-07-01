@@ -5,6 +5,7 @@ def call(Map config = [:]) {
     stage("Selenium Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/gradle.yaml')) {
             node(POD_LABEL) {
+                unstash "workspace"
                 container('gradle') {
                     sh """
                         ./gradlew ${test_task} --no-daemon \

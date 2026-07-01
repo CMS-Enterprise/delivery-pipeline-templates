@@ -17,6 +17,7 @@ void call(Map args = [:]) {
 
         podTemplate(yaml: args.pod_yaml ?: readTrusted(pod_yaml)) {
             node(POD_LABEL) {
+                unstash "workspace"
                 container(container_name) {
                     def base_url = args.base_url ?: env.DEPLOY_URL
                     def browser = args.browser ?: "chrome"

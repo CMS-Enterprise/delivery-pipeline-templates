@@ -5,6 +5,7 @@ def call(Map config = [:]) {
     stage("TruffleHog Secret Scan") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/trufflehog.yaml')) {
             node(POD_LABEL) {
+                unstash "workspace"
                 container('trufflehog') {
                     sh """
                         trufflehog filesystem ${scan_path} \

@@ -8,6 +8,7 @@ def call(Map config = [:]) {
     stage("SonarQube Analysis") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/sonar-scanner.yaml')) {
             node(POD_LABEL) {
+                unstash "workspace"
                 container('sonar-scanner') {
                     withCredentials([string(credentialsId: config.token_credential ?: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                         sh """
