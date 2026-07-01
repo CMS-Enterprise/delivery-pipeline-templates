@@ -9,7 +9,7 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1000
+    runAsUser: 101
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
