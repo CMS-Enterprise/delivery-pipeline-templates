@@ -2,7 +2,7 @@ def call(Map config = [:]) {
     def paths = config.paths ?: 'src/'
     def fail_on_error = config.fail_on_error != false
 
-    stage("ESLintVue") {
+    stage("ESLintSvelte") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
