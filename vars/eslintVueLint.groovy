@@ -1,5 +1,6 @@
 def call(Map config = [:]) {
     def paths = config.paths ?: 'src/'
+    def working_dir = config.working_dir ?: '.'
     def fail_on_error = config.fail_on_error != false
 
     stage("ESLintVue") {
@@ -9,7 +10,7 @@ def call(Map config = [:]) {
                 container('node') {
                     sh "npm install --save-dev eslint eslint-plugin-vue @eslint/js typescript-eslint globals"
                     def exit_code = sh(
-                        script: "npx eslint ${paths} --format json --output-file eslint-results.json",
+                        script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file eslint-results.json",
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_error) {

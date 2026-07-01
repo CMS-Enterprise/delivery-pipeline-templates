@@ -1,5 +1,6 @@
 def call(Map config = [:]) {
     def paths = config.paths ?: 'src/'
+    def working_dir = config.working_dir ?: '.'
     def min_score = config.min_score ?: '7.0'
     def requirements_file = config.requirements_file ?: 'requirements-dev.txt'
 
@@ -13,6 +14,7 @@ def call(Map config = [:]) {
                         source /home/python/python-env/bin/activate
                         pip3 install pylint
                         [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
+                        cd ${working_dir}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
                             --fail-under=${min_score}

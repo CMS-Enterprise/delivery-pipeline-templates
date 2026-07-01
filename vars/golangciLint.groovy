@@ -1,5 +1,6 @@
 def call(Map config = [:]) {
     def config_file = config.config_file ?: '.golangci.yml'
+    def working_dir = config.working_dir ?: '.'
     def timeout = config.timeout ?: '5m'
     def fail_on_error = config.fail_on_error != false
 
@@ -10,6 +11,7 @@ def call(Map config = [:]) {
                 container('golangci-lint') {
                     def exit_code = sh(
                         script: """
+                            cd ${working_dir} && \
                             golangci-lint run \
                                 --config ${config_file} \
                                 --timeout ${timeout} \
