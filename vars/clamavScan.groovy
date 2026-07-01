@@ -6,7 +6,6 @@ def call(Map config = [:]) {
     stage("ClamAV Antivirus Scan") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/clamav.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('clamav') {
                     sh """
                         freshclam

@@ -7,7 +7,6 @@ def call(Map config = [:]) {
     stage("Cypress Integration Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cypress.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('cypress') {
                     sh """
                         npx cypress run \

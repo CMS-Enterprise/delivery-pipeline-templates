@@ -2,7 +2,6 @@ def call(Map config = [:]) {
     stage("npm Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('node') {
                     sh "npm test -- --coverage"
                 }

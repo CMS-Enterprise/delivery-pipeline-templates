@@ -6,7 +6,6 @@ def call(Map config = [:]) {
     stage("Playwright Integration Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/playwright.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('playwright') {
                     sh """
                         export SELENIUM_REMOTE_URL="https://seleniumbox.cloud.cms.gov/"

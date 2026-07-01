@@ -4,7 +4,6 @@ def call(Map config = [:]) {
     stage("Jest Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('node') {
                     sh "npx jest ${test_args} --reporters=default --reporters=jest-junit"
                 }

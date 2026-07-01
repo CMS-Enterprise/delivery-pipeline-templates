@@ -4,7 +4,6 @@ def call(Map config = [:]) {
     stage("Testcontainers Integration Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/gradle.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('gradle') {
                     sh """
                         export TESTCONTAINERS_RYUK_DISABLED=true

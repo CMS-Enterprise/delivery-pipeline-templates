@@ -5,7 +5,6 @@ def call(Map config = [:]) {
     stage("Cucumber Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/gradle.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
                 container('gradle') {
                     sh "./gradlew ${task} --no-daemon ${tags ? "-Dcucumber.filter.tags='${tags}'" : ''}"
                 }
