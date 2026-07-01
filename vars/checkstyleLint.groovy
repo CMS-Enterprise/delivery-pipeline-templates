@@ -1,5 +1,6 @@
 def call(Map config = [:]) {
     def config_file = config.config_file ?: 'config/checkstyle/checkstyle.xml'
+    def working_dir = config.working_dir ?: '.'
     def fail_on_violation = config.fail_on_violation != false
 
     stage("Checkstyle Lint") {
@@ -7,7 +8,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('gradle') {
-                    sh "gradle checkstyleMain checkstyleTest --no-daemon"
+                    sh "cd ${working_dir} && gradle checkstyleMain checkstyleTest --no-daemon"
                 }
                 recordIssues(
                     tools: [checkStyle(pattern: '**/build/reports/checkstyle/*.xml')],

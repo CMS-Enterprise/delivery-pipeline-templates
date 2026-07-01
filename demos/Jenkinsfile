@@ -13,7 +13,7 @@ def services = [
 def lintService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            eslintLint(paths: "src/", working_dir: "demos/${svc.name}")
+            eslintNextLint(paths: "src/", working_dir: "demos/${svc.name}")
             break
         case 'vue':
             eslintVueLint(paths: "src/", working_dir: "demos/${svc.name}")

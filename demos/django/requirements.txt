@@ -1,2 +1,4 @@
 django>=4.2,<5.0
 gunicorn>=21.2.0
+pylint-django>=2.7.0
+

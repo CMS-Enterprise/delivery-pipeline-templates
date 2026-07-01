@@ -12,9 +12,9 @@ def call(Map config = [:]) {
                     sh """
                         source /home/python/.bash_profile
                         source /home/python/python-env/bin/activate
-                        pip3 install pylint
-                        [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         cd ${working_dir}
+                        pip3 install pylint 
+                        [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
                             --fail-under=${min_score}

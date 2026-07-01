@@ -18,6 +18,11 @@ spec:
     - name: golangci-lint
       image: artifactory.cloud.cms.gov/docker/golangci/golangci-lint@sha256:5cceeef04e53efe1470638d4b4b4f5ceefd574955ab3941b2d9a68a8c9ad5240
       command: ["cat"]
+      env:
+        - name: GOLANGCI_LINT_CACHE
+          value: /tmp/.cache/golangci-lint
+        - name: GOCACHE
+          value: /tmp/.cache/go-build
       tty: true
       securityContext:
         allowPrivilegeEscalation: false
