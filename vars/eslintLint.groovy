@@ -7,6 +7,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('node') {
+                    sh "npm install --save-dev eslint @eslint/js typescript-eslint globals" 
                     def exit_code = sh(
                         script: "npx eslint ${paths} --format json --output-file eslint-results.json",
                         returnStatus: true
