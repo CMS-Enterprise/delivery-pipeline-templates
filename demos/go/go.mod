@@ -1,3 +1,3 @@
 module github.com/robocare/go-site
 
-go 1.21
+go 1.26
