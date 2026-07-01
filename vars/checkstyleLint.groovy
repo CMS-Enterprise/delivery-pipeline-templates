@@ -7,8 +7,9 @@ def call(Map config = [:]) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/gradle.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
-                container('gradle') {
-                    sh "cd ${working_dir} && gradle checkstyleMain checkstyleTest --no-daemon"
+                container('java') {
+                    XXX download jar
+                    sh "cd ${working_dir} && java -jar checkstyle*.jar
                 }
                 recordIssues(
                     tools: [checkStyle(pattern: '**/build/reports/checkstyle/*.xml')],

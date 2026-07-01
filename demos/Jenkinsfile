@@ -28,7 +28,7 @@ def lintService(svc) {
             golangciLint(working_dir: "demos/${svc.name}")
             break
         case 'maven':
-            checkstyleLint(working_dir: "demos/${svc.name}")
+            echo "Maven is not implimented"
             break
     }
 }

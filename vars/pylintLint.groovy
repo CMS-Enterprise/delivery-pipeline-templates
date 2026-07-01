@@ -2,7 +2,7 @@ def call(Map config = [:]) {
     def paths = config.paths ?: 'src/'
     def working_dir = config.working_dir ?: '.'
     def min_score = config.min_score ?: '7.0'
-    def requirements_file = config.requirements_file ?: 'requirements-dev.txt'
+    def requirements_file = config.requirements_file ?: 'requirements.txt'
 
     stage("Pylint") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/python.yaml')) {
