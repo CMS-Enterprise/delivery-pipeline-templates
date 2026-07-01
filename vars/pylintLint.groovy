@@ -10,7 +10,7 @@ def call(Map config = [:]) {
                 container('python') {
                     sh """
                         source /home/python/.bash_profile
-                        source python-env/bin/activate
+                        source /home/python/python-env/bin/activate
                         pip3 install pylint
                         [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pylint ${paths} \
