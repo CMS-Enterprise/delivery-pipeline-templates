@@ -86,7 +86,8 @@ pipeline {
                             }
                         }]
                     }
-                    parallel branches
+                   // parallel 
+                    branches
                 }
             }
         }
