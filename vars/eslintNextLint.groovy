@@ -8,6 +8,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('node') {
+                    sh "npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/"
                     sh "npm install --save-dev eslint next @eslint/js typescript-eslint eslint-config-next globals" 
                     def exit_code = sh(
                         script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file eslint-results.json",

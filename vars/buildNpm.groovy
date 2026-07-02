@@ -5,6 +5,7 @@ def call(Map config = [:]) {
                 checkout scm
                 container('node') {
                     sh """
+                        npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/
                         npm ci
                         npm run build
                     """
