@@ -20,7 +20,7 @@ def call(Map config = [:]) {
                             --fail-under=${min_score}
                     """
                 }
-                archiveArtifacts allowEmptyArchive: true, artifacts: "pylint-results.json"
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/pylint-results.json"
             }
         }
     }

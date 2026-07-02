@@ -4,7 +4,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 const eslintConfig = defineConfig([
   // Bring in core Next.js & Web Vitals rules
   ...nextVitals,
-
+  ...(next / babel),
   // Custom rule overrides and settings
   {
     rules: {
