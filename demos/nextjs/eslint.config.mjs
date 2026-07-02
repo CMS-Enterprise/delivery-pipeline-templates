@@ -10,6 +10,11 @@ const eslintConfig = defineConfig([
       "no-unused-vars": "warn",
       "@next/next/no-img-element": "error",
     },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
   },
 
   // Files to ignore entirely from linting
