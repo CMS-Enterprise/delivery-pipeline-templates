@@ -4,6 +4,10 @@
 
 **_This is not to be used for anything at this point. It contains untested AI generated code._**
 
+TODO:
+
+- demo: post always archiveArtifacts
+
 # Delivery Pipeline Templates
 
 A CloudBees Pipeline Template Catalog providing standardized CI/CD pipelines for containerized applications.

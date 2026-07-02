@@ -13,7 +13,7 @@ def call(Map config = [:]) {
                         source /home/python/.bash_profile
                         source /home/python/python-env/bin/activate
                         cd ${working_dir}
-                        pip3 install pylint 
+                        pip3 install pylint pylint-django
                         [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
