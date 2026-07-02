@@ -15,8 +15,7 @@ def call(Map config = [:]) {
                             golangci-lint run \
                                 --config ${config_file} \
                                 --timeout ${timeout} \
-                                --output.json.path golangci-lint-results.json ; \
-                            cat golangci-lint-results.json
+                                --output.json.path stdout | tee golangci-lint-results.json
                         """,
                         returnStatus: true
                     )
@@ -24,7 +23,7 @@ def call(Map config = [:]) {
                         error "golangci-lint found issues"
                     }
                 }
-                archiveArtifacts allowEmptyArchive: true, artifacts: "golangci-lint-results.json"
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/golangci-lint-results.json"
             }
         }
     }
