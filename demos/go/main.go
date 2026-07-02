@@ -1,42 +1,38 @@
-// Package main is the heart of this webapp
+// Package main is the heart of this webapp.
 package main
 
 import (
-	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
+	"time"
+
+	"jason.castonguay/handlers"
 )
 
-var templates *template.Template
+const (
+	ReadSeconds = 5
+	IdleSeconds = 15
+)
 
-// init sets the templates
-func init() {
-	templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
-}
-
-// homeHandler is for home.html
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	templates.ExecuteTemplate(w, "home.html", map[string]string{"PageTitle": "Home"})
-}
-
-// aboutHandler is for about.html
-func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	templates.ExecuteTemplate(w, "about.html", map[string]string{"PageTitle": "About"})
-}
-
-// main sets up our handlers
+// main sets up our main.
 func main() {
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/about", aboutHandler)
+	router := http.NewServeMux()
+	server := &http.Server{
+		Addr:         ":3005",
+		Handler:      router,
+		ReadTimeout:  ReadSeconds * time.Second,
+		WriteTimeout: time.Second,
+		IdleTimeout:  IdleSeconds * time.Second,
+	}
+	handler, err := handlers.NewTemplateHandler()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	router.HandleFunc("/", handler.Home)
+	router.HandleFunc("/about", handler.About)
 
 	log.Println("Starting server on :3005")
-	log.Fatal(http.ListenAndServe(":3005", nil))
+	log.Fatal(server.ListenAndServe())
 }
