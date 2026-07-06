@@ -23,6 +23,8 @@ spec:
       env:
         - name: PATH
           value: "~/.local/bin:~/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+        - name: HOME
+          value: "/home/jenkins/agent"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
