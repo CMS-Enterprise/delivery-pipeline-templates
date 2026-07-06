@@ -11,7 +11,7 @@ def call(Map config = [:]) {
                     sh "npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/"
                     sh "npm install --save-dev eslint next eslint-plugin-vue @eslint/js typescript-eslint globals"
                     def exit_code = sh(
-                        script: "cd ${working_dir} && npx -dd eslint ${paths} --format json |tee eslint-results.json ; cat /home/node/.npm/_logs/*",
+                        script: "cd ${working_dir} && npx eslint ${paths} --format json |tee eslint-results.json",
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_error) {
