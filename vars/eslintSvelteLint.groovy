@@ -18,7 +18,7 @@ def call(Map config = [:]) {
                         error "ESLint found violations"
                     }
                 }
-                archiveArtifacts allowEmptyArchive: true, artifacts: "eslint-results.json"
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/eslint-results.json"
             }
         }
     }
