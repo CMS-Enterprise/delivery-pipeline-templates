@@ -4,7 +4,7 @@ def services = [
     [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
     [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
     [name: 'sveltekit', buildTool: 'npm',    pod: 'node.yaml',          container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm run check'],
-    [name: 'django',    buildTool: 'python', pod: 'python.yaml',        container: 'python',        buildCmd: 'pip install -r requirements.txt && python manage.py collectstatic --noinput', testCmd: 'pip3 install -r requirements.txt && python manage.py test'],
+    [name: 'django',    buildTool: 'python', pod: 'python.yaml',        container: 'python',        buildCmd: 'pip3 install -r requirements.txt && python manage.py collectstatic --noinput', testCmd: 'pip3 install -r requirements.txt && python manage.py test'],
     [name: 'go',        buildTool: 'go',     pod: 'golangci-lint.yaml', container: 'golangci-lint', buildCmd: 'go build -o go-site .',                                testCmd: 'go test ./...'],
     [name: 'maven',     buildTool: 'maven',  pod: 'gradle.yaml',       container: 'gradle',        buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
 ]
