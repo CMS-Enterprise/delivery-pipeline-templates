@@ -10,9 +10,9 @@ def call(Map config = [:]) {
                 checkout scm
                 container('python') {
                     sh """
-                        python -m pip config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
+                        python3 -m pip config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         cd ${working_dir}
-                        python -m pip install pylint pylint-django
+                        python3 -m pip install pylint pylint-django
                         [ -f ${requirements_file} ] && python -m pip install -r ${requirements_file}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
