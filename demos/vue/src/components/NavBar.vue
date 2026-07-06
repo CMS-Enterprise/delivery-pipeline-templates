@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ current-page: string }>();
+defineProps<{ currentPage: string }>();
 defineEmits<{ navigate: [page: "home" | "about"] }>();
 </script>
 
@@ -13,7 +13,7 @@ defineEmits<{ navigate: [page: "home" | "about"] }>();
         <li>
           <a
             href="#"
-            :class="{ active: current-page === 'home' }"
+            :class="{ active: current - page === 'home' }"
             @click.prevent="$emit('navigate', 'home')"
             >Home</a
           >
@@ -21,7 +21,7 @@ defineEmits<{ navigate: [page: "home" | "about"] }>();
         <li>
           <a
             href="#"
-            :class="{ active: current-page === 'about' }"
+            :class="{ active: current - page === 'about' }"
             @click.prevent="$emit('navigate', 'about')"
             >About</a
           >

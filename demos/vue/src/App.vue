@@ -4,7 +4,7 @@ import HomeView from './views/HomeView.vue';
 import AboutView from './views/AboutView.vue';
 import { ref } from 'vue';
 
-const current-page = ref<'home' | 'about'>('home');
+const currentPage = ref<'home' | 'about'>('home');
 
 function navigate(page: 'home' | 'about') {
   current-page.value = page;
