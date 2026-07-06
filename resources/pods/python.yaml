@@ -22,7 +22,7 @@ spec:
       tty: true
       env:
         - name: PATH
-          value: "~/.local/bin:~/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+          value: "/home/jenkins/agent/.local/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
         - name: HOME
           value: "/home/jenkins/agent"
       securityContext:
