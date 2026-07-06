@@ -4,17 +4,17 @@ import HomeView from './views/HomeView.vue';
 import AboutView from './views/AboutView.vue';
 import { ref } from 'vue';
 
-const currentPage = ref<'home' | 'about'>('home');
+const current-page = ref<'home' | 'about'>('home');
 
 function navigate(page: 'home' | 'about') {
-  currentPage.value = page;
+  current-page.value = page;
 }
 </script>
 
 <template>
-  <NavBar :currentPage="currentPage" @navigate="navigate" />
+  <NavBar :current-page="current - page" @navigate="navigate" />
   <main class="container">
-    <HomeView v-if="currentPage === 'home'" />
+    <HomeView v-if="current - page === 'home'" />
     <AboutView v-else />
   </main>
   <footer class="footer">
