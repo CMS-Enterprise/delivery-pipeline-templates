@@ -13,7 +13,7 @@ defineEmits<{ navigate: [page: "home" | "about"] }>();
         <li>
           <a
             href="#"
-            :class="{ active: current - page === 'home' }"
+            :class="{ active: currentPage === 'home' }"
             @click.prevent="$emit('navigate', 'home')"
             >Home</a
           >
@@ -21,7 +21,7 @@ defineEmits<{ navigate: [page: "home" | "about"] }>();
         <li>
           <a
             href="#"
-            :class="{ active: current - page === 'about' }"
+            :class="{ active: currentPage === 'about' }"
             @click.prevent="$emit('navigate', 'about')"
             >About</a
           >
