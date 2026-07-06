@@ -8,7 +8,7 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
-    "eslint": "^10.6.0",
+    "eslint": "^9",
     "eslint-config-next": "^16.2.10",
     "next": "^16.2.10",
     "react": "^19.2.7",
