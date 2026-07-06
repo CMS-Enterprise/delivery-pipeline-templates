@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import NavBar from './components/NavBar.vue';
-import HomeView from './views/HomeView.vue';
-import AboutView from './views/AboutView.vue';
-import { ref } from 'vue';
+import NavBar from "./components/NavBar.vue";
+import HomeView from "./views/HomeView.vue";
+import AboutView from "./views/AboutView.vue";
+import { ref } from "vue";
 
-const currentPage = ref<'home' | 'about'>('home');
+const currentPage = ref<"home" | "about">("home");
 
-function navigate(page: 'home' | 'about') {
-  current-page.value = page;
+function navigate(page: "home" | "about") {
+  currentPage.value = page;
 }
 </script>
 
