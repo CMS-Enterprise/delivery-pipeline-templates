@@ -1,1 +1,8 @@
 check-this
+.pids
+node_modules/
+.next/
+out/
+.env*
+*.tsbuildinfo
+next-env.d.ts
