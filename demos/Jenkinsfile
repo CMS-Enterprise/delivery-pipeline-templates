@@ -4,7 +4,7 @@ def services = [
     [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
     [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
     [name: 'sveltekit', buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm run check'],
-    [name: 'django',    buildTool: 'python', pod: 'python.yaml',          container: 'python',        buildCmd: 'pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple && pip3.14 install -r requirements.txt && python3.14 manage.py collectstatic --noinput', testCmd: 'pip3.14 install -r requirements.txt && python manage.py test'],
+    [name: 'django',    buildTool: 'python', pod: 'python.yaml',          container: 'python',        buildCmd: 'find . -exec ls -l {} + && pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple && pip3.14 install -r requirements.txt && python3.14 manage.py collectstatic --noinput', testCmd: 'pip3.14 install -r requirements.txt && python manage.py test'],
     [name: 'go',        buildTool: 'go',     pod: 'golangci-lint.yaml',   container: 'golangci-lint', buildCmd: 'go build -o go-site .',                                testCmd: 'go test ./...'],
     [name: 'maven',     buildTool: 'maven',  pod: 'maven-openjdk25.yaml', container: 'maven',         buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
 ]
