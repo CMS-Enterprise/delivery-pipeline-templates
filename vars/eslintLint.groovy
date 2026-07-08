@@ -15,6 +15,8 @@ def call(Map config = [:]) {
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_error) {
+                        cat eslint-results.json
+                        archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/eslint-results.json"
                         error "ESLint found violations"
                     }
                 }

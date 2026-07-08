@@ -11,10 +11,12 @@ def call(Map config = [:]) {
                     sh "npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/"
                     sh "npm install --save-dev eslint svelte eslint-plugin-svelte @eslint/js typescript-eslint @sveltejs/eslint-config globals"
                     def exit_code = sh(
-                        script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file stdio | tee eslint-results.json",
+                        script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file eslint-results.json",
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_error) {
+                        cat eslint-results.json
+                        archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/eslint-results.json"
                         error "ESLint found violations"
                     }
                 }
