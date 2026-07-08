@@ -12,7 +12,10 @@ function navigate(page: "home" | "about") {
 </script>
 
 <template>
-  <NavBar :currentPage="currentPage" @navigate="navigate" />
+  <NavBar
+    :current-page="currentPage"
+    @navigate="navigate"
+  />
   <main class="container">
     <HomeView v-if="currentPage === 'home'" />
     <AboutView v-else />
