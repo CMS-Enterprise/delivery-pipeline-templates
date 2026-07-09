@@ -3,7 +3,7 @@ def call(Map config = [:]) {
     def filesize_limit = config.filesize_limit ?: '500M'
     def scansize_limit = config.scansize_limit ?: '1G'
 
-    stage("ClamAV Antivirus Scan") {
+    stage("Security Scan: Malware") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/clamav.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"

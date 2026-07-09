@@ -3,7 +3,7 @@ def call(Map config = [:]) {
     def working_dir = config.working_dir ?: '.'
     def fail_on_error = config.fail_on_error != false
 
-    stage("ESLintSvelte") {
+    stage("Lint: Svelte") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"

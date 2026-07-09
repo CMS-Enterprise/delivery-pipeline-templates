@@ -4,7 +4,7 @@ def call(Map config = [:]) {
     def timeout = config.timeout ?: '5m'
     def fail_on_error = config.fail_on_error != false
 
-    stage("golangci-lint") {
+    stage("Lint: Go") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/golangci-lint.yaml')) {
             node(POD_LABEL) {
                 checkout scm

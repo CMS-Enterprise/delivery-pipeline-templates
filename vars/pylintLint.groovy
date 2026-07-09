@@ -4,7 +4,7 @@ def call(Map config = [:]) {
     def min_score = config.min_score ?: '7.0'
     def requirements_file = config.requirements_file ?: 'requirements.txt'
 
-    stage("Pylint") {
+    stage("Lint: Python") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/python.yaml')) {
             node(POD_LABEL) {
                 checkout scm

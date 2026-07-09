@@ -2,7 +2,7 @@ def call(Map config = [:]) {
     def scan_path = config.scan_path ?: '.'
     def fail_on_secret = config.fail_on_secret != false
 
-    stage("TruffleHog Secret Scan") {
+    stage("Security Scan: Secrets") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/trufflehog.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
