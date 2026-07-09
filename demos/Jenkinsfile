@@ -1,15 +1,13 @@
 @Library('delivery-pipeline-templates') _
 
 def services = [
-    [name: 'nextjs',    buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
-    [name: 'vue',       buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm test'],
-    [name: 'sveltekit', buildTool: 'npm',    pod: 'node.yaml',            container: 'node',          buildCmd: 'npm ci && npm run build',                              testCmd: 'npm run check'],
-    [name: 'django',    buildTool: 'python', pod: 'python.yaml',          container: 'python',        buildCmd: 'find . -exec ls -l {} + && pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple && pip3.14 install -r requirements.txt', testCmd: 'pip3.14 install -r requirements.txt && python manage.py test'],
-    [name: 'go',        buildTool: 'go',     pod: 'golangci-lint.yaml',   container: 'golangci-lint', buildCmd: 'go build -o go-site .',                                testCmd: 'go test ./...'],
+    [name: 'nextjs'],    
+    [name: 'vue'],
+    [name: 'sveltekit'],
+    [name: 'django'],
+    [name: 'go'],
     //[name: 'maven',     buildTool: 'maven',  pod: 'maven-openjdk25.yaml', container: 'maven',         buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
 ]
-
-
 def lintService(svc) {
     switch (svc.name) {
         case 'nextjs':
@@ -32,6 +30,54 @@ def lintService(svc) {
             break
     }
 }
+
+def buildService(svc) {
+    switch (svc.name) {
+        case 'nextjs':
+            buildNpm()
+            break
+        case 'vue':
+            buildNpm()
+            break
+        case 'sveltekit':
+            buildNpm()
+            break
+        case 'django':
+            buildPython()
+            break
+        case 'go':
+            buildGo()
+            break
+        case 'maven':
+            echo "Maven is not implimented"
+            break
+      }
+  }
+
+def testService(svc) {
+    switch (svc.name) {
+        case 'nextjs':
+            testNpm() //npm test
+            break
+        case 'vue':
+            testNpm() //npm teset
+            break
+        case 'sveltekit':
+            testNpm() //npm run check
+            break
+        case 'django':
+            testPython() //pip3.14 install -r requirements.txt && python manage.py test'],
+            break
+        case 'go':
+            testGo() //go test ./...
+            break
+        case 'maven':
+            echo "Maven is not implimented"
+            break
+      }
+  }
+
+
 
 pipeline {
     agent none
@@ -107,21 +153,9 @@ pipeline {
             steps {
                 script {
                     def branches = services.collectEntries { svc ->
-                        ["Build: ${svc.name}", {
-                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
-                                node(POD_LABEL) {
-                                    unstash 'workspace'
-                                    container(svc.container) {
-                                        dir("demos/${svc.name}") {
-                                            sh svc.buildCmd
-                                        }
-                                    }
-                                    stash name: "build-${svc.name}", includes: "demos/${svc.name}/**"
-                                }
-                            }
-                        }]
+                        ["Build: ${svc.name}", { buildService(svc) }]
                     }
-                   parallel branches
+                    parallel branches
                 }
             }
         }
@@ -131,18 +165,7 @@ pipeline {
             steps {
                 script {
                     def branches = services.collectEntries { svc ->
-                        ["Test: ${svc.name}", {
-                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
-                                node(POD_LABEL) {
-                                    unstash "build-${svc.name}"
-                                    container(svc.container) {
-                                        dir("demos/${svc.name}") {
-                                            sh svc.testCmd
-                                        }
-                                    }
-                                }
-                            }
-                        }]
+                        ["Test: ${svc.name}", { testService(svc) }]
                     }
                     parallel branches
                 }
