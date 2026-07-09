@@ -8,8 +8,9 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('clamav') {
-                    sh """
-                        freshclam
+                    sh "freshclam"
+                    def exit_code = sh (
+                        script: """
                         clamscan --infected --recursive \
                             --max-filesize=${filesize_limit} \
                             --max-scansize=${scansize_limit} \
@@ -18,7 +19,14 @@ def call(Map config = [:]) {
                             --log=virus-report.clamav.txt \
                             --stdout \
                             ${scan_path}
-                    """
+                        """
+                        returnStatus: true
+                    )
+                    if (exit_code != 0) {
+                        sh "cat virus-report.clamav.txt"
+                        archiveArtifacts allowEmptyArchive: true, artifacts: "virus-report.clamav.txt"
+                        error "ClamAV found infected files"
+                    }
                 }
                 archiveArtifacts allowEmptyArchive: true, artifacts: "virus-report.clamav.txt"
             }
