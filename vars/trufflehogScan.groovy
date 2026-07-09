@@ -7,14 +7,22 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "workspace"
                 container('trufflehog') {
-                    sh """
-                        trufflehog filesystem ${scan_path} \
+                    def exit_code = sh (
+                        script: """
+                        /opt/trufflehog/trufflehog filesystem ${scan_path} \
                             --json \
                             ${fail_on_secret ? '--fail' : ''} \
-                            | tee trufflehog-results.json
-                    """
+                            > trufflehog-results.json
+                        """
+                        returnStatus: true
+                    )
+                    if (exit_code != 0 && fail_on_secret) {
+                        sh "cat trufflehog-results.json"
+                        archiveArtifacts allowEmptyArchive: true, artifacts: "${scan_path}/trufflehog-results.json"
+                        error "TruffleHog found secrets"
+                    }
                 }
-                archiveArtifacts allowEmptyArchive: true, artifacts: "trufflehog-results.json"
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${scan_path}/trufflehog-results.json"
             }
         }
     }
