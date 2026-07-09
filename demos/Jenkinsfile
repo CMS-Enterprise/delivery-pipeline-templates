@@ -66,7 +66,7 @@ def testService(svc) {
             testNpm() //npm run check
             break
         case 'django':
-            testPython() //pip3.14 install -r requirements.txt && python manage.py test'],
+            pytestTest() //instead of pip3.14 install -r requirements.txt && python manage.py test'
             break
         case 'go':
             testGo() //go test ./...
@@ -92,15 +92,10 @@ pipeline {
         // ─── Fetch Source ───
         stage('Fetch Source') {
             agent {
-    kubernetes {
-      yaml """
-      apiVersion: v1
-      kind: Pod
-      spec:
-        restartPolicy: Never
-      """
-    } }
-
+              kubernetes {
+                yamlFile 'resources/pods/jenkins.yaml'
+              }
+            }
             steps {
                 checkout scm
                 stash name: 'workspace', includes: '**'
