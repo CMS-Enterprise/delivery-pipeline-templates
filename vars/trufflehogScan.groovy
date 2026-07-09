@@ -8,12 +8,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('trufflehog') {
                     def exit_code = sh (
-                        script: """
-                        /opt/trufflehog/trufflehog filesystem ${scan_path} \
-                            --json \
-                            ${fail_on_secret ? '--fail' : ''} \
-                            > trufflehog-results.json
-                        """
+                        script: "/opt/trufflehog/trufflehog filesystem ${scan_path} --json ${fail_on_secret ? '--fail' : ''} > trufflehog-results.json",
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_secret) {
