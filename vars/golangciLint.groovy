@@ -7,7 +7,7 @@ def call(Map config = [:]) {
     stage("Lint: Go") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/golangci-lint.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash "workspace"
                 container('golangci-lint') {
                     def exit_code = sh(
                         script: """
