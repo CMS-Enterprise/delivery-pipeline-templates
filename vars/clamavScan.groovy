@@ -19,7 +19,7 @@ def call(Map config = [:]) {
                             --log=virus-report.clamav.txt \
                             --stdout \
                             ${scan_path}
-                        """
+                        """,
                         returnStatus: true
                     )
                     if (exit_code != 0) {
