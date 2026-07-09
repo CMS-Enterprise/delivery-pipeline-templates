@@ -7,7 +7,7 @@ def call(Map config = [:]) {
     stage("Lint: Python") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/python.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash "workspace"
                 container('python') {
                     sh """
                         pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
