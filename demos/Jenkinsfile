@@ -107,14 +107,14 @@ pipeline {
             steps {
                 script {
                     def branches = services.collectEntries { svc ->
-                        ["Lint: ${svc.name}", { lintService(svc) }]
+                        ["Lint: ${svc.name}": { lintService(svc) }]
                     }
                     parallel branches
                 }
             }
         }
         // ─── Security Scans (Code Quality, Code Security, Secret Detection, Source Malware) ───
-        stage('Security Scans') {
+        stage('Security Scan') {
             steps {
                 script {
                     parallel(
@@ -132,10 +132,10 @@ pipeline {
                         'Code Security Scan': {
                             snykCodeScan(snykConfig)
                         }, */
-                        'Secret Detection Scan': {
+                        'Security Scan: Secrets': {
                             trufflehogScan(scan_path: '.')
                         },
-                        'Source Malware Scan': {
+                        'Security Scan: Malware': {
                             clamavScan(scan_path: '.')
                         }
                     )
@@ -148,7 +148,7 @@ pipeline {
             steps {
                 script {
                     def branches = services.collectEntries { svc ->
-                        ["Build: ${svc.name}", { buildService(svc) }]
+                        ["Build: ${svc.name}": { buildService(svc) }]
                     }
                     parallel branches
                 }
@@ -160,7 +160,7 @@ pipeline {
             steps {
                 script {
                     def branches = services.collectEntries { svc ->
-                        ["Test: ${svc.name}", { testService(svc) }]
+                        ["Test: ${svc.name}": { testService(svc) }]
                     }
                     parallel branches
                 }
