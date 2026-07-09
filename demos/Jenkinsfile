@@ -125,5 +125,28 @@ pipeline {
                 }
             }
         }
+
+        // ─── Test ───
+        stage('Test') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Test: ${svc.name}", {
+                            podTemplate(yaml: readTrusted("resources/pods/${svc.pod}")) {
+                                node(POD_LABEL) {
+                                    unstash "build-${svc.name}"
+                                    container(svc.container) {
+                                        dir("demos/${svc.name}") {
+                                            sh svc.testCmd
+                                        }
+                                    }
+                                }
+                            }
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
     }
 }
