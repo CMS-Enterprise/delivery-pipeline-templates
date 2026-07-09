@@ -1,11 +1,14 @@
 def call(Map config = [:]) {
-    stage("python Build") {
+    def stagename = config.stage ?: 'Build: Python'
+    def working_dir = config.working_dir ?: '.'
+    stage(${stagename}) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/python.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
-                container('node') {
+                container('python') {
                     sh """
                         pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple 
+                        cd ${working_dir} 
                         pip3.14 install -r requirements.txt
                     """
                 }

@@ -34,19 +34,19 @@ def lintService(svc) {
 def buildService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            buildNpm()
+            buildNpm(stage: "Build: NextJS", working_dir: "demos/$svc.name")
             break
         case 'vue':
-            buildNpm()
+            buildNpm(stage: "Build: Vue", working_dir: "demos/$svc.name")
             break
         case 'sveltekit':
-            buildNpm()
+            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/$svc.name"))
             break
         case 'django':
-            buildPython()
+            buildPython(stage: "Build: Django", working_dir: "demos/$svc.name"))
             break
         case 'go':
-            buildGo()
+            buildGo(stage: "Build: Go", working_dir: "demos/$svc.name"))
             break
         case 'maven':
             echo "Maven is not implimented"
