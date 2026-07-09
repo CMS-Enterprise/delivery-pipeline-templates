@@ -11,6 +11,7 @@ def call(Map config = [:]) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
             node(POD_LABEL) {
                 container('cosign') {
+                    // TODO: switch into AWS account
                     sh """
                         cosign verify --key awskms:///${kms_key_arn} \
                             --insecure-ignore-tlog=true \

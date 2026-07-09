@@ -77,17 +77,20 @@ pipeline {
             steps {
                 script {
                     parallel(
-      /*                  'Code Quality Scan': {
+
+      /*            Need Sonarqube Project Key and token_credential
+       *            'Code Quality Scan': {
                             sonarqubeScan(
                                 project_key: "${sonarqube_project_key}",
-                                url: "${sonarqube_url}",
+                                url: "https://sonarqube.cloud.cms.gov/",
                                 token_credential: "${sonarqube_token_credential}",
                                 source_path: 'demos/'
                             )
                         }, */
+                        /*  Need Snyk API Token as a credential
                         'Code Security Scan': {
                             snykCodeScan(snykConfig)
-                        },
+                        }, */
                         'Secret Detection Scan': {
                             trufflehogScan(scan_path: '.')
                         },
