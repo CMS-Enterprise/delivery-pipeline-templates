@@ -99,6 +99,7 @@ pipeline {
             steps {
                 checkout([
                   $class: 'GitSCM',
+                  branches: [[name: "*/playground/a-new-attempt"]],
                   extensions: [[$class: 'CleanBeforeCheckout']]
                 ])
                 stash name: 'workspace', includes: '**'
