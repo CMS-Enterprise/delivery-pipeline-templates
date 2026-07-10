@@ -15,7 +15,7 @@ spec:
       type: RuntimeDefault
   restartPolicy: Never
   containers:
-    - name: golangci-lint
+    - name: go
       image: artifactory.cloud.cms.gov/docker/golang:latest
       command: ["cat"]
       env:
