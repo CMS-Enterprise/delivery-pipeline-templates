@@ -25,6 +25,7 @@ graph LR
     secret_scan["Secret Detection Scan"]
     source_malware["Source Malware Scan"]
     build["Build"]
+    build_malware["Build Malware Scan"]
     test["Test"]
     verify_base["Verify Base Image Signatures"]
     build_image["Build Images"]
@@ -57,7 +58,8 @@ graph LR
     security_scan --> build
     secret_scan --> build
     source_malware --> build
-    build --> test
+    build --> build_malware
+    build_malware --> test
     test --> verify_base
     verify_base --> build_image
     build_image --> publish
@@ -92,6 +94,7 @@ graph LR
     style security_scan fill:#ffe0b2,stroke:#f57c00
     style secret_scan fill:#ffe0b2,stroke:#f57c00
     style source_malware fill:#ffe0b2,stroke:#f57c00
+    style build_malware fill:#ffe0b2,stroke:#f57c00
     style verify_base fill:#ffe0b2,stroke:#f57c00
     style sign_images fill:#ffe0b2,stroke:#f57c00
     style generate_sbom fill:#ffe0b2,stroke:#f57c00
