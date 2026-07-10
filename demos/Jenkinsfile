@@ -43,7 +43,8 @@ def buildService(svc) {
             buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: "sveltekit-build")
             break
         case 'django':
-            buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
+            //buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
+            echo "No building Django"
             break
         case 'go':
             buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: "go-build")
