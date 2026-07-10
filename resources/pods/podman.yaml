@@ -16,7 +16,7 @@ spec:
     runAsNonRoot: true
     seccompProfile:
       type: Unconfined
-      #type: RuntimeDefault # This breaks podman
+      # type: RuntimeDefault # This breaks podman
   restartPolicy: Never
   containers:
     - name: podman

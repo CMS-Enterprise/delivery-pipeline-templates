@@ -2,7 +2,7 @@ def call(Map config = [:]) {
     def stagename = config.stage ?: 'Build: NPM'
     def working_dir = config.working_dir ?: '.'
     def mystash = config.stash ?: "workspace"
-    stage(${stagename}) {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
                 unstash "workspace"
