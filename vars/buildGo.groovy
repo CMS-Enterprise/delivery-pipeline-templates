@@ -11,8 +11,8 @@ def call(Map config = [:]) {
                         cd ${working_dir}
                         go build -o go-site .
                     """
-                }    
-                stash name: ${mystash}, includes: "${working_dir}/**"
+                }
+                stash name: "${mystash}", includes: "${working_dir}/**"
             }
         }
     }

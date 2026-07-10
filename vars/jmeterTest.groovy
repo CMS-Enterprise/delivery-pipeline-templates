@@ -7,7 +7,7 @@ def call(Map config = [:]) {
     stage("JMeter Performance Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jmeter.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash workspace
                 container('jmeter') {
                     sh """
                         jmeter -n \

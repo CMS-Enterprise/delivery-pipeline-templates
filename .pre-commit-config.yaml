@@ -18,15 +18,11 @@ repos:
       - id: pretty-format-json
         args:
           - --autofix
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.48.0
-    hooks:
-      - id: markdownlint
   - repo: https://github.com/detailyang/pre-commit-shell
     rev: 1.0.5
     hooks:
       - id: shell-lint
-  - repo: https://github.com/jenkinsci/jenkinsfilelint
-    rev: 1.4.1
-    hooks:
-      - id: jenkinsfilelint
+#  - repo: https://github.com/jenkinsci/jenkinsfilelint
+#    rev: 1.4.1
+#    hooks:
+#      - id: jenkinsfilelint

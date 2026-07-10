@@ -14,7 +14,7 @@ def call(Map config = [:]) {
                         npm run build
                     """
                 }
-                stash name: ${mystash}, includes: "${working_dir}/**"
+                stash name: "${mystash}", includes: "${working_dir}/**"
             }
         }
     }

@@ -9,7 +9,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('node') {
                     sh "npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/"
-                    sh "npm install --save-dev eslint next @eslint/js@9 typescript-eslint eslint-plugin-react eslint-config-next globals" 
+                    sh "npm install --save-dev eslint next @eslint/js@9 typescript-eslint eslint-plugin-react eslint-config-next globals"
                     def exit_code = sh(
                         script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file eslint-results.json",
                         returnStatus: true
@@ -19,8 +19,8 @@ def call(Map config = [:]) {
                         archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/eslint-results.json"
                         error "ESLint found violations"
                     }
-                }
                 archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/eslint-results.json"
+                }
             }
         }
     }

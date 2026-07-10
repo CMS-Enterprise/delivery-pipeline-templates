@@ -232,7 +232,7 @@ pipeline {
               }
             } finally {
               sh "podman rm --force ${builderName}"
-              script { 
+              script {
                   env.HTTP_PROXY=""
                   env.HTTPS_PROXY=""
               }
@@ -410,7 +410,7 @@ pipeline {
           - containerPort: 8090
         """
     }
-  }  
+  }
       steps {
         echo "Active scanning attempts to find potential vulnerabilities by using known attacks against the selected targets."
         echo "Active scanning is an attack on those targets.You should NOT use it on web applications that you do not own."

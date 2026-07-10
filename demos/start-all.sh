@@ -6,7 +6,7 @@ PIDS_FILE="$SCRIPT_DIR/.pids"
 
 PROJECTS=(nextjs vue sveltekit django maven go)
 
->"$PIDS_FILE"
+true >"$PIDS_FILE"
 
 echo "Starting webapps..."
 echo

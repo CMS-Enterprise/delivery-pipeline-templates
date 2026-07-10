@@ -10,7 +10,7 @@ def call(Map config = [:]) {
                 checkout scm
                 container('python') {
                     sh """
-                        pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple 
+                        pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         pip3 install pytest pytest-cov
                         [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pytest ${test_path} \

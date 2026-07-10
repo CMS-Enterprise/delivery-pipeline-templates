@@ -6,7 +6,7 @@ def call(Map config = [:]) {
     stage("Snyk Dependency Scan") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/snyk.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash workspace
                 container('snyk') {
                     withCredentials([string(credentialsId: config.token_credential ?: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
                         sh """

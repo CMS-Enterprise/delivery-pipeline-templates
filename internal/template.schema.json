@@ -1,110 +1,155 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://delivery-pipelines.internal/template.schema.json",
-  "title": "CloudBees Pipeline Template Schema",
-  "required": ["version", "name", "displayName", "type"],
-  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "properties": {
-    "version": {
-      "type": "number",
-      "enum": [1]
-    },
-    "name": {
-      "type": "string",
-      "description": "The name of the template"
+    "description": {
+      "description": "The description of the template",
+      "type": "string"
     },
     "displayName": {
-      "type": "string",
-      "description": "The display name of the template"
-    },
-    "description": {
-      "type": "string",
-      "description": "The description of the template"
-    },
-    "type": {
-      "type": "string",
-      "description": "The type of the template",
-      "enum": ["pipeline-template"]
-    },
-    "templateFile": {
-      "type": "string",
-      "description": "The file name of the template (Defaults to Jenkinsfile)"
-    },
-    "templateType": {
-      "type": "string",
-      "description": "MULTIBRANCH for multibranch pipelines, SCRIPTED for single-run jobs",
-      "enum": ["MULTIBRANCH", "SCRIPTED"]
+      "description": "The display name of the template",
+      "type": "string"
     },
     "multibranch": {
-      "type": "object",
       "description": "Multibranch pipeline configuration",
       "properties": {
         "branchSource": {
-          "type": "object",
           "properties": {
-            "github": {
-              "type": "object",
-              "properties": {
-                "repoOwner": { "type": "string" },
-                "repository": { "type": "string" },
-                "credentialsId": { "type": "string" },
-                "apiUri": { "type": "string" }
-              }
-            },
             "git": {
-              "type": "object",
               "properties": {
-                "remote": { "type": "string" },
-                "credentialsId": { "type": "string" }
-              }
+                "credentialsId": {
+                  "type": "string"
+                },
+                "remote": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "github": {
+              "properties": {
+                "apiUri": {
+                  "type": "string"
+                },
+                "credentialsId": {
+                  "type": "string"
+                },
+                "repoOwner": {
+                  "type": "string"
+                },
+                "repository": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
-          }
+          },
+          "type": "object"
         },
-        "markerFile": { "type": "string" },
+        "markerFile": {
+          "type": "string"
+        },
         "orphanedItemStrategy": {
-          "type": "object",
           "properties": {
-            "daysToKeep": { "type": "number" }
-          }
+            "daysToKeep": {
+              "type": "number"
+            }
+          },
+          "type": "object"
         },
-        "scanRepositoryInterval": { "type": "string" }
-      }
+        "scanRepositoryInterval": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "name": {
+      "description": "The name of the template",
+      "type": "string"
     },
     "parameters": {
-      "type": "array",
       "description": "The parameters of the template",
       "items": {
-        "type": "object",
-        "required": ["name", "displayName", "type"],
         "properties": {
-          "name": {
-            "type": "string",
-            "description": "The name of the parameter"
-          },
-          "displayName": {
-            "type": "string",
-            "description": "The display name of the parameter"
-          },
-          "description": {
-            "type": "string",
-            "description": "The description of the parameter"
-          },
-          "type": {
-            "type": "string",
-            "description": "The type of the parameter",
-            "enum": ["string", "boolean", "number", "credentials"]
+          "allowedValues": {
+            "description": "An array containing the list of values allowed for the parameter",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "defaultValue": {
-            "type": ["string", "boolean", "number"],
-            "description": "The default value of the parameter"
+            "description": "The default value of the parameter",
+            "type": [
+              "string",
+              "boolean",
+              "number"
+            ]
           },
-          "allowedValues": {
-            "type": "array",
-            "description": "An array containing the list of values allowed for the parameter",
-            "items": { "type": "string" }
+          "description": {
+            "description": "The description of the parameter",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the parameter",
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the parameter",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of the parameter",
+            "enum": [
+              "string",
+              "boolean",
+              "number",
+              "credentials"
+            ],
+            "type": "string"
           }
-        }
-      }
+        },
+        "required": [
+          "name",
+          "displayName",
+          "type"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "templateFile": {
+      "description": "The file name of the template (Defaults to Jenkinsfile)",
+      "type": "string"
+    },
+    "templateType": {
+      "description": "MULTIBRANCH for multibranch pipelines, SCRIPTED for single-run jobs",
+      "enum": [
+        "MULTIBRANCH",
+        "SCRIPTED"
+      ],
+      "type": "string"
+    },
+    "type": {
+      "description": "The type of the template",
+      "enum": [
+        "pipeline-template"
+      ],
+      "type": "string"
+    },
+    "version": {
+      "enum": [
+        1
+      ],
+      "type": "number"
     }
-  }
+  },
+  "required": [
+    "version",
+    "name",
+    "displayName",
+    "type"
+  ],
+  "title": "CloudBees Pipeline Template Schema",
+  "type": "object"
 }
