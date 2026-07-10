@@ -97,7 +97,10 @@ pipeline {
               }
             }
             steps {
-                checkout scm
+                checkout([
+                  $class: 'GitSCM'
+                  extensions: [[$class: 'CleanBeforeCheckout']]
+                ])
                 stash name: 'workspace', includes: '**'
             }
         }
@@ -167,9 +170,4 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            cleanWs()
-          }
-      }
 }
