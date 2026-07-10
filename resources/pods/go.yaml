@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: "true"
+spec:
+  serviceAccountName: jenkins-agents
+  nodeSelector:
+    node-pool: agent
+  terminationGracePeriodSeconds: 30
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  restartPolicy: Never
+  containers:
+    - name: golangci-lint
+      image: artifactory.cloud.cms.gov/docker/golang:latest
+      command: ["cat"]
+      env:
+        - name: GOCACHE
+          value: /tmp/.cache/go-build
+      tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "2Gi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "2Gi"
