@@ -98,7 +98,7 @@ pipeline {
             }
             steps {
                 checkout([
-                  $class: 'GitSCM'
+                  $class: 'GitSCM',
                   extensions: [[$class: 'CleanBeforeCheckout']]
                 ])
                 stash name: 'workspace', includes: '**'
