@@ -34,19 +34,19 @@ def lintService(svc) {
 def buildService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            buildNpm(stage: "Build: NextJS", working_dir: "demos/$svc.name")
+            buildNpm(stage: "Build: NextJS", working_dir: "demos/$svc.name", stash: "nextjs-build")
             break
         case 'vue':
-            buildNpm(stage: "Build: Vue", working_dir: "demos/$svc.name")
+            buildNpm(stage: "Build: Vue", working_dir: "demos/$svc.name", stash: "vue-build")
             break
         case 'sveltekit':
-            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/$svc.name"))
+            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/$svc.name", stash: "sveltekit-build")
             break
         case 'django':
-            buildPython(stage: "Build: Django", working_dir: "demos/$svc.name"))
+            buildPython(stage: "Build: Django", working_dir: "demos/$svc.name",command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
             break
         case 'go':
-            buildGo(stage: "Build: Go", working_dir: "demos/$svc.name"))
+            buildGo(stage: "Build: Go", working_dir: "demos/$svc.name", stash: "go-build")
             break
         case 'maven':
             echo "Maven is not implimented"
@@ -57,19 +57,19 @@ def buildService(svc) {
 def testService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            testNpm() //npm test
+            testNpm(stage: "Test: NextJS", working_dir: "demos/$svc.name", unstash: "nextjs-build", stash: "nextjs-build")
             break
         case 'vue':
-            testNpm() //npm teset
+            testNpm(stage: "Test: Vue", working_dir: "demos/$svc.name", unstash: "vue-build", stash: "vue-build")
             break
         case 'sveltekit':
-            testNpm() //npm run check
+            testNpm(stage: "Test: Sveltekit", working_dir: "demos/$svc.name", unstash: "sveltekit-build", stash: "sveltekit-build")
             break
         case 'django':
-            pytestTest() //instead of pip3.14 install -r requirements.txt && python manage.py test'
+            pytestTest(stage: "Test: Django", working_dir: "demos/$svc.name", unstash: "django-build", stash: "django-build") //instead of pip3.14 install -r requirements.txt && python manage.py test'
             break
         case 'go':
-            testGo() //go test ./...
+            testGo(stage: "Test: Go", working_dir: "demos/$svc.name", unstash: "go-build", stash: "go-build") //go test ./...
             break
         case 'maven':
             echo "Maven is not implimented"
@@ -167,4 +167,9 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            cleanWs()
+          }
+      }
 }
