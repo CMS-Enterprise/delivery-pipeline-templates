@@ -97,9 +97,10 @@ pipeline {
               }
             }
             steps {
+
                 checkout scmGit(
-                  branches: [[name: "*/playground/a-new-attempt"]],
-                  extensions: [CleanBeforeCheckout()],
+                  branches: [[name: '*/playground/a-new-attempt']], 
+                  extensions: [cleanBeforeCheckout()], 
                   userRemoteConfigs: [[url: 'https://github.com/CMS-Enterprise/delivery-pipeline-templates.git']]
                 )
                 stash name: 'workspace', includes: '**'
