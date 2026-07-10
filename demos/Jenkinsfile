@@ -1,7 +1,7 @@
 @Library('delivery-pipeline-templates') _
 
 def services = [
-    [name: 'nextjs'],    
+    [name: 'nextjs'],
     [name: 'vue'],
     [name: 'sveltekit'],
     [name: 'django'],
@@ -43,7 +43,7 @@ def buildService(svc) {
             buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: "sveltekit-build")
             break
         case 'django':
-            buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}",command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
+            buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
             break
         case 'go':
             buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: "go-build")
@@ -99,8 +99,8 @@ pipeline {
             steps {
 
                 checkout scmGit(
-                  branches: [[name: '*/playground/a-new-attempt']], 
-                  extensions: [cleanBeforeCheckout()], 
+                  branches: [[name: '*/playground/a-new-attempt']],
+                  extensions: [cleanBeforeCheckout()],
                   userRemoteConfigs: [[url: 'https://github.com/CMS-Enterprise/delivery-pipeline-templates.git']]
                 )
                 stash name: 'workspace', includes: '**'
