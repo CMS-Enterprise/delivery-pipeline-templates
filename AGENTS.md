@@ -4,14 +4,18 @@ freshclam is run pointing to artifactory.cloud.cms.gov for its cache
 cosign is checked for containers
 
 All code is linted
-All code is scanned with trivy, grype, sonarqube and snyk.
+All code is scanned with trivy, sonarqube and snyk.
 these scans run in parallel
+trivy is the vulnerability scanner, not grype
 
 unit tests are run, depending on the language and test type eg junit, cucumber
 
 Containers are built with podman and signed with cosign
-additional process is building with podman with a squid proxy only allowing artifactory.cloud.cms.gov
 flag for reproducable builds
+
+the squid proxy that only allows artifactory.cloud.cms.gov belongs to the
+ironbank / batcave builds, not the standard pipeline. see templates/ironbankish/
+and ironbankbuild.md. the standard pod-pipeline does not proxy its build egress.
 
 containers are scanned with Jfrog Xray and snyk
 SBOMs are created with jfrog xray and with snyk
