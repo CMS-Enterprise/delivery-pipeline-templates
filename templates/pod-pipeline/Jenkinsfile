@@ -65,7 +65,13 @@ pipeline {
         stage('Fetch Source') {
             agent { label 'jenkins-agent' }
             steps {
-                checkout scm
+                script {
+                    def scmVars = checkout scm
+                    // Consumed as a default by dockerBuild, jfrogBuild, helmDeploy,
+                    // argocdDeploy and gitopsPromote.
+                    env.GIT_SHORT_HASH = scmVars.GIT_COMMIT.take(7)
+                    env.REPO_NAME = "${github_repo}"
+                }
                 stash name: 'source', includes: '**'
             }
         }
@@ -176,7 +182,7 @@ pipeline {
             steps {
                 unstash 'source'
                 script {
-                    def tag = env.GIT_COMMIT?.take(7) ?: env.BUILD_NUMBER
+                    def tag = env.GIT_SHORT_HASH ?: env.BUILD_NUMBER
                     services.each { svc ->
                         container('podman') {
                             sh "podman build -t ${jfrog_registry}/${jfrog_staging_repo}/${svc.name}:${tag} demos/${svc.name}/"
@@ -208,7 +214,7 @@ pipeline {
             }
         }
 
-        // ─── Image Scans (Xray, Vulnerability, Container Security, Malware, OPA Policy) ───
+        // ─── Image Scans (Xray, Vulnerability, Container Security, Malware, OpenSCAP, OPA Policy) ───
         stage('Image Scans') {
             steps {
                 script {
@@ -233,6 +239,18 @@ pipeline {
                         },
                         'Container Malware Scan': {
                             clamavScan(scan_path: 'demos/')
+                        },
+                        'OpenSCAP Policy Scan': {
+                            imageTags.each { name, image ->
+                                openscapScan([
+                                    image: image,
+                                    profile: "${openscap_profile}",
+                                    datastream: "${openscap_datastream}",
+                                    output_name: "openscap-${name}",
+                                    stage: "OpenSCAP Policy Scan: ${name}",
+                                    kms_key_arn: "${cosign_kms_key_arn}"
+                                ])
+                            }
                         },
                         'OPA Policy Scan': {
                             opaPolicyScan(
@@ -297,11 +315,10 @@ pipeline {
             when { expression { return is_main } }
             steps {
                 script {
-                    kustomizeDeploy(
+                    kustomizeDeploy([
                         overlay_path: "${manifest_path_dev}",
-                        namespaces: [dev: "${namespace_dev}"],
-                        'dev'
-                    )
+                        namespaces: [dev: "${namespace_dev}"]
+                    ], 'dev')
                 }
             }
         }
@@ -381,7 +398,7 @@ pipeline {
                     services.each { svc ->
                         smokeTest(
                             url: "${staging_base_url}/${svc.name}/health",
-                            retries: ${smoke_retries}
+                            retries: "${smoke_retries}"
                         )
                     }
                 }

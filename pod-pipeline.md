@@ -32,9 +32,10 @@ graph LR
     publish["Publish Images to Staging Repo"]
     sign_images["Sign Images (Cosign)"]
     xray_scan["Xray Scan"]
-    vuln_scan["Vulnerability Scan"]
+    vuln_scan["Vulnerability Scan (Trivy)"]
     container_scan["Container Security Scan (Snyk)"]
     malware_scan["Container Malware Scan"]
+    openscap_scan["OpenSCAP Policy Scan"]
     opa_scan["OPA Policy Scan"]
     generate_sbom["Generate / Validate SBOMs"]
     promote["Promote Image to Verified Repo"]
@@ -68,11 +69,13 @@ graph LR
     sign_images --> vuln_scan
     sign_images --> container_scan
     sign_images --> malware_scan
+    sign_images --> openscap_scan
     sign_images --> opa_scan
     xray_scan --> generate_sbom
     vuln_scan --> generate_sbom
     container_scan --> generate_sbom
     malware_scan --> generate_sbom
+    openscap_scan --> generate_sbom
     opa_scan --> generate_sbom
     generate_sbom --> promote
     promote --> update_tags
@@ -104,6 +107,7 @@ graph LR
     style vuln_scan fill:#bbdefb,stroke:#1976d2
     style container_scan fill:#bbdefb,stroke:#1976d2
     style malware_scan fill:#bbdefb,stroke:#1976d2
+    style openscap_scan fill:#bbdefb,stroke:#1976d2
     style opa_scan fill:#bbdefb,stroke:#1976d2
     style promote fill:#e1bee7,stroke:#7b1fa2
     style update_tags fill:#e1bee7,stroke:#7b1fa2

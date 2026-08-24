@@ -85,6 +85,25 @@ parameters:
       - high
       - critical
 
+  # ─── OpenSCAP ───
+  - name: openscap_profile
+    displayName: OpenSCAP Profile
+    description: "XCCDF profile ID evaluated against each built image"
+    type: string
+    defaultValue: xccdf_org.ssgproject.content_profile_stig
+    allowedValues:
+      - xccdf_org.ssgproject.content_profile_stig
+      - xccdf_org.ssgproject.content_profile_cis
+      - xccdf_org.ssgproject.content_profile_ospp
+      - xccdf_org.ssgproject.content_profile_pci-dss
+  - name: openscap_datastream
+    displayName: OpenSCAP Datastream
+    description: >-
+      Path to the SCAP datastream inside the openscap pod image. Content ships
+      with the image so nothing is downloaded at scan time.
+    type: string
+    defaultValue: /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
+
   # ─── OPA Policy ───
   - name: opa_policy_path
     displayName: OPA Policy Path

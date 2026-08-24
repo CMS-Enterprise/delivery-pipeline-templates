@@ -1,17 +1,16 @@
 def call(Map config = [:]) {
-    def kms_key_arn = config.kms_key_arn
-    if (!kms_key_arn) {
-        echo "No KMS key ARN provided — skipping cosign sign"
-        return
-    }
+    // Fails closed: every published container must carry a signature, so a
+    // missing key or account is an error rather than a silent skip.
+    def kms_key_arn = config.kms_key_arn ?: error('kms_key_arn is required for cosign signing')
+    def account_id = config.account_id ?: error('account_id is required for cosign signing')
 
-    def image = config.image ?: env.IMAGE_TAG ?: error("IMAGE_TAG not set")
+    def image = config.image ?: env.IMAGE_TAG ?: error('IMAGE_TAG not set')
     def role_name = config.role_name ?: 'deploy-role'
     def region = config.region ?: 'us-east-1'
-    def account_id = config.account_id ?: error("account_id is required for cosign signing")
     def role_arn = "arn:aws:iam::${account_id}:role/${role_name}"
+    def stagename = config.stage ?: 'Cosign Sign'
 
-    stage("Cosign Sign") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
             node(POD_LABEL) {
                 container('aws-cli') {

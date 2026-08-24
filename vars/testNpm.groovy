@@ -1,10 +1,11 @@
 def call(Map config = [:]) {
     def stagename = config.stage ?: 'Test: NPM'
     def working_dir = config.working_dir ?: '.'
+    def myunstash = config.unstash ?: 'workspace'
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/node.yaml')) {
             node(POD_LABEL) {
-                unstash "workspace"
+                unstash "${myunstash}"
                 container('node') {
                     sh """
                         npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/
@@ -13,7 +14,6 @@ def call(Map config = [:]) {
                         npm test
                     """
                 }
-                stash name: "workspace", includes: "**"
             }
         }
     }

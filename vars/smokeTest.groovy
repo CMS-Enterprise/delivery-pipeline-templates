@@ -1,7 +1,8 @@
 def call(Map config = [:]) {
     def url = config.url ?: config.health_endpoint ?: "${env.DEPLOY_URL}/health"
-    def retries = config.retries ?: 5
-    def delay = config.retry_delay_seconds ?: 10
+    // Template parameters arrive as strings; retry()/sleep() need numbers.
+    def retries = (config.retries ?: 5) as Integer
+    def delay = (config.retry_delay_seconds ?: 10) as Integer
     def expected_status = config.expected_status ?: 200
 
     stage("Smoke Test") {

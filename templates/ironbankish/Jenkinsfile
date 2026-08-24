@@ -29,6 +29,7 @@ pipeline {
     string(name: 'clamscan_filesize_limit', defaultValue: "500M", description: "clamscan filesize limits")
     string(name: 'clamscan_size_limit', defaultValue: "1G", description: "clamscan scan size limits")
     booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "false", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
+    booleanParam(name: 'openscap_enabled', defaultValue: true, description: 'Scan the built image for policy violations with OpenSCAP. Requires the raw image filesystem, which is built automatically when enabled.')
     string(name: 'target_url', defaultValue: "http://localhost:3000", description: 'ZAP testing target')
   }
 
@@ -107,6 +108,12 @@ pipeline {
               memory: "3Gi"
         - name: snyk
           image: artifactory.cloud.cms.gov/docker/snyk/snyk:alpine
+          imagePullPolicy: Always
+          command: ['tail', '-f', '/dev/null']
+        - name: openscap
+          # SCAP Security Guide datastreams ship in the image, so no content is
+          # fetched at scan time (the squid proxy would block it anyway).
+          image: artifactory.cloud.cms.gov/docker/compliance-as-code/openscap:latest
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: skopeo
@@ -188,10 +195,12 @@ pipeline {
                 "--output type=oci,dest=./image.oci.tar",
               ]
 
-              if (params.clamscan_oci_tar)  {
+              // oscap-chroot can only evaluate a directory tree, so OpenSCAP
+              // needs the raw filesystem even when clamscan works off the tar.
+              if (params.clamscan_oci_tar && !params.openscap_enabled) {
                 echo "Option 'clamscan_oci_tar' set to true. Only building OCI tar"
               } else {
-                echo "Option 'clamscan_oci_tar' set to false. Adding build output of raw image filesystem"
+                echo "Adding build output of raw image filesystem"
                 arguments.add("--output type=local,dest=./image-raw")
               }
 
@@ -363,6 +372,57 @@ pipeline {
             }
           }
         } // end stage malware scan
+
+        stage('Policy Scan') {
+          when {
+            expression { params.openscap_enabled }
+          }
+          steps {
+            container('openscap') {
+              script {
+                try {
+                  // Exit 0 means every rule passed, 2 means at least one rule
+                  // failed, and 1 means oscap itself errored out.
+                  def exit_code = sh(
+                    script: """
+                      oscap-chroot ./image-raw xccdf eval \
+                        --profile ${openscap_profile} \
+                        --results openscap-results.xml \
+                        --report openscap-report.html \
+                        ${openscap_datastream}
+                    """,
+                    returnStatus: true
+                  )
+
+                  if (exit_code == 2) {
+                    error "OpenSCAP found policy violations in ${params.image}:${params.tag}"
+                  } else if (exit_code != 0) {
+                    error "OpenSCAP failed to evaluate the image (exit ${exit_code})"
+                  }
+
+                } catch(err) {
+                  if (params.continue_on_image_scan_failure) {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                      error "${err}. Continuing pipeline execution."
+                    }
+                  } else {
+                    error "${err}"
+                  }
+                } finally {
+                  archiveArtifacts artifacts: 'openscap-results.xml, openscap-report.html', allowEmptyArchive: true
+                  publishHTML(target: [
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'openscap-report.html',
+                    reportName: "OpenSCAP Policy Report"
+                  ])
+                }
+              }
+            }
+          }
+        } // end stage policy scan
       } // end parallel
     } // end image scan stage
 

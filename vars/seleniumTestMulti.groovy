@@ -3,14 +3,15 @@ void call(Map args = [:]) {
         def runtime = args.runtime ?: "java"
         def selenium_grid = args.selenium_grid ?: "https://selenium.cloud.cms.gov"
 
+        // The java branch invokes mvn, so it needs the maven image, not gradle.
         def pod_yaml = runtime == "java"
-            ? 'resources/pods/gradle.yaml'
+            ? 'resources/pods/maven-openjdk25.yaml'
             : runtime == "python"
                 ? 'resources/pods/python.yaml'
                 : 'resources/pods/node.yaml'
 
         def container_name = runtime == "java"
-            ? 'gradle'
+            ? 'maven'
             : runtime == "python"
                 ? 'python'
                 : 'node'

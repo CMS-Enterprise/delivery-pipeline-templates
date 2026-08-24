@@ -1,11 +1,22 @@
 @Library('delivery-pipeline-templates') _
 
+def registry = 'artifactory.cloud.cms.gov/tooling-registry'
+
+// Signing fails closed, so these must be set before the Build Images stage
+// will pass. Override per-controller rather than committing real values.
+def cosignConfig = [
+    kms_key_arn: env.COSIGN_KMS_KEY_ARN,
+    account_id: env.AWS_ACCOUNT_ID,
+]
+
+// `stash` is the artifact each service hands to the next stage. Django has no
+// build step yet, so it carries the raw checkout forward instead.
 def services = [
-    [name: 'nextjs'],
-    [name: 'vue'],
-    [name: 'sveltekit'],
-    [name: 'django'],
-    [name: 'go'],
+    [name: 'nextjs',    stash: 'nextjs-build'],
+    [name: 'vue',       stash: 'vue-build'],
+    [name: 'sveltekit', stash: 'sveltekit-build'],
+    [name: 'django',    stash: 'workspace'],
+    [name: 'go',        stash: 'go-build'],
     //[name: 'maven',     buildTool: 'maven',  pod: 'maven-openjdk25.yaml', container: 'maven',         buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
 ]
 def lintService(svc) {
@@ -34,20 +45,20 @@ def lintService(svc) {
 def buildService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            buildNpm(stage: "Build: NextJS", working_dir: "demos/${svc.name}", stash: "nextjs-build")
+            buildNpm(stage: "Build: NextJS", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'vue':
-            buildNpm(stage: "Build: Vue", working_dir: "demos/${svc.name}", stash: "vue-build")
+            buildNpm(stage: "Build: Vue", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'sveltekit':
-            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: "sveltekit-build")
+            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'django':
-            //buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: "django-build")
+            //buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: svc.stash)
             echo "No building Django"
             break
         case 'go':
-            buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: "go-build")
+            buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'maven':
             echo "Maven is not implimented"
@@ -67,10 +78,10 @@ def testService(svc) {
             testNpm(stage: "Test: Sveltekit", working_dir: "demos/${svc.name}", unstash: "sveltekit-build", stash: "sveltekit-build")
             break
         case 'django':
-            pytestTest(stage: "Test: Django", working_dir: "demos/${svc.name}", unstash: "django-build", stash: "django-build") //instead of pip3.14 install -r requirements.txt && python manage.py test'
+            pytestTest(stage: "Test: Django", working_dir: "demos/${svc.name}", unstash: svc.stash)
             break
         case 'go':
-            testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: "go-build", stash: "go-build") //go test ./...
+            testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash)
             break
         case 'maven':
             echo "Maven is not implimented"
@@ -98,12 +109,17 @@ pipeline {
               }
             }
             steps {
-
-                checkout scmGit(
-                  branches: [[name: '*/playground/a-new-attempt']],
-                  extensions: [cleanBeforeCheckout()],
-                  userRemoteConfigs: [[url: 'https://github.com/CMS-Enterprise/delivery-pipeline-templates.git']]
-                )
+                script {
+                    def scmVars = checkout scmGit(
+                      branches: [[name: '*/playground/a-new-attempt']],
+                      extensions: [cleanBeforeCheckout()],
+                      userRemoteConfigs: [[url: 'https://github.com/CMS-Enterprise/delivery-pipeline-templates.git']]
+                    )
+                    // Consumed as a default by dockerBuild, jfrogBuild, helmDeploy,
+                    // argocdDeploy and gitopsPromote.
+                    env.GIT_SHORT_HASH = scmVars.GIT_COMMIT.take(7)
+                    env.REPO_NAME = 'delivery-pipeline-templates'
+                }
                 stash name: 'workspace', includes: '**'
             }
         }
@@ -172,5 +188,45 @@ pipeline {
                 }
             }
         }
+
+        // TODO: How do you validate each container used in the build?
+        // Collect the keys, save them somewhere, and then verify.
+        //
+        // stage('Verify Base Images') {
+        //     steps {
+        //         script {
+        //             cosignVerify(jfrogConfig)
+        //             // cosign verify \
+        //             //   --certificate-identity 'registry1.dso.mil' \
+        //             //   --certificate-oidc-issuer-regexp '^$' \
+        //             //   --certificate-chain 'ironbank-signing-certificate-chain.pem' \
+        //             //   --insecure-ignore-tlog \
+        //             //   --insecure-ignore-sct=true \
+        //             //   artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/ubi/ubi9:9.6
+        //         }
+        //     }
+        // }
+        // ─── Build Container Images ───
+        // TODO: none of the demos/* apps ship a Dockerfile yet, so this stage
+        // cannot pass until one is added per service.
+        stage('Build Images') {
+            steps {
+                script {
+                    def branches = services.collectEntries { svc ->
+                        ["Build Images: ${svc.name}": {
+                            dockerBuild(cosignConfig + [
+                                stage: "Build Image: ${svc.name}",
+                                registry: registry,
+                                image_name: svc.name,
+                                context_dir: "demos/${svc.name}",
+                                unstash: svc.stash
+                            ])
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
     }
 }

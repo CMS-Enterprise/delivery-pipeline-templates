@@ -2,11 +2,12 @@ def call(Map config = [:]) {
     def severity_threshold = config.severity_threshold ?: 'high'
     def org = config.org ?: env.SNYK_ORG
     def monitor = config.monitor ?: false
+    def myunstash = config.unstash ?: 'workspace'
 
     stage("Snyk Dependency Scan") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/snyk.yaml')) {
             node(POD_LABEL) {
-                unstash workspace
+                unstash "${myunstash}"
                 container('snyk') {
                     withCredentials([string(credentialsId: config.token_credential ?: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
                         sh """

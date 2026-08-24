@@ -1,0 +1,71 @@
+version: 1
+type: pipeline-template
+name: ironbankish
+displayName: IronBank-style Hardened Image Build
+description: >-
+  Builds a container image with podman behind a squid proxy that only permits
+  artifactory.cloud.cms.gov, then scans the resulting OCI archive with Snyk and
+  ClamAV before publishing with skopeo. Outside artifacts must be pulled in
+  explicitly at an earlier step and scanned before use.
+templateType: SCRIPTED
+
+parameters:
+  # ─── Container Registry ───
+  - name: image_registry_auth_json
+    displayName: Image Registry Auth JSON Credential
+    description: >-
+      Jenkins file credential holding a docker config.json used to authenticate
+      to the image registry for both the build and publish steps.
+    type: credentials
+    defaultValue: image-registry-auth-json
+
+  # ─── Snyk ───
+  - name: snyk_token
+    displayName: Snyk API Token Credential
+    type: credentials
+    defaultValue: snyk-api-token
+  - name: sbom_format
+    displayName: SBOM Format
+    description: >-
+      Format passed to 'snyk container sbom'. Must contain a '+' because the
+      substring after it is used as the SBOM file extension.
+    type: string
+    defaultValue: cyclonedx1.4+json
+    allowedValues:
+      - cyclonedx1.4+json
+      - cyclonedx1.4+xml
+      - cyclonedx1.5+json
+      - spdx2.3+json
+
+  # ─── OpenSCAP ───
+  - name: openscap_profile
+    displayName: OpenSCAP Profile
+    description: "XCCDF profile ID evaluated against the built image filesystem"
+    type: string
+    defaultValue: xccdf_org.ssgproject.content_profile_stig
+    allowedValues:
+      - xccdf_org.ssgproject.content_profile_stig
+      - xccdf_org.ssgproject.content_profile_cis
+      - xccdf_org.ssgproject.content_profile_ospp
+      - xccdf_org.ssgproject.content_profile_pci-dss
+  - name: openscap_datastream
+    displayName: OpenSCAP Datastream
+    description: >-
+      Path to the SCAP datastream inside the openscap container. Content ships
+      with the image, so nothing is fetched through the squid proxy at scan time.
+    type: string
+    defaultValue: /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
+
+  # ─── Build Behavior ───
+  - name: default_build_target
+    displayName: Default Build Target
+    description: >-
+      Build target used for reporting when the build_target job parameter is
+      set. Applies to multi-stage Dockerfiles.
+    type: string
+    defaultValue: ""
+  - name: enable_ansi_colors
+    displayName: Enable ANSI Colors
+    description: "Wrap the podman build in an ansiColor block for readable logs"
+    type: boolean
+    defaultValue: true

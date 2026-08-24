@@ -3,15 +3,19 @@ def call(Map config = [:]) {
     def source_path = config.source_path ?: 'src/'
     def coverage = config.coverage != false
     def requirements_file = config.requirements_file ?: 'requirements-dev.txt'
+    def stagename = config.stage ?: 'Test: Python'
+    def working_dir = config.working_dir ?: '.'
+    def myunstash = config.unstash ?: 'workspace'
 
-    stage("Pytest") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/python.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash "${myunstash}"
                 container('python') {
                     sh """
                         pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         pip3 install pytest pytest-cov
+                        cd ${working_dir}
                         [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
                         pytest ${test_path} \
                             ${coverage ? "--cov=${source_path} --cov-report=xml:coverage.xml --cov-report=html:htmlcov" : ''} \
@@ -19,10 +23,10 @@ def call(Map config = [:]) {
                             -v
                     """
                 }
-                junit allowEmptyResults: true, testResults: 'pytest-results.xml'
+                junit allowEmptyResults: true, testResults: "${working_dir}/pytest-results.xml"
                 if (coverage) {
                     publishHTML(target: [
-                        reportDir: "htmlcov",
+                        reportDir: "${working_dir}/htmlcov",
                         reportFiles: "index.html",
                         reportName: "Pytest Coverage Report"
                     ])

@@ -3,11 +3,12 @@ def call(Map config = [:]) {
     def threads = config.threads ?: '10'
     def ramp_up = config.ramp_up ?: '30'
     def duration = config.duration ?: '60'
+    def myunstash = config.unstash ?: 'workspace'
 
     stage("JMeter Performance Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jmeter.yaml')) {
             node(POD_LABEL) {
-                unstash workspace
+                unstash "${myunstash}"
                 container('jmeter') {
                     sh """
                         jmeter -n \
