@@ -58,6 +58,7 @@ These steps are available to all templates when this repo is configured as a Jen
 | `rollbackK8s`        | kubectl rollout undo                       |
 | `smokeTest`          | HTTP health check with retries             |
 | `slackNotify`        | Slack webhook notification                 |
+| `serviceNowUpdate`   | Create or comment on a ServiceNow record   |
 | `cosignSign`         | Sign container image with cosign + AWS KMS |
 | `cosignVerify`       | Verify container image signature           |
 | `awsAssumeRole`      | AWS STS AssumeRole                         |
