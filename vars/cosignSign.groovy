@@ -13,6 +13,7 @@ def call(Map config = [:]) {
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
             node(POD_LABEL) {
+                def parsed = null
                 container('aws-cli') {
                     def creds = sh(
                         script: """
@@ -24,17 +25,22 @@ def call(Map config = [:]) {
                         """,
                         returnStdout: true
                     ).trim()
-                    def parsed = readJSON text: creds
-                    env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId
-                    env.AWS_SECRET_ACCESS_KEY = parsed.Credentials.SecretAccessKey
-                    env.AWS_SESSION_TOKEN = parsed.Credentials.SessionToken
+                    parsed = readJSON text: creds
                 }
-                container('cosign') {
-                    sh """
-                        cosign sign --key awskms:///${kms_key_arn} \
-                            --tlog-upload=false \
-                            ${image}
-                    """
+                // Scoped with withEnv rather than assigned to env.*, which is
+                // pipeline-global and would leak across parallel signings.
+                withEnv([
+                    "AWS_ACCESS_KEY_ID=${parsed.Credentials.AccessKeyId}",
+                    "AWS_SECRET_ACCESS_KEY=${parsed.Credentials.SecretAccessKey}",
+                    "AWS_SESSION_TOKEN=${parsed.Credentials.SessionToken}"
+                ]) {
+                    container('cosign') {
+                        sh """
+                            cosign sign --key awskms:///${kms_key_arn} \
+                                --tlog-upload=false \
+                                ${image}
+                        """
+                    }
                 }
             }
         }

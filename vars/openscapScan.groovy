@@ -11,7 +11,9 @@ def call(Map config = [:]) {
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/openscap.yaml')) {
             node(POD_LABEL) {
-                cosignVerify(config)
+                if (!config.skip_verify) {
+                    cosignVerify(config + [image: image])
+                }
                 container('podman') {
                     // oscap-chroot needs a plain directory tree, and exporting a
                     // flattened container avoids mounting the image as root.

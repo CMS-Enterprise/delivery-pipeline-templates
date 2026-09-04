@@ -47,8 +47,10 @@ These steps are available to all templates when this repo is configured as a Jen
 | `buildNpm`           | npm ci + build in ephemeral pod            |
 | `unitTestGradle`     | Gradle test execution                      |
 | `unitTestNpm`        | npm test with coverage                     |
+| `changedServices`    | Select which monorepo services a build needs |
 | `dockerBuild`        | Podman build + push to registry            |
 | `jfrogBuild`         | Podman build + push to JFrog Artifactory   |
+| `jfrogBuildPublish`  | Podman build + push + sign, one image per call |
 | `jfrogScan`          | JFrog Xray build scan                      |
 | `jfrogPromote`       | Promote build from staging to prod repo    |
 | `trivyScan`          | Trivy container vulnerability scan         |

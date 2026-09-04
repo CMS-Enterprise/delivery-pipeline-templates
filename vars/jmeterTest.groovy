@@ -4,8 +4,11 @@ def call(Map config = [:]) {
     def ramp_up = config.ramp_up ?: '30'
     def duration = config.duration ?: '60'
     def myunstash = config.unstash ?: 'workspace'
+    def output_name = config.output_name ?: 'jmeter'
+    def stagename = config.stage ?: 'JMeter Performance Test'
+    def report_name = config.report_name ?: 'JMeter Report'
 
-    stage("JMeter Performance Test") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jmeter.yaml')) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
@@ -16,15 +19,15 @@ def call(Map config = [:]) {
                             -Jthreads=${threads} \
                             -Jrampup=${ramp_up} \
                             -Jduration=${duration} \
-                            -l jmeter-results.jtl \
-                            -e -o jmeter-report/
+                            -l ${output_name}-results.jtl \
+                            -e -o ${output_name}-report/
                     """
                 }
-                perfReport sourceDataFiles: 'jmeter-results.jtl'
+                perfReport sourceDataFiles: "${output_name}-results.jtl"
                 publishHTML(target: [
-                    reportDir: "jmeter-report",
+                    reportDir: "${output_name}-report",
                     reportFiles: "index.html",
-                    reportName: "JMeter Report"
+                    reportName: report_name
                 ])
             }
         }

@@ -4,8 +4,9 @@ def call(Map config = [:]) {
     def image = config.image ?: env.IMAGE_TAG ?: error("image is required")
     def output_name = config.output_name ?: 'snyk-container'
     def generate_sbom = config.generate_sbom != false
+    def stagename = config.stage ?: 'Snyk Container Scan'
 
-    stage("Snyk Container Scan") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/snyk.yaml')) {
             node(POD_LABEL) {
                 container('snyk') {

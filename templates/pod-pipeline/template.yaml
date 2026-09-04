@@ -53,6 +53,21 @@ parameters:
     displayName: Cosign KMS Key ARN
     description: "AWS KMS key ARN for image signing (leave empty to skip signing)"
     type: string
+  - name: aws_account_id
+    displayName: AWS Account ID
+    description: >-
+      Account holding the cosign signing role. Required by cosignSign, which
+      fails closed rather than publishing an unsigned image.
+    type: string
+  - name: base_images
+    displayName: Base Images to Verify
+    description: >-
+      Comma-separated base images whose cosign signatures are checked before the
+      build. Leave empty to skip. Ironbank base images are signed by
+      registry1.dso.mil rather than the build's own KMS key, so those need
+      certificate-identity verification instead of this key-based check.
+    type: string
+    defaultValue: ""
 
   # ─── Code Quality (SonarQube) ───
   - name: sonarqube_url

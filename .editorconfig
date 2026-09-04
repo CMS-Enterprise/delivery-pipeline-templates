@@ -6,3 +6,13 @@ indent_size = 2
 indent_style = space
 tab_width = 2
 insert_final_newline = true
+
+# Jenkins pipeline code nests deeply (pipeline > stages > stage > steps >
+# script), so it uses 4 spaces to keep block boundaries legible.
+[{*.groovy,Jenkinsfile}]
+indent_size = 4
+tab_width = 4
+
+# Make requires literal tabs for recipe lines.
+[Makefile]
+indent_style = tab

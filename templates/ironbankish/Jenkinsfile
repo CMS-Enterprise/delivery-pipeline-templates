@@ -2,40 +2,40 @@
 def skip_snyk_scan = false
 
 pipeline {
-  parameters {
-    string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.', trim: true)
-    string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.', trim: true)
-    string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.', trim: true)
-    booleanParam(name: 'image_push_enabled', defaultValue: "false", description: 'Enable the image push step.')
-    string(name: 'image', defaultValue: "my-app", description: 'The fully qualified container image name.', trim: true)
-    string(name: 'tag', defaultValue: "latest", description: 'Container image tag.', trim: true)
+    parameters {
+        string(name: 'git_repository', description: 'The URL of the Git repository to clone when building the container image.', trim: true)
+        string(name: 'git_commit', description: 'The commit hash or branch name to checkout when building the container image.', trim: true)
+        string(name: 'git_credentials', description: 'The ID of the Jenkins credentials to use when cloning the Git repository.', trim: true)
+        booleanParam(name: 'image_push_enabled', defaultValue: "false", description: 'Enable the image push step.')
+        string(name: 'image', defaultValue: "my-app", description: 'The fully qualified container image name.', trim: true)
+        string(name: 'tag', defaultValue: "latest", description: 'Container image tag.', trim: true)
 
-    booleanParam(name: 'update_latest', defaultValue: "false", description: 'When true, update the latest tag to point to the newly built image.')
-    string(name: 'build_args', description: 'A JSON object of build arguments to pass to the container build process.', trim: true)
-    string(name: 'build_dir', defaultValue: ".", description: 'The directory to use as the build context for the container build.', trim: true)
-    string(name: 'dockerfile', defaultValue: "Dockerfile", description: 'The path to the Dockerfile to use for the container build.', trim: true)
-    string(name: 'build_target', defaultValue: "", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).', trim: true)
-    string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.', trim: true)
-    string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.', trim: true)
-    string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.', trim: true)
-    string(name: 'build_memory_limit', defaultValue: "1Gi", description: "Memory limit for the image build process.", trim: true)
-    string(name: 'build_cpu_limit', defaultValue: "1", description: "CPU limit for the image build process.", trim: true)
-    booleanParam(name: 'enable_cache', defaultValue: "true", description: 'Enable image build cache.')
+        booleanParam(name: 'update_latest', defaultValue: "false", description: 'When true, update the latest tag to point to the newly built image.')
+        string(name: 'build_args', description: 'A JSON object of build arguments to pass to the container build process.', trim: true)
+        string(name: 'build_dir', defaultValue: ".", description: 'The directory to use as the build context for the container build.', trim: true)
+        string(name: 'dockerfile', defaultValue: "Dockerfile", description: 'The path to the Dockerfile to use for the container build.', trim: true)
+        string(name: 'build_target', defaultValue: "", description: 'The build target to use when building the container image (for use with multi-stage Dockerfiles).', trim: true)
+        string(name: 'copy_artifacts_job_name', defaultValue: '', description: 'Optional, name of the Jenkins job from which to copy build artifacts that may be required by the Dockerfile.', trim: true)
+        string(name: 'copy_artifacts_build_number', defaultValue: '', description: 'Optional, specific build number of artifacts to copy.', trim: true)
+        string(name: 'copy_artifacts_filter', defaultValue: '', description: 'Optional, a comma separated list of filemasks to identify build artifacts to copy.', trim: true)
+        string(name: 'build_memory_limit', defaultValue: "1Gi", description: "Memory limit for the image build process.", trim: true)
+        string(name: 'build_cpu_limit', defaultValue: "1", description: "CPU limit for the image build process.", trim: true)
+        booleanParam(name: 'enable_cache', defaultValue: "true", description: 'Enable image build cache.')
 
-    string(name: 'snyk_project_name', defaultValue: "my-app", description: 'The name of the Snyk project to associate the container image scan with.')
-    string(name: 'vulnerability_severity_threshold', defaultValue: "high", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
-    booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
-    booleanParam(name: 'clamscan_oci_tar', defaultValue: false, description: 'if enabled, clamscan will scan the entire tar archive rather than a flat file system which could improve performance')
-    string(name: 'clamscan_filesize_limit', defaultValue: "500M", description: "clamscan filesize limits")
-    string(name: 'clamscan_size_limit', defaultValue: "1G", description: "clamscan scan size limits")
-    booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "false", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
-    booleanParam(name: 'openscap_enabled', defaultValue: true, description: 'Scan the built image for policy violations with OpenSCAP. Requires the raw image filesystem, which is built automatically when enabled.')
-    string(name: 'target_url', defaultValue: "http://localhost:3000", description: 'ZAP testing target')
-  }
+        string(name: 'snyk_project_name', defaultValue: "my-app", description: 'The name of the Snyk project to associate the container image scan with.')
+        string(name: 'vulnerability_severity_threshold', defaultValue: "high", description: 'The minimum severity level of vulnerabilities which will cause the build to fail if detected (options: low, medium, high, critical).')
+        booleanParam(name: 'clamscan_enabled', defaultValue: true, description: 'optionally enable/disable the clamscan antivirus scan.')
+        booleanParam(name: 'clamscan_oci_tar', defaultValue: false, description: 'if enabled, clamscan will scan the entire tar archive rather than a flat file system which could improve performance')
+        string(name: 'clamscan_filesize_limit', defaultValue: "500M", description: "clamscan filesize limits")
+        string(name: 'clamscan_size_limit', defaultValue: "1G", description: "clamscan scan size limits")
+        booleanParam(name: 'continue_on_image_scan_failure', defaultValue: "false", description: 'When set to true, the pipeline will continue to the image publish step even if either of the malware scan or vulnerability scan fails for any reason.')
+        booleanParam(name: 'openscap_enabled', defaultValue: true, description: 'Scan the built image for policy violations with OpenSCAP. Requires the raw image filesystem, which is built automatically when enabled.')
+        string(name: 'target_url', defaultValue: "http://localhost:3000", description: 'ZAP testing target')
+    }
 
-  agent {
-    kubernetes {
-      yaml """
+    agent {
+        kubernetes {
+            yaml """
       apiVersion: v1
       kind: Pod
       metadata:
@@ -122,158 +122,158 @@ pipeline {
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
       """
-    }
-  }
-
-  options {
-    // Allow other pipelines to copy the artifacts produced by this pipeline
-    copyArtifactPermission('*')
-  }
-
-  stages {
-    stage('Setup Pipeline') {
-      steps {
-        container('setup') {
-          script {
-            checkout scmGit(
-              branches: [[ name: "${params.git_commit}" ]],
-              userRemoteConfigs: [[
-                url: "${params.git_repository}",
-                credentialsId: "${params.git_credentials}",
-                refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
-              ]],
-              extensions: [
-                cloneOption(shallow: true, honorRefspec: true, noTags: true),
-                submodule(recursiveSubmodules: true, shallow: true)
-              ]
-            )
-
-            if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
-              def filters = []
-              def escaped = false
-              for (def filter in params.copy_artifacts_filter.split(',')) {
-                next_escaped = filter.endsWith('\\') && !(filter =~ /(\\\\)+$/)
-                filter = filter.replaceAll(/\\(.)/) { _, c -> c }
-                if (next_escaped) {
-                  filter = filter.substring(0, filter.length() - 1)
-                }
-                if (escaped) {
-                  filters[-1] = filters[-1] + "," + filter
-                } else {
-                  filters << filter
-                }
-
-                escaped = next_escaped
-              }
-
-              for (def filter in filters) {
-                copyArtifacts(
-                  projectName: params.copy_artifacts_job_name,
-                  filter: filter,
-                  selector: specific(params.copy_artifacts_build_number)
-                )
-              }
-            }
-          }
-          script {
-              env.HTTP_PROXY = "http://localhost:3128"
-              env.HTTPS_PROXY = "http://localhost:3128"
-          }
         }
-      }
     }
 
-    stage('Build Image') {
-      steps {
-        container('podman') {
-          script {
-            def builderName = "builder-${UUID.randomUUID().toString().substring(0, 8)}"
-            try {
-              def arguments = [
-                "--file=${params.dockerfile}",
-                "--tag=${params.image}:${params.tag}",
-                "--output type=oci,dest=./image.oci.tar",
-              ]
+    options {
+        // Allow other pipelines to copy the artifacts produced by this pipeline
+        copyArtifactPermission('*')
+    }
 
-              // oscap-chroot can only evaluate a directory tree, so OpenSCAP
-              // needs the raw filesystem even when clamscan works off the tar.
-              if (params.clamscan_oci_tar && !params.openscap_enabled) {
-                echo "Option 'clamscan_oci_tar' set to true. Only building OCI tar"
-              } else {
-                echo "Adding build output of raw image filesystem"
-                arguments.add("--output type=local,dest=./image-raw")
-              }
+    stages {
+        stage('Setup Pipeline') {
+            steps {
+                container('setup') {
+                    script {
+                        checkout scmGit(
+                            branches: [[ name: "${params.git_commit}" ]],
+                            userRemoteConfigs: [[
+                                url: "${params.git_repository}",
+                                credentialsId: "${params.git_credentials}",
+                                refspec: "+${params.git_commit}:refs/remotes/origin/HEAD"
+                            ]],
+                            extensions: [
+                                cloneOption(shallow: true, honorRefspec: true, noTags: true),
+                                submodule(recursiveSubmodules: true, shallow: true)
+                            ]
+                        )
 
-              if (params.build_target) {
-                echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
-                echo "default_build_target: ${default_build_target}"
-                arguments.add("--target=${params.build_target}")
-              }
+                        if (params.copy_artifacts_job_name && params.copy_artifacts_build_number && params.copy_artifacts_filter) {
+                            def filters = []
+                            def escaped = false
+                            for (def filter in params.copy_artifacts_filter.split(',')) {
+                                next_escaped = filter.endsWith('\\') && !(filter =~ /(\\\\)+$/)
+                                filter = filter.replaceAll(/\\(.)/) { _, c -> c }
+                                if (next_escaped) {
+                                    filter = filter.substring(0, filter.length() - 1)
+                                }
+                                if (escaped) {
+                                    filters[-1] = filters[-1] + "," + filter
+                                } else {
+                                    filters << filter
+                                }
 
-              if (params.build_args) {
-                def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
-                argMap.each { key, value ->
-                  arguments.add("--build-arg=${key}='${value}'")
+                                escaped = next_escaped
+                            }
+
+                            for (def filter in filters) {
+                                copyArtifacts(
+                                    projectName: params.copy_artifacts_job_name,
+                                    filter: filter,
+                                    selector: specific(params.copy_artifacts_build_number)
+                                )
+                            }
+                        }
+                    }
+                    script {
+                            env.HTTP_PROXY = "http://localhost:3128"
+                            env.HTTPS_PROXY = "http://localhost:3128"
+                    }
                 }
-              }
+            }
+        }
 
-              if (params.enable_cache) {
-                arguments.add("--layers")
-                arguments.add("--cache-from=${params.image}/build-layer-cache")
-                arguments.add("--cache-to=${params.image}/build-layer-cache")
-              }
+        stage('Build Image') {
+            steps {
+                container('podman') {
+                    script {
+                        def builderName = "builder-${UUID.randomUUID().toString().substring(0, 8)}"
+                        try {
+                            def arguments = [
+                                "--file=${params.dockerfile}",
+                                "--tag=${params.image}:${params.tag}",
+                                "--output type=oci,dest=./image.oci.tar",
+                            ]
 
-              build_command = "podman build ${arguments.join(' ')} ${params.build_dir}"
+                            // oscap-chroot can only evaluate a directory tree, so OpenSCAP
+                            // needs the raw filesystem even when clamscan works off the tar.
+                            if (params.clamscan_oci_tar && !params.openscap_enabled) {
+                                echo "Option 'clamscan_oci_tar' set to true. Only building OCI tar"
+                            } else {
+                                echo "Adding build output of raw image filesystem"
+                                arguments.add("--output type=local,dest=./image-raw")
+                            }
 
-              // Authentication by copying a docker config JSON to config directory
-              withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-                echo "export image registry auth json to ~/.docker/config.json"
-                sh 'mkdir -p ~/.docker'
-                sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
+                            if (params.build_target) {
+                                echo "build_target (${params.build_target.getClass()}): ${params.build_target}"
+                                echo "default_build_target: ${default_build_target}"
+                                arguments.add("--target=${params.build_target}")
+                            }
+
+                            if (params.build_args) {
+                                def argMap = new groovy.json.JsonSlurper().parseText(params.build_args)
+                                argMap.each { key, value ->
+                                    arguments.add("--build-arg=${key}='${value}'")
+                                }
+                            }
+
+                            if (params.enable_cache) {
+                                arguments.add("--layers")
+                                arguments.add("--cache-from=${params.image}/build-layer-cache")
+                                arguments.add("--cache-to=${params.image}/build-layer-cache")
+                            }
+
+                            build_command = "podman build ${arguments.join(' ')} ${params.build_dir}"
+
+                            // Authentication by copying a docker config JSON to config directory
+                            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+                                echo "export image registry auth json to ~/.docker/config.json"
+                                sh 'mkdir -p ~/.docker'
+                                sh 'mv "$AUTH_JSON_FILE" ~/.docker/config.json'
 // XXX grab repo from config.json
-                if ("${enable_ansi_colors}" == "true") {
-                  ansiColor('xterm') {
-                    sh build_command
-                  }
-                } else {
-                  sh build_command
+                                if ("${enable_ansi_colors}" == "true") {
+                                    ansiColor('xterm') {
+                                        sh build_command
+                                    }
+                                } else {
+                                    sh build_command
+                                }
+                            }
+                        } finally {
+                            sh "podman rm --force ${builderName}"
+                            script {
+                                    env.HTTP_PROXY=""
+                                    env.HTTPS_PROXY=""
+                            }
+                        }
+
+                    }
                 }
-              }
-            } finally {
-              sh "podman rm --force ${builderName}"
-              script {
-                  env.HTTP_PROXY=""
-                  env.HTTPS_PROXY=""
-              }
             }
-
-          }
         }
-      }
-    }
 
-    stage('Image Scan') {
-      parallel {
-        stage('Vulnerability Scan') {
-          steps {
-            container('snyk') {
-              script {
-                // When Snyk reports findings it uses the filename as the "target" in the dashboard,
-                // so using the image name as the filename keeps things better organized.
-                // Unfortunately since filenames cannot contain / we have to replace them with _.
-                def image_file_name = "'${params.image}:${params.tag}'".replace('/', '_')
-                sh "ln image.oci.tar ${image_file_name}"
-                def args = [
-                  // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
-                  '--exclude-app-vulns',
-                  "--severity-threshold=${params.vulnerability_severity_threshold}",
-                  "--project-name=${params.snyk_project_name}",
-                  "oci-archive:${image_file_name}"
-                ]
-                def sbom_ext = "${sbom_format}".tokenize('+')[1]
-                try {
-                  withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
-                    sh """
+        stage('Image Scan') {
+            parallel {
+                stage('Vulnerability Scan') {
+                    steps {
+                        container('snyk') {
+                            script {
+                                // When Snyk reports findings it uses the filename as the "target" in the dashboard,
+                                // so using the image name as the filename keeps things better organized.
+                                // Unfortunately since filenames cannot contain / we have to replace them with _.
+                                def image_file_name = "'${params.image}:${params.tag}'".replace('/', '_')
+                                sh "ln image.oci.tar ${image_file_name}"
+                                def args = [
+                                    // Application vulnerabilities can be detected using `snyk test` as part of the SAST step
+                                    '--exclude-app-vulns',
+                                    "--severity-threshold=${params.vulnerability_severity_threshold}",
+                                    "--project-name=${params.snyk_project_name}",
+                                    "oci-archive:${image_file_name}"
+                                ]
+                                def sbom_ext = "${sbom_format}".tokenize('+')[1]
+                                try {
+                                    withCredentials([string(credentialsId: "${snyk_token}", variable: 'SNYK_TOKEN')]) {
+                                        sh """
                       snyk --version
                       # Report vulnerabilities to the Snyk dashboard
                       snyk container monitor ${args.join(' ')}
@@ -282,71 +282,71 @@ pipeline {
                       # vulnerabilities are found exceeding the specified threshold
                       snyk container test --json-file-output=snyk-vulnerabilities.json ${args.join(' ')}
                     """
-                  }
+                                    }
 
-                // If there is an error during the snyk scan
-                } catch(err) {
+                                // If there is an error during the snyk scan
+                                } catch(err) {
 
-                  if (params.continue_on_image_scan_failure) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                      error "Failed to scan the image with Snyk. Continuing pipeline execution."
+                                    if (params.continue_on_image_scan_failure) {
+                                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                            error "Failed to scan the image with Snyk. Continuing pipeline execution."
+                                        }
+                                    } else {
+                                        echo "Snyk scan failed with error: ${err}"
+                                        error "Failed to scan the image with Snyk."
+                                    }
+
+                                // No matter what, make sure the artifacts are archived
+                                } finally {
+                                    archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
+                                }
+
+                            } // end script block
+                        } // end  container snyk
+                    } // end steps
+                } // end vulnerability scan stage
+
+
+                stage('Malware Scan') {
+                    when {
+                        expression { params.clamscan_enabled }
                     }
-                  } else {
-                    echo "Snyk scan failed with error: ${err}"
-                    error "Failed to scan the image with Snyk."
-                  }
+                    steps {
+                        container('clamav') {
+                            script {
+                                try {
+                                    echo "Updating ClamAV database"
+                                    def freshclamExitCode = sh(script: "freshclam", returnStatus: true)
+                                    if (freshclamExitCode != 0) {
+                                        echo "Freshclam exited with code ${freshclamExitCode}"
+                                        error 'Failed to update ClamAV database.'
+                                    }
 
-                // No matter what, make sure the artifacts are archived
-                } finally {
-                  archiveArtifacts artifacts: 'snyk-sbom.*, snyk-vulnerabilities.json', allowEmptyArchive: true
-                }
+                                    // the defaults for clamav like max-scantime are designed to protect
+                                    // against DoS attacks. `man clamscan` for details
+                                    def args = [
+                                        '--infected',
+                                        '--recursive',
+                                        '--scan-archive=yes',
+                                        "--max-filesize=${params.clamscan_filesize_limit}", // Max size 2G
+                                        "--max-scansize=${params.clamscan_size_limit}", //max size 10G
+                                        "--max-files=0", // Disabled the default max files (10,000)
+                                        "--max-scantime=0", // Disabled the default scan time (2min)
+                                        "--log=virus-report.clamav.txt",
+                                        "--alert-exceeds-max",
+                                        "--stdout",
+                                    ]
 
-              } // end script block
-            } // end  container snyk
-          } // end steps
-        } // end vulnerability scan stage
+                                    if (params.clamscan_oci_tar)  {
+                                        echo "Option 'clamscan_oci_tar' set to true. Scanning OCI tar instead of raw image filesystem"
+                                        args.add("./image.oci.tar")
+                                    } else {
+                                        echo "Option 'clamscan_oci_tar' set to false. Scanning raw image filesystem"
+                                        args.add("./image-raw")
+                                    }
 
-
-        stage('Malware Scan') {
-          when {
-            expression { params.clamscan_enabled }
-          }
-          steps {
-            container('clamav') {
-              script {
-                try {
-                  echo "Updating ClamAV database"
-                  def freshclamExitCode = sh(script: "freshclam", returnStatus: true)
-                  if (freshclamExitCode != 0) {
-                    echo "Freshclam exited with code ${freshclamExitCode}"
-                    error 'Failed to update ClamAV database.'
-                  }
-
-                  // the defaults for clamav like max-scantime are designed to protect
-                  // against DoS attacks. `man clamscan` for details
-                  def args = [
-                    '--infected',
-                    '--recursive',
-                    '--scan-archive=yes',
-                    "--max-filesize=${params.clamscan_filesize_limit}", // Max size 2G
-                    "--max-scansize=${params.clamscan_size_limit}", //max size 10G
-                    "--max-files=0", // Disabled the default max files (10,000)
-                    "--max-scantime=0", // Disabled the default scan time (2min)
-                    "--log=virus-report.clamav.txt",
-                    "--alert-exceeds-max",
-                    "--stdout",
-                  ]
-
-                  if (params.clamscan_oci_tar)  {
-                    echo "Option 'clamscan_oci_tar' set to true. Scanning OCI tar instead of raw image filesystem"
-                    args.add("./image.oci.tar")
-                  } else {
-                    echo "Option 'clamscan_oci_tar' set to false. Scanning raw image filesystem"
-                    args.add("./image-raw")
-                  }
-
-                  echo "ClamAV database updated successfully, running clamscan"
-                  sh """
+                                    echo "ClamAV database updated successfully, running clamscan"
+                                    sh """
                     # Note: while clamscan can scan a tar files contents recursively, the tar or zip files
                     # in the image are still subject to the file / scan size limits BEFORE the untar / unzip.
                     # If a file exists that exceeds the limit, the command will exit code 1, causing the job
@@ -357,102 +357,102 @@ pipeline {
                     chmod a+r virus-report.clamav.txt
                   """
 
-                } catch(err) {
-                  if (params.continue_on_image_scan_failure) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                      error "Failed to scan the image with ClamAV. Continuing pipeline execution."
+                                } catch(err) {
+                                    if (params.continue_on_image_scan_failure) {
+                                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                            error "Failed to scan the image with ClamAV. Continuing pipeline execution."
+                                        }
+                                    } else {
+                                        error "Failed to scan the image with ClamAV."
+                                    }
+                                } finally {
+                                    archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
+                                }
+                            }
+                        }
                     }
-                  } else {
-                    error "Failed to scan the image with ClamAV."
-                  }
-                } finally {
-                  archiveArtifacts artifacts: 'virus-report.clamav.txt', allowEmptyArchive: true
-                }
-              }
-            }
-          }
-        } // end stage malware scan
+                } // end stage malware scan
 
-        stage('Policy Scan') {
-          when {
-            expression { params.openscap_enabled }
-          }
-          steps {
-            container('openscap') {
-              script {
-                try {
-                  // Exit 0 means every rule passed, 2 means at least one rule
-                  // failed, and 1 means oscap itself errored out.
-                  def exit_code = sh(
-                    script: """
+                stage('Policy Scan') {
+                    when {
+                        expression { params.openscap_enabled }
+                    }
+                    steps {
+                        container('openscap') {
+                            script {
+                                try {
+                                    // Exit 0 means every rule passed, 2 means at least one rule
+                                    // failed, and 1 means oscap itself errored out.
+                                    def exit_code = sh(
+                                        script: """
                       oscap-chroot ./image-raw xccdf eval \
                         --profile ${openscap_profile} \
                         --results openscap-results.xml \
                         --report openscap-report.html \
                         ${openscap_datastream}
                     """,
-                    returnStatus: true
-                  )
+                                        returnStatus: true
+                                    )
 
-                  if (exit_code == 2) {
-                    error "OpenSCAP found policy violations in ${params.image}:${params.tag}"
-                  } else if (exit_code != 0) {
-                    error "OpenSCAP failed to evaluate the image (exit ${exit_code})"
-                  }
+                                    if (exit_code == 2) {
+                                        error "OpenSCAP found policy violations in ${params.image}:${params.tag}"
+                                    } else if (exit_code != 0) {
+                                        error "OpenSCAP failed to evaluate the image (exit ${exit_code})"
+                                    }
 
-                } catch(err) {
-                  if (params.continue_on_image_scan_failure) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                      error "${err}. Continuing pipeline execution."
+                                } catch(err) {
+                                    if (params.continue_on_image_scan_failure) {
+                                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                            error "${err}. Continuing pipeline execution."
+                                        }
+                                    } else {
+                                        error "${err}"
+                                    }
+                                } finally {
+                                    archiveArtifacts artifacts: 'openscap-results.xml, openscap-report.html', allowEmptyArchive: true
+                                    publishHTML(target: [
+                                        allowMissing: true,
+                                        alwaysLinkToLastBuild: false,
+                                        keepAll: true,
+                                        reportDir: '.',
+                                        reportFiles: 'openscap-report.html',
+                                        reportName: "OpenSCAP Policy Report"
+                                    ])
+                                }
+                            }
+                        }
                     }
-                  } else {
-                    error "${err}"
-                  }
-                } finally {
-                  archiveArtifacts artifacts: 'openscap-results.xml, openscap-report.html', allowEmptyArchive: true
-                  publishHTML(target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: false,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'openscap-report.html',
-                    reportName: "OpenSCAP Policy Report"
-                  ])
-                }
-              }
-            }
-          }
-        } // end stage policy scan
-      } // end parallel
-    } // end image scan stage
+                } // end stage policy scan
+            } // end parallel
+        } // end image scan stage
 
-    stage('Image Publish') {
-      when {
-        expression { params.image_push_enabled }
-      }
-      steps {
-        container('skopeo') {
-          script {
-            // Authentication by copying a docker config JSON to config directory
-            withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
-              sh """
+        stage('Image Publish') {
+            when {
+                expression { params.image_push_enabled }
+            }
+            steps {
+                container('skopeo') {
+                    script {
+                        // Authentication by copying a docker config JSON to config directory
+                        withCredentials([file(credentialsId: "${image_registry_auth_json}", variable: 'AUTH_JSON_FILE')]) {
+                            sh """
                 skopeo copy --dest-authfile "\$AUTH_JSON_FILE" oci-archive:image.oci.tar "docker://${params.image}:${params.tag}"
               """
 
-              if (params.update_latest) {
-                sh """
+                            if (params.update_latest) {
+                                sh """
                   skopeo copy --dest-authfile "\$AUTH_JSON_FILE" oci-archive:image.oci.tar "docker://${params.image}:latest"
                 """
-              }
+                            }
+                        }
+                    }
+                }
             }
-          }
         }
-      }
-    }
-  stage('Dynamic Testing - Active Scan') {
-    agent {
-    kubernetes {
-      yaml """
+        stage('Dynamic Testing - Active Scan') {
+            agent {
+                kubernetes {
+                    yaml """
       apiVersion: v1
       kind: Pod
       spec:
@@ -469,29 +469,29 @@ pipeline {
           ports:
           - containerPort: 8090
         """
-    }
-  }
-      steps {
-        echo "Active scanning attempts to find potential vulnerabilities by using known attacks against the selected targets."
-        echo "Active scanning is an attack on those targets.You should NOT use it on web applications that you do not own."
-        container(name: 'zap') {
-          sh '''
+                }
+            }
+            steps {
+                echo "Active scanning attempts to find potential vulnerabilities by using known attacks against the selected targets."
+                echo "Active scanning is an attack on those targets.You should NOT use it on web applications that you do not own."
+                container(name: 'zap') {
+                    sh '''
             zap-cli -v active-scan $target_url
             echo "Generating the dynamic scan report"
             mkdir -p report
             zap-cli -v report -o report/dynamic-owasp-zap-scan.html -f html
           '''
+                }
+                echo "Publishing the report"
+                publishHTML  (target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: true,
+                    reportDir: 'report',
+                    reportFiles: 'dynamic-owasp-zap-scan.html',
+                    reportName: "Dynamic Scan Report"
+                ])
+            }
         }
-        echo "Publishing the report"
-        publishHTML  (target: [
-          allowMissing: false,
-          alwaysLinkToLastBuild: false,
-          keepAll: true,
-          reportDir: 'report',
-          reportFiles: 'dynamic-owasp-zap-scan.html',
-          reportName: "Dynamic Scan Report"
-        ])
-      }
-    }
-  } //end stages
+    } //end stages
 } // end pipelines

@@ -4,8 +4,9 @@ def call(Map config = [:]) {
     def retries = (config.retries ?: 5) as Integer
     def delay = (config.retry_delay_seconds ?: 10) as Integer
     def expected_status = config.expected_status ?: 200
+    def stagename = config.stage ?: 'Smoke Test'
 
-    stage("Smoke Test") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/curl.yaml')) {
             node(POD_LABEL) {
                 container('curl') {

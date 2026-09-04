@@ -4,8 +4,8 @@ def call(Map config = [:]) {
         echo "No KMS key ARN provided — skipping cosign verify"
         return
     }
+    def image = config.image ?: env.IMAGE_TAG ?: error("image is required (env.IMAGE_TAG is not set)")
     def stagename = config.stage ?: "Cosign Verify"
-    def image = env.IMAGE_TAG ?: error("IMAGE_TAG not set")
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {

@@ -22,7 +22,66 @@ repos:
     rev: 1.0.5
     hooks:
       - id: shell-lint
-#  - repo: https://github.com/jenkinsci/jenkinsfilelint
-#    rev: 1.4.1
-#    hooks:
-#      - id: jenkinsfilelint
+
+  # jenkinsfilelint is intentionally absent: it validates by POSTing the
+  # Jenkinsfile to a running controller, so it cannot run on a workstation with
+  # no reachable Jenkins. Declarative syntax is validated by CI instead.
+
+  # Local hooks. Stage placement follows measured runtime — see process.md.
+  # npm-groovy-lint is deliberately excluded from every stage: its finding
+  # volume is too high to gate on, and --format corrupts PTC ${placeholders}.
+  - repo: local
+    hooks:
+      - id: yamllint
+        name: yamllint (changed files)
+        entry: yamllint -c .yamllint.yml
+        language: system
+        files: ^(resources|templates)/.*\.ya?ml$
+
+      - id: conftest-test
+        name: conftest test (pod policy)
+        entry: conftest test resources/pods/ --policy policy/ --namespace pods
+        language: system
+        pass_filenames: false
+        files: ^(resources/pods/|policy/)
+
+      # Whole-tree and whole-range checks. A single-file pre-commit scope cannot
+      # see a policy change that breaks an unrelated pod manifest, so the full
+      # runs happen here, where the developer is already pausing to publish.
+      - id: yamllint-all
+        name: yamllint (full tree)
+        entry: yamllint -c .yamllint.yml resources/ templates/
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: conftest-verify
+        name: conftest verify (policy unit tests)
+        entry: conftest verify --policy policy/
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: conftest-test-all
+        name: conftest test (full tree)
+        entry: conftest test resources/pods/ --policy policy/ --namespace pods
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: gitleaks-range
+        name: Detect hardcoded secrets (push range)
+        entry: scripts/gitleaks-range.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: gitlint
+        name: Conventional commit message
+        entry: gitlint --staged --msg-filename
+        language: system
+        stages: [commit-msg]

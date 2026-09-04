@@ -1,0 +1,14 @@
+[general]
+contrib=contrib-title-conventional-commits
+# B6 fires on every single-line commit. Requiring a body on a one-line change
+# would push people toward filler text, which defeats the point.
+ignore=body-is-missing
+
+[contrib-title-conventional-commits]
+types=feat,fix,docs,style,refactor,perf,test,build,ci,chore,revert
+
+[title-max-length]
+line-length=72
+
+[body-max-line-length]
+line-length=80

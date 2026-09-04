@@ -12,15 +12,15 @@ pipeline {
     stages {
         stage("Checkout") {
             steps {
-              checkout([$class: "GitSCM",
-                branches: [[name: "${branchName}"]],
-                doGenerateSubmoduleConfigureations: false,
-                extensions: [],
-                submoduleCfs: [],
-                userRemoteConfigs: [[credentialsId: "${gitCredentials}", url: "${repoUrl}"]]]
-              )
+                checkout([$class: "GitSCM",
+                    branches: [[name: "${branchName}"]],
+                    doGenerateSubmoduleConfigureations: false,
+                    extensions: [],
+                    submoduleCfs: [],
+                    userRemoteConfigs: [[credentialsId: "${gitCredentials}", url: "${repoUrl}"]]]
+                )
             }
-          }
+        }
         stage('CI') {
             steps {
                 script {

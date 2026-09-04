@@ -39,8 +39,8 @@ pipeline {
                         string(credentialsId: "${artifactory_token_credential}", variable: 'ARTIFACTORY_TOKEN'),
                         usernamePassword(credentialsId: "${jfrog_credential}", usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_PASS')
                     ]) {
-                      script {
-                        sh """
+                        script {
+                            sh """
                             export RENOVATE_PLATFORM=github
                             export RENOVATE_REPOSITORIES='''' + "${renovate_repositories}" + ''''
                             export RENOVATE_HOST_RULES='[
@@ -49,7 +49,7 @@ pipeline {
                             ]'
                             renovate
                         """
-                      }
+                        }
                     }
                 }
             }

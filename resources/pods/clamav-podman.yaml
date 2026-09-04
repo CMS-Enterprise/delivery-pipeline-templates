@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: "true"
+spec:
+  serviceAccountName: jenkins-agents
+  nodeSelector:
+    node-pool: agent
+  terminationGracePeriodSeconds: 30
+  hostUsers: false
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: Unconfined
+      # type: RuntimeDefault # This breaks podman
+  restartPolicy: Never
+  volumes:
+    - name: clamav-db
+      emptyDir: {}
+  containers:
+    # Flattens the image under test into a plain directory tree so clamscan can
+    # walk it without mounting the image as root.
+    - name: podman
+      image: artifactory.cloud.cms.gov/docker/podman/stable@sha256:d6f571f9dba42c692281715f4402bdd78884ff16707b08293ebe4cfdea31dbcb
+      command:
+        - sleep
+      args:
+        - infinity
+      resources:
+        requests:
+          cpu: "2"
+          memory: "4Gi"
+          ephemeral-storage: "20Gi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+          ephemeral-storage: "20Gi"
+      securityContext:
+        allowPrivilegeEscalation: true # false breaks podman. allows for calling a suid program
+        privileged: false
+        capabilities:
+          add:
+            - CAP_SETUID # Needed by podman
+            - CAP_SETGID # Needed by podman
+    - name: clamav
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav:1.5.3
+      command: ["cat"]
+      tty: true
+      volumeMounts:
+        - name: clamav-db
+          mountPath: /var/lib/clamav
+      resources:
+        requests:
+          cpu: "2"
+          memory: "5Gi"
+          ephemeral-storage: "20Gi"
+        limits:
+          cpu: "2"
+          memory: "5Gi"
+          ephemeral-storage: "20Gi"

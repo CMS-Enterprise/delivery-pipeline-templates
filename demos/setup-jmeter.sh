@@ -9,8 +9,8 @@ JMETER_TGZ="$JMETER_DIR/apache-jmeter-$JMETER_VERSION.tgz"
 MIRROR="https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
 
 if [ -x "$JMETER_HOME/bin/jmeter" ]; then
-    echo "JMeter $JMETER_VERSION already installed at $JMETER_HOME"
-    exit 0
+  echo "JMeter $JMETER_VERSION already installed at $JMETER_HOME"
+  exit 0
 fi
 
 echo "Downloading Apache JMeter $JMETER_VERSION..."

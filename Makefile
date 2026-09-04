@@ -1,15 +1,17 @@
-.PHONY: lint lint-yaml lint-groovy validate-policies test-policies
+.PHONY: lint lint-yaml validate-policies test-policies lint-secrets
 
-lint: lint-yaml lint-groovy validate-policies test-policies
+lint: lint-yaml validate-policies test-policies
 
 lint-yaml:
 	yamllint -c .yamllint.yml resources/ templates/
-
-lint-groovy:
-	npm-groovy-lint --path "vars/" --path "templates/" --files "**/*.groovy,**/Jenkinsfile"
 
 validate-policies:
 	conftest verify --policy policy/
 
 test-policies:
 	conftest test resources/pods/ --policy policy/ --namespace pods
+
+# Full-history scan, ~10s over 631 commits. Deliberately outside `lint` and
+# outside every hook; the pre-push hook scans only the range being pushed.
+lint-secrets:
+	gitleaks git --redact --no-banner .
