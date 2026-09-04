@@ -25,11 +25,11 @@ def call(Map config = [:]) {
                 }
                 junit allowEmptyResults: true, testResults: "${working_dir}/pytest-results.xml"
                 if (coverage) {
-                    publishHTML(target: [
-                        reportDir: "${working_dir}/htmlcov",
-                        reportFiles: "index.html",
-                        reportName: "Pytest Coverage Report"
-                    ])
+                    // archiveArtifacts, not publishHTML: the HTML Publisher plugin
+                    // is not installed on the controller, so publishHTML throws
+                    // NoSuchMethodError and fails the stage after the tests pass.
+                    archiveArtifacts allowEmptyArchive: true,
+                        artifacts: "${working_dir}/coverage.xml,${working_dir}/htmlcov/**"
                 }
             }
         }

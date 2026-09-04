@@ -9,11 +9,10 @@ def call(Map config = [:]) {
                     sh "npx jest ${test_args} --reporters=default --reporters=jest-junit"
                 }
                 junit allowEmptyResults: true, testResults: 'junit.xml'
-                publishHTML(target: [
-                    reportDir: "coverage/lcov-report",
-                    reportFiles: "index.html",
-                    reportName: "Jest Coverage Report"
-                ])
+                // archiveArtifacts, not publishHTML: the HTML Publisher plugin is
+                // not installed on the controller, so publishHTML throws
+                // NoSuchMethodError and fails the stage after the tests pass.
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'coverage/**'
             }
         }
     }

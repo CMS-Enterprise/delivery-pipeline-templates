@@ -409,15 +409,11 @@ pipeline {
                                         error "${err}"
                                     }
                                 } finally {
+                                    // Archived only, not rendered inline: the HTML
+                                    // Publisher plugin is not installed on the
+                                    // controller, so publishHTML throws
+                                    // NoSuchMethodError from this finally block.
                                     archiveArtifacts artifacts: 'openscap-results.xml, openscap-report.html', allowEmptyArchive: true
-                                    publishHTML(target: [
-                                        allowMissing: true,
-                                        alwaysLinkToLastBuild: false,
-                                        keepAll: true,
-                                        reportDir: '.',
-                                        reportFiles: 'openscap-report.html',
-                                        reportName: "OpenSCAP Policy Report"
-                                    ])
                                 }
                             }
                         }
@@ -483,14 +479,10 @@ pipeline {
           '''
                 }
                 echo "Publishing the report"
-                publishHTML  (target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: false,
-                    keepAll: true,
-                    reportDir: 'report',
-                    reportFiles: 'dynamic-owasp-zap-scan.html',
-                    reportName: "Dynamic Scan Report"
-                ])
+                // Archived, not rendered inline: the HTML Publisher plugin is not
+                // installed on the controller, so publishHTML throws
+                // NoSuchMethodError and fails the stage after the scan runs.
+                archiveArtifacts artifacts: 'report/dynamic-owasp-zap-scan.html', allowEmptyArchive: true
             }
         }
     } //end stages

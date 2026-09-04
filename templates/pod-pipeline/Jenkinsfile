@@ -381,7 +381,6 @@ pipeline {
                                 ramp_up: "${jmeter_ramp_up}",
                                 duration: "${jmeter_duration}",
                                 output_name: "jmeter-dev-${svc.name}",
-                                report_name: "JMeter Dev: ${svc.name}",
                                 stage: "JMeter: ${svc.name}"
                             )
                         }]
@@ -452,7 +451,6 @@ pipeline {
                                 ramp_up: "${load_test_ramp_up}",
                                 duration: "${load_test_duration}",
                                 output_name: "jmeter-load-${svc.name}",
-                                report_name: "Load Test: ${svc.name}",
                                 stage: "Load Test: ${svc.name}"
                             )
                         }]

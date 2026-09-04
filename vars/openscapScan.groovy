@@ -36,16 +36,11 @@ def call(Map config = [:]) {
                         """,
                         returnStatus: true
                     )
+                    // Archived only, not rendered inline: the HTML Publisher plugin
+                    // is not installed on the controller, so publishHTML throws
+                    // NoSuchMethodError and fails the scan after oscap runs.
                     archiveArtifacts allowEmptyArchive: true,
                         artifacts: "${output_name}-results.xml,${output_name}-report.html"
-                    publishHTML(target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: "${output_name}-report.html",
-                        reportName: 'OpenSCAP Policy Report'
-                    ])
                     // oscap exits 0 when every rule passes, 2 when at least one
                     // rule fails, and 1 for tool errors. Only 2 is a policy result.
                     if (exit_code == 2) {

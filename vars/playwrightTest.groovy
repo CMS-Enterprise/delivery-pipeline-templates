@@ -18,11 +18,10 @@ def call(Map config = [:]) {
                     """
                 }
                 junit allowEmptyResults: true, testResults: 'test-results/junit.xml'
-                publishHTML(target: [
-                    reportDir: "playwright-report",
-                    reportFiles: "index.html",
-                    reportName: "Playwright Report"
-                ])
+                // archiveArtifacts, not publishHTML: the HTML Publisher plugin is
+                // not installed on the controller, so publishHTML throws
+                // NoSuchMethodError and fails the stage after the tests pass.
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'playwright-report/**'
             }
         }
     }
