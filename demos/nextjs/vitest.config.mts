@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -5,7 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': new URL('./src', import.meta.url).pathname,
+      // fileURLToPath, not URL.pathname: pathname percent-encodes, so a workspace
+      // path containing a space resolves to a directory that does not exist.
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   test: {

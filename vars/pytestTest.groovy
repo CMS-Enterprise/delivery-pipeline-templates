@@ -13,10 +13,10 @@ def call(Map config = [:]) {
                 unstash "${myunstash}"
                 container('python') {
                     sh """
-                        pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
-                        pip3 install pytest pytest-cov
+                        pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
+                        pip3.14 install pytest pytest-cov
                         cd ${working_dir}
-                        [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
+                        [ -f ${requirements_file} ] && pip3.14 install -r ${requirements_file}
                         pytest ${test_path} \
                             ${coverage ? "--cov=${source_path} --cov-report=xml:coverage.xml --cov-report=html:htmlcov" : ''} \
                             --junitxml=pytest-results.xml \
