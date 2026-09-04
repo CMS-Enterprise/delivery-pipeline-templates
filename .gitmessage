@@ -1,0 +1,21 @@
+# <type>(<optional scope>): <subject>
+#
+# https://www.conventionalcommits.org/en/v1.0.0/
+#
+# type      feat, fix, docs, style, refactor, perf, test, build, ci, chore,
+#           revert. feat and fix describe behaviour; the rest do not.
+# scope     optional, e.g. templates, vars, policy, resources/pods
+# subject   imperative mood, no trailing period, under 72 characters
+#
+# Body: wrap at 80. Explain why the change was made, not what it does — the
+# diff already shows what. Optional; a one-line change does not need one.
+#
+# Breaking changes: append ! after the type/scope (feat!: ...) and add a
+# BREAKING CHANGE: <description> trailer below.
+#
+# Trailers can route downstream CI, so keep them exact:
+#   Refs: <ticket>
+#   BREAKING CHANGE: <description>
+#
+# Lines beginning with # are stripped. gitlint checks this message at
+# commit-msg and .gitlint is authoritative for the type list and line limits.

@@ -89,6 +89,42 @@ To use the `vars/` steps, add this repository as a **Global Pipeline Library**:
 - Default version: `main`
 - Source: Git pointing to this repository
 
+## Development Setup
+
+Contributing to this repository (as opposed to consuming the catalog) requires a
+one-time setup per clone:
+
+```
+make init
+```
+
+This installs the `prek` hook shims for the `pre-commit`, `commit-msg` and
+`pre-push` stages, and sets `commit.template` to `.gitmessage`. Both are local
+git state and cannot be committed, so a fresh clone has neither until you run it.
+
+Prerequisites: `prek`, `gitlint`, `yamllint`, `conftest` and `gitleaks` on
+`PATH`.
+
+### Commit Messages
+
+Commit messages follow [ConventionalCommits](https://www.conventionalcommits.org/en/v1.0.0/)
+and are enforced by `gitlint` at the `commit-msg` stage. `.gitlint` is
+authoritative for the permitted types and line limits.
+
+`.gitmessage` is the authoring scaffold that `make init` wires up — it prefills
+the editor with the format as comments, which git strips. It is a reminder, not
+the gate, so `git commit -m` bypasses it but still gets checked by the hook.
+
+Available `make` targets:
+
+| Target                | Purpose                                            |
+| --------------------- | -------------------------------------------------- |
+| `make init`           | Per-clone setup: hooks and commit template         |
+| `make lint`           | yamllint, policy validation and policy unit tests  |
+| `make lint-secrets`   | Full-history secret scan (~10s, outside all hooks) |
+
+The staging rationale for each check is documented in [process.md](process.md).
+
 ## Migration from JTE
 
 | JTE Concept                         | PTC Equivalent                                   |

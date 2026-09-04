@@ -1,4 +1,10 @@
-.PHONY: lint lint-yaml validate-policies test-policies lint-secrets
+.PHONY: init lint lint-yaml validate-policies test-policies lint-secrets
+
+# Per-clone setup. Both steps write to local git state, which cannot be
+# committed, so a fresh clone has neither until this runs.
+init:
+	prek install -t pre-commit -t commit-msg -t pre-push
+	git config commit.template .gitmessage
 
 lint: lint-yaml validate-policies test-policies
 
