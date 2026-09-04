@@ -117,13 +117,55 @@ the gate, so `git commit -m` bypasses it but still gets checked by the hook.
 
 Available `make` targets:
 
-| Target                | Purpose                                            |
-| --------------------- | -------------------------------------------------- |
-| `make init`           | Per-clone setup: hooks and commit template         |
-| `make lint`           | yamllint, policy validation and policy unit tests  |
-| `make lint-secrets`   | Full-history secret scan (~10s, outside all hooks) |
+| Target                   | Purpose                                                |
+| ------------------------ | ------------------------------------------------------ |
+| `make init`              | Per-clone setup: hooks and commit template             |
+| `make lint`              | yamllint, policy checks, `template.yaml` schema        |
+| `make lint-jenkinsfiles` | Validate all Jenkinsfiles against the controller (~3s) |
+| `make lint-secrets`      | Full-history secret scan (~10s, outside all hooks)     |
 
 The staging rationale for each check is documented in [process.md](process.md).
+
+### Testing Against a Jenkins Controller
+
+Two scripts talk to a live controller. Both need `JENKINS_URL`, `JENKINS_USER`
+and `JENKINS_TOKEN`:
+
+```
+source .envrc.jenkins
+```
+
+**`scripts/jenkins-lint.sh`** validates declarative Jenkinsfiles against the
+controller's `pipeline-model-converter/validate` endpoint. It also runs
+automatically at pre-push on changed Jenkinsfiles. Without credentials or a
+reachable controller it skips with a message and exits 0, so an offline push is
+never blocked.
+
+Three of the templates — `jfrog-secure`, `library-publish` and `multi-branch` —
+are scripted pipelines with no `pipeline {}` block. The declarative linter cannot
+validate those, so they are reported as `SKIP`. That is expected, not an
+oversight.
+
+**`scripts/jenkins-job.sh`** triggers builds and reads their output:
+
+```
+./scripts/jenkins-job.sh trigger demos BRANCH=main
+./scripts/jenkins-job.sh status  demos
+./scripts/jenkins-job.sh log     demos 42
+./scripts/jenkins-job.sh tail    demos
+```
+
+It refuses job paths outside `JENKINS_JOB_PREFIX` (default `demos`) so a mistyped
+argument cannot start another team's job. This is a guardrail, not a security
+boundary — the token still reaches any job it has permission for via `curl`.
+
+### MCP
+
+A Jenkins [MCP server](https://github.com/jenkinsci/mcp-server-plugin) would let
+an agent trigger builds and read logs directly, replacing `jenkins-job.sh`. It is
+a **controller-side plugin**, so it must be installed on the controller by an
+administrator; it is not currently installed. Note it exposes no Jenkinsfile
+validation tool, so `jenkins-lint.sh` stays useful either way.
 
 ## Migration from JTE
 

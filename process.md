@@ -32,19 +32,27 @@ tree.
 | `yamllint`                  | 48 yaml files                | 0.13s   |
 | `conftest verify`           | 4 rego files                 | 0.011s  |
 | `conftest test`             | 38 pod manifests, 456 assertions | 0.021s |
+| `validate-templates.py`     | 10 template.yaml files       | 0.07s   |
+| `jenkins-lint`              | 1 Jenkinsfile                | 0.22s   |
+| `jenkins-lint`              | 11 Jenkinsfiles, sequential  | 3.3s    |
 | `gitleaks` range scan       | 5 commits                    | 0.034s  |
 | `gitleaks` range scan       | 20 commits                   | 0.61s   |
 | `gitleaks` full history     | 631 commits                  | 9.6s    |
 | **full pre-commit stage**   | all files                    | 0.35s   |
-| **full pre-push stage**     | all files, 5-commit range    | 0.57s   |
-| **`make lint`**             | all files                    | 0.17s   |
+| **full pre-push stage**     | all files, 5-commit range    | 1.9s    |
+| **`make lint`**             | all files                    | 0.25s   |
 
-Two consequences worth stating explicitly:
+Three consequences worth stating explicitly:
 
 - `conftest` costs 0.03s, not the JVM-scale cost its reputation suggests. It is
   cheap enough for pre-commit, and that is where it runs.
 - A full-history secret scan costs 9.6s and is therefore in no hook at all. It
   is available as `make lint-secrets`. The hooks scan a commit range instead.
+- `jenkins-lint` costs 0.22s per file but 3.3s for the tree, because each file is
+  a separate HTTP round trip. Changed files run at pre-push; the full tree is
+  on demand as `make lint-jenkinsfiles`. It is the one check whose cost is
+  network latency rather than computation, so the per-file figure is the one that
+  governs its placement.
 
 ## 1. Authoring Standards
 
@@ -110,8 +118,9 @@ Tooling notes:
 - **prek** is a drop-in reimplementation of the `pre-commit` framework, chosen
   for lower startup overhead while remaining compatible with existing
   `.pre-commit-config.yaml` files. It drives all three hook stages here.
-- `jenkinsfilelint` is deliberately absent: it validates by POSTing to a running
-  Jenkins controller, which is not reachable from a workstation.
+- Declarative Jenkinsfile validation **does** run, at pre-push — see section 4.
+  Earlier revisions of this document asserted a controller was not reachable from
+  a workstation. That was wrong, and the check was missing for that reason alone.
 
 ### Bypass policy
 
@@ -154,7 +163,7 @@ does not conform and has not been rewritten.
 
 Pre-push occupies the space between pre-commit and CI. The budget is larger than
 pre-commit's, because the developer is pausing to publish rather than mid-edit,
-but smaller than CI's. The whole stage costs 0.57s.
+but smaller than CI's. The whole stage costs 1.9s.
 
 The distinguishing property of this stage is **scope**, not just budget. A
 pre-commit hook sees only the files in one commit, which is blind to two
@@ -170,6 +179,44 @@ failure modes:
 The range script resolves `PRE_COMMIT_FROM_REF..PRE_COMMIT_TO_REF`, falls back
 to the default branch when the remote branch does not exist yet, and skips with
 a message when `gitleaks` is not installed so that a fresh clone can still push.
+
+### Declarative Jenkinsfile validation
+
+`scripts/jenkins-lint.sh` POSTs changed Jenkinsfiles to the controller's
+`pipeline-model-converter/validate` endpoint. This is the only check that can
+catch a malformed `pipeline {}` block before a push, because declarative syntax
+is defined by the plugins installed on the controller rather than by any grammar
+a local parser could carry. It is also the reason this check cannot move earlier:
+its cost is a network round trip, and pre-commit is where latency gets a hook
+bypassed.
+
+Three properties of the endpoint drive the implementation:
+
+- **It answers HTTP 200 for invalid input** and reports the verdict in the body.
+  The script's exit status therefore comes from grepping for
+  `Errors encountered validating`. A wrapper that trusted the status code would
+  pass everything.
+- **It only understands declarative pipelines.** `jfrog-secure`,
+  `library-publish` and `multi-branch` are scripted, with no `pipeline {}` block,
+  and the endpoint rejects them with `did not contain the 'pipeline' step`. The
+  script skips files without that block, so those three are reported as skipped
+  rather than becoming permanent false failures. This is a structural limit of
+  the linter, not a defect in those templates.
+- **It needs credentials and a reachable controller.** Absent either, the script
+  exits 0 with an explanation. An offline push is not blocked, which does mean
+  the check is not enforced for anyone who never has a controller — the same
+  local-enforcement caveat as section 2, with the same answer: server-side CI.
+
+Requires `JENKINS_URL`, `JENKINS_USER` and `JENKINS_TOKEN` — see
+`.envrc.jenkins`. The full-tree run is `make lint-jenkinsfiles`.
+
+`scripts/jenkins-job.sh` uses the same credentials to trigger a build and read
+its console log, so a template change can be exercised end to end without
+copying logs out of a browser. It refuses job paths outside
+`JENKINS_JOB_PREFIX` (default `demos`). That allowlist is a guardrail against
+mistakes and **not** a security boundary: the same token reaches any permitted
+job via plain `curl`. Restricting that requires a service account whose build
+permission is scoped server-side.
 
 ### Local tool prerequisites
 
@@ -253,7 +300,17 @@ pinned images like everything else.
   `policy/` contains no `*_test.rego` files. The hook is wired up and will start
   producing a verdict as soon as policy unit tests are written; today only
   `conftest test` is doing work.
-- **Groovy has no automated correctness check.** With `npm-groovy-lint`
-  excluded, nothing mechanically validates the templates in `templates/` — the
-  gap between a syntax error and a consumer's broken build is currently review
-  alone. This is the strongest argument for the CI item above.
+- **Scripted pipelines have no automated correctness check.** The declarative
+  linter in section 4 now covers the 8 declarative Jenkinsfiles, and
+  `validate-templates.py` covers every `template.yaml`. But `jfrog-secure`,
+  `library-publish` and `multi-branch` are scripted, so no mechanical check
+  reaches them and `npm-groovy-lint` remains excluded. Review is the only gate
+  on those three. Closing this needs either a Groovy parse check that tolerates
+  PTC `${placeholders}`, or converting them to declarative.
+- **No unit tests for `vars/` steps.** There is no Groovy test framework in the
+  repository. The declarative linter validates a Jenkinsfile's *structure*; it
+  does not execute a `vars/` step or assert its behaviour. JenkinsPipelineUnit
+  would be the conventional answer.
+- **The demos pipeline is not a job on the controller.** `demos/Jenkinsfile`
+  validates, but there is no `demos` job, so `scripts/jenkins-job.sh trigger`
+  has nothing to trigger until a seed job or multibranch item exists.

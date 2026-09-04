@@ -80,6 +80,18 @@ repos:
         always_run: true
         stages: [pre-push]
 
+      # Changed files only: 0.22s each fits a pre-push budget, where the 3.8s
+      # full-tree run does not. Needs a reachable controller because declarative
+      # syntax is defined by the controller's plugins; it no-ops when there
+      # isn't one, so an offline push is not blocked. Full run: make
+      # lint-jenkinsfiles.
+      - id: jenkins-lint
+        name: Validate declarative Jenkinsfiles (changed)
+        entry: scripts/jenkins-lint.sh
+        language: system
+        files: (^|/)Jenkinsfile$
+        stages: [pre-push]
+
       - id: gitlint
         name: Conventional commit message
         entry: gitlint --staged --msg-filename
