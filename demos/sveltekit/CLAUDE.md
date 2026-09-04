@@ -12,6 +12,7 @@
 - `npm run build` - production build
 - `npm run preview` - preview production build on port 3002
 - `npm run check` - run svelte-check for type errors
+- `npm test` - run the Vitest suite
 - `./run.sh` - install and start dev server
 
 # Code Style
@@ -31,6 +32,8 @@
 - `src/lib/components/` - Reusable components (Nav.svelte)
 - `src/app.html` - HTML shell template
 - `src/app.css` - Global CSS with variables
+- `src/testing/` - Vitest setup and `$app/*` stand-ins (see Gotchas)
+- `*.spec.ts` files sit beside what they cover
 
 # Workflow
 
@@ -45,3 +48,9 @@
 - `<svelte:head>` for per-page title/meta tags
 - CSS variables in `src/app.css` control site-wide theme; component styles are scoped
 - The site brand is "RoboCare Health" (robotic healthcare company)
+- `vitest.config.ts` uses the plain `svelte()` plugin, not `sveltekit()`, and aliases
+  `$app` to `src/testing/app`. The real `$app/*` modules only exist inside a running
+  SvelteKit app, so tests would otherwise fail to resolve them.
+- Import test helpers from `src/testing/app/*` by relative path, not via `$app/*`:
+  svelte-check types `$app/*` from SvelteKit and does not see the stand-ins.
+- vitest is pinned to 3.x — vitest 5 requires Vite 6+, and this app is on Vite 5.

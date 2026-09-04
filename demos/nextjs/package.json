@@ -7,17 +7,24 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^6.0.3"
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.0.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   },
   "name": "nextjs-site",
   "private": true,
   "scripts": {
     "build": "next build",
+    "check": "tsc --noEmit",
     "dev": "next dev -p 3000",
-    "start": "next start -p 3000"
+    "start": "next start -p 3000",
+    "test": "vitest run"
   },
   "version": "0.1.0"
 }

@@ -10,6 +10,8 @@
 - `npm install` - install dependencies
 - `npm run dev` - start dev server on port 3001
 - `npm run build` - type-check and build for production
+- `npm run check` - type-check only (vue-tsc --noEmit)
+- `npm test` - run the Vitest suite
 - `npm run preview` - preview production build on port 3001
 - `./run.sh` - install and start dev server
 
@@ -29,6 +31,7 @@
 - `src/assets/main.css` - Global styles with CSS variables
 - `index.html` - Entry point (Vite SPA)
 - No vue-router; navigation handled via reactive state in App.vue
+- `*.spec.ts` files sit beside the component they cover (Vitest + @vue/test-utils)
 
 # Workflow
 

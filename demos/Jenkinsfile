@@ -78,7 +78,10 @@ def testService(svc) {
             testNpm(stage: "Test: Sveltekit", working_dir: "demos/${svc.name}", unstash: "sveltekit-build", stash: "sveltekit-build")
             break
         case 'django':
-            pytestTest(stage: "Test: Django", working_dir: "demos/${svc.name}", unstash: svc.stash)
+            // source_path overrides the step's `src/` default; this app's code
+            // lives in mysite/ and pages/, so the default measures nothing.
+            pytestTest(stage: "Test: Django", working_dir: "demos/${svc.name}", unstash: svc.stash,
+                       test_path: 'tests/', source_path: 'pages', requirements_file: 'requirements-dev.txt')
             break
         case 'go':
             testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash)

@@ -10,3 +10,8 @@ build/
 .idea/
 .vscode/
 *.swp
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+pytest-results.xml
