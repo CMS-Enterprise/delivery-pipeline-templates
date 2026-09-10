@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: jfrog-cli
-      image: releases-docker.jfrog.io/jfrog/jfrog-cli-v2@sha256:4a7d5c8e9f2b1d6a3c8e5f7b0d2a4e6c9f1b3d5a7c9e2f4b6d8a0c3e5f7a9b1d
+      image: releases-docker.jfrog.io/jfrog/jfrog-cli-v2@sha256:fbdae2394788e1df2042a56c569ee118648f931796138313507498bb5b6d875c
       command: ["cat"]
       tty: true
       securityContext:
