@@ -2,7 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/docker/maven@sha256:abfd3b6c00e918b36c11c89c81ea803e6f24e7aebc1ae9dbc7badb4c2b2f2e44 AS builder
+FROM artifactory.cloud.cms.gov/docker/maven@sha256:880934ae394bf91bc3e57d573e4fc04774f064f3c4df7ccd7cc10b3b126737bf AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:4a3b9c3e47bb4a4db0f6c3f5a6c5c5d1bc1d4b5e6f7a8b9c0d1e2f3a4b5c6d7e
+FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:27cc0849148c0fd32ee8e95988917becf9bc96a3182a24f99d9763aa8e90f8cb
 
 WORKDIR /app
 
