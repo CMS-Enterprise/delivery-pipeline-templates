@@ -10,9 +10,9 @@ def cosignConfig = [
 // JFrog configuration for staging and promotion
 def jfrogConfig = [
     server_id: 'jfrog-artifactory',
-    url: 'https://artifactory.cloud.cms.gov/artifactory',
-    registry: 'artifactory.cloud.cms.gov/tooling-registry',
-    staging_repo: 'docker-staging-local',
+    url: 'https://artifactory.cloud.cms.gov/',
+    registry: 'artifactory.cloud.cms.gov',
+    staging_repo: 'itopsplatf-cloudpipe',
     prod_repo: 'docker-prod-local',
     credential: 'jfrog-credentials'
 ]

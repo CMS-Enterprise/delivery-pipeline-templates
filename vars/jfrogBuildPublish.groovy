@@ -4,13 +4,13 @@
 // build name so the per-service Xray scans and promotions stay separate.
 def call(Map config = [:]) {
     def server_id = config.server_id ?: 'jfrog-artifactory'
-    def registry = config.registry ?: 'docker.artifactory.cloud.cms.gov'
+    def registry = config.registry ?: 'artifactory.cloud.cms.gov'
     def repo = config.staging_repo ?: 'docker-staging-local'
     def image_name = config.image_name ?: error('image_name is required')
     def tag = config.tag ?: env.GIT_SHORT_HASH ?: error('tag is required (env.GIT_SHORT_HASH is not set)')
     def context_dir = config.context_dir ?: '.'
     def containerfile = config.containerfile ?: "${context_dir}/Dockerfile"
-    def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/artifactory'
+    def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/'
     def build_name = config.build_name ?: "${env.JOB_NAME}-${image_name}"
     def stagename = config.stage ?: "Build & Publish: ${image_name}"
     def full_image = "${registry}/${repo}/${image_name}:${tag}"
