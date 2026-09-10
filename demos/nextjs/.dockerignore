@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs (rebuilt in container)
+.next/
+out/
+
+# Development and testing
+.git/
+.gitignore
+*.md
+README*
+tests/
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+
+# Environment and config
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

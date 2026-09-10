@@ -1,13 +1,57 @@
 @Library('delivery-pipeline-templates') _
 
-def registry = 'artifactory.cloud.cms.gov/tooling-registry'
-
 // Signing fails closed, so these must be set before the Build Images stage
 // will pass. Override per-controller rather than committing real values.
 def cosignConfig = [
     kms_key_arn: env.COSIGN_KMS_KEY_ARN,
     account_id: env.AWS_ACCOUNT_ID,
 ]
+
+// JFrog configuration for staging and promotion
+def jfrogConfig = [
+    server_id: 'jfrog-artifactory',
+    url: 'https://artifactory.cloud.cms.gov/artifactory',
+    registry: 'artifactory.cloud.cms.gov/tooling-registry',
+    staging_repo: 'docker-staging-local',
+    prod_repo: 'docker-prod-local',
+    credential: 'jfrog-credentials'
+]
+
+// GitOps manifest repository configuration
+def gitopsConfig = [
+    manifest_repo: 'https://github.com/CMS-Enterprise/delivery-pipeline-manifests.git',
+    manifest_branch: 'main',
+    manifest_path_dev: 'overlays/dev',
+    git_credential: 'github-org-token'
+]
+
+// Deployment configuration
+def deployConfig = [
+    namespaces: [
+        dev: 'delivery-demos-dev',
+        staging: 'delivery-demos-staging',
+        prod: 'delivery-demos-prod'
+    ],
+    clusters: [
+        dev: 'dev-cluster',
+        staging: 'staging-cluster',
+        prod: 'prod-cluster'
+    ]
+]
+
+// Snyk configuration (if enabled)
+def snykConfig = [
+    org: env.SNYK_ORG ?: 'cms-enterprise',
+    token_credential: 'snyk-api-token',
+    severity_threshold: 'high'
+]
+
+// State tracking for monorepo
+def selected = []           // Changed services requiring build
+def has_services = false    // Flag to skip artifact stages on doc-only commits
+def stagingImages = [:]     // Per-service staging image coords
+def verifiedImages = [:]    // Per-service verified/prod image coords
+def buildNames = [:]        // Per-service JFrog build names
 
 // `stash` is the artifact each service hands to the next stage. Django has no
 // build step yet, so it carries the raw checkout forward instead.
@@ -17,7 +61,7 @@ def services = [
     [name: 'sveltekit', stash: 'sveltekit-build'],
     [name: 'django',    stash: 'workspace'],
     [name: 'go',        stash: 'go-build'],
-    //[name: 'maven',     buildTool: 'maven',  pod: 'maven-openjdk25.yaml', container: 'maven',         buildCmd: './mvnw package -DskipTests',                           testCmd: './mvnw test'],
+    [name: 'maven',     stash: 'maven-build'],
 ]
 def lintService(svc) {
     switch (svc.name) {
@@ -37,7 +81,8 @@ def lintService(svc) {
             golangciLint(working_dir: "demos/${svc.name}")
             break
         case 'maven':
-            echo "Maven is not implimented"
+            // Maven linting not configured - checkstyle plugin would require pom.xml updates
+            echo "Maven linting: skipped (no checkstyle configured)"
             break
     }
 }
@@ -61,7 +106,15 @@ def buildService(svc) {
             buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'maven':
-            echo "Maven is not implimented"
+            podTemplate(yaml: readTrusted('resources/pods/maven-openjdk25.yaml')) {
+                node(POD_LABEL) {
+                    unstash 'workspace'
+                    container('maven') {
+                        sh 'cd demos/maven && mvn package -DskipTests'
+                    }
+                    stash name: 'maven-build', includes: 'demos/maven/**'
+                }
+            }
             break
       }
   }
@@ -87,7 +140,14 @@ def testService(svc) {
             testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash)
             break
         case 'maven':
-            echo "Maven is not implimented"
+            podTemplate(yaml: readTrusted('resources/pods/maven-openjdk25.yaml')) {
+                node(POD_LABEL) {
+                    unstash 'maven-build'
+                    container('maven') {
+                        sh 'cd demos/maven && mvn test'
+                    }
+                }
+            }
             break
       }
   }
@@ -127,19 +187,41 @@ pipeline {
             }
         }
 
-        // ─── Lint ───
-        stage('Lint') {
+        // ─── Detect Changed Services ───
+        stage('Detect Changed Services') {
             steps {
                 script {
-                    def branches = services.collectEntries { svc ->
+                    selected = changedServices(services: services, base_dir: 'demos')
+                    has_services = !selected.isEmpty()
+
+                    if (has_services) {
+                        echo "Changed services detected: ${selected.collect { it.name }.join(', ')}"
+                        // Initialize build names for JFrog per-service isolation
+                        selected.each { svc ->
+                            buildNames[svc.name] = "${env.JOB_NAME}-${svc.name}"
+                        }
+                    } else {
+                        echo "No services changed (documentation-only commit)"
+                    }
+                }
+            }
+        }
+
+        // ─── Lint ───
+        stage('Lint') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
                         ["Lint: ${svc.name}": { lintService(svc) }]
                     }
                     parallel branches
                 }
             }
         }
-        // ─── Security Scans (Code Quality, Code Security, Secret Detection, Source Malware) ───
-        stage('Security Scan') {
+        // ─── Source Security Scans ───
+        // Note: Source scans run on all commits (including doc-only) as a security gate
+        stage('Source Scans') {
             steps {
                 script {
                     parallel(
@@ -170,9 +252,10 @@ pipeline {
 
         // ─── Build ───
         stage('Build') {
+            when { expression { has_services } }
             steps {
                 script {
-                    def branches = services.collectEntries { svc ->
+                    def branches = selected.collectEntries { svc ->
                         ["Build: ${svc.name}": { buildService(svc) }]
                     }
                     parallel branches
@@ -182,9 +265,10 @@ pipeline {
 
         // ─── Test ───
         stage('Test') {
+            when { expression { has_services } }
             steps {
                 script {
-                    def branches = services.collectEntries { svc ->
+                    def branches = selected.collectEntries { svc ->
                         ["Test: ${svc.name}": { testService(svc) }]
                     }
                     parallel branches
@@ -209,27 +293,192 @@ pipeline {
         //         }
         //     }
         // }
-        // ─── Build Container Images ───
-        // TODO: none of the demos/* apps ship a Dockerfile yet, so this stage
-        // cannot pass until one is added per service.
-        stage('Build Images') {
+        // ─── Build and Publish Container Images ───
+        stage('Build and Publish Images') {
+            when { expression { has_services } }
             steps {
                 script {
-                    def branches = services.collectEntries { svc ->
-                        ["Build Images: ${svc.name}": {
-                            dockerBuild(cosignConfig + [
-                                stage: "Build Image: ${svc.name}",
-                                registry: registry,
+                    def branches = selected.collectEntries { svc ->
+                        ["Build & Publish: ${svc.name}": {
+                            def result = jfrogBuildPublish(jfrogConfig + cosignConfig + [
                                 image_name: svc.name,
                                 context_dir: "demos/${svc.name}",
-                                unstash: svc.stash
+                                build_name: buildNames[svc.name],
+                                unstash: svc.stash,
+                                stage: "Build & Publish: ${svc.name}"
                             ])
+                            // Store staging image coordinates for later stages
+                            stagingImages[svc.name] = result.image
+                        }]
+                    }
+                    branches.failFast = true
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Image Scans and SBOMs ───
+        stage('Image Scans and SBOMs') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = [:]
+
+                    selected.each { svc ->
+                        def image = stagingImages[svc.name]
+
+                        branches["Xray: ${svc.name}"] = {
+                            jfrogScan(jfrogConfig + [
+                                build_name: buildNames[svc.name],
+                                skip_verify: true,
+                                stage: "Xray: ${svc.name}"
+                            ])
+                        }
+
+                        branches["Trivy: ${svc.name}"] = {
+                            trivyScan([
+                                image: image,
+                                severity: 'CRITICAL,HIGH',
+                                fail_on_vulnerability: true,
+                                skip_verify: true,
+                                output_name: "trivy-${svc.name}",
+                                stage: "Trivy: ${svc.name}"
+                            ])
+                        }
+
+                        branches["Snyk: ${svc.name}"] = {
+                            snykContainerScan(snykConfig + [
+                                image: image,
+                                output_name: "snyk-${svc.name}",
+                                generate_sbom: true,
+                                stage: "Snyk: ${svc.name}"
+                            ])
+                        }
+
+                        branches["ClamAV: ${svc.name}"] = {
+                            clamavScan([
+                                image: image,
+                                output_name: "clamav-${svc.name}",
+                                stage: "ClamAV: ${svc.name}"
+                            ])
+                        }
+
+                        branches["OpenSCAP: ${svc.name}"] = {
+                            openscapScan([
+                                image: image,
+                                skip_verify: true,
+                                output_name: "openscap-${svc.name}",
+                                stage: "OpenSCAP: ${svc.name}"
+                            ])
+                        }
+
+                        branches["SBOM: ${svc.name}"] = {
+                            jfrogSbom(jfrogConfig + [
+                                build_name: buildNames[svc.name],
+                                output_name: "jfrog-sbom-${svc.name}",
+                                stage: "SBOM: ${svc.name}"
+                            ])
+                        }
+                    }
+
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Promote to Verified Repo ───
+        stage('Promote to Verified Repo') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
+                        ["Promote: ${svc.name}": {
+                            verifiedImages[svc.name] = jfrogPromote(jfrogConfig + [
+                                image: stagingImages[svc.name],
+                                build_name: buildNames[svc.name],
+                                stage: "Promote: ${svc.name}"
+                            ], jfrogConfig.prod_repo)
                         }]
                     }
                     parallel branches
                 }
             }
         }
+
+        // ─── Update Image Tags (GitOps) ───
+//        stage('Update Image Tags') {
+//            when { expression { has_services } }
+//            steps {
+//                script {
+//                    gitopsPromote(gitopsConfig + [
+//                        environment_path: gitopsConfig.manifest_path_dev,
+//                        image_overrides: verifiedImages
+//                    ], 'dev')
+//                }
+//            }
+//        }
+
+//        // ─── Deploy to Dev ───
+//        stage('Deploy to Dev') {
+//            when {
+//                expression { env.BRANCH_NAME == 'main' && has_services }
+//            }
+//            steps {
+//                script {
+//                    kustomizeDeploy([
+//                        overlay_path: gitopsConfig.manifest_path_dev,
+//                        namespaces: [dev: deployConfig.namespaces.dev],
+//                        clusters: [dev: deployConfig.clusters.dev]
+//                    ], 'dev')
+//                }
+//            }
+//        }
+//
+//        // ─── Dev Verification ───
+//        stage('Dev Verification') {
+//            when {
+//                expression { env.BRANCH_NAME == 'main' && has_services }
+//            }
+//            steps {
+//                script {
+//                    def branches = [:]
+//
+//                    // JMeter load tests per service
+//                    selected.each { svc ->
+//                        branches["JMeter: ${svc.name}"] = {
+//                            jmeterTest([
+//                                test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+//                                threads: '10',
+//                                ramp_up: '30',
+//                                duration: '60',
+//                                output_name: "jmeter-dev-${svc.name}",
+//                                stage: "JMeter: ${svc.name}"
+//                            ])
+//                        }
+//                    }
+//
+//                    // DAST security scan (ZAP)
+//                    branches['DAST'] = {
+//                        podTemplate(yaml: readTrusted('resources/pods/zap.yaml')) {
+//                            node(POD_LABEL) {
+//                                container('zap') {
+//                                    sh """
+//                                        zap-baseline.py -t https://dev.delivery-demos.example.com \
+//                                            -r zap-report.html -J zap-report.json
+//                                    """
+//                                }
+//                                archiveArtifacts artifacts: 'zap-report.*', allowEmptyArchive: true
+//                            }
+//                        }
+//                    }
+//
+//                    parallel branches
+//                }
+//            }
+//        }
+//
+//        // TODO: Staging and Production deployment stages can be added here
+//        // following the pattern from templates/pod-pipeline/Jenkinsfile
 
     }
 }

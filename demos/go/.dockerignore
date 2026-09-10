@@ -1,0 +1,23 @@
+# Build outputs (rebuilt in container)
+go-site
+*.exe
+
+# Dependencies (re-downloaded in container)
+vendor/
+
+# Development and testing
+.git/
+.gitignore
+*.md
+README*
+*_test.go
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

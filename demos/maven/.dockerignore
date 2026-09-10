@@ -1,0 +1,27 @@
+# Build outputs (rebuilt in container)
+target/
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Development and testing
+.git/
+.gitignore
+*.md
+README*
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db

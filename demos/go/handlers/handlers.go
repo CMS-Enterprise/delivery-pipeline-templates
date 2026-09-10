@@ -17,6 +17,16 @@ func NewTemplateHandler() (*TemplateHandler, error) {
 	return &TemplateHandler{templates: tmpl}, nil
 }
 
+// Health reports liveness for the pipeline's smoke test.
+func Health(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/health" {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
+}
+
 // Home is for home.html .
 func (h *TemplateHandler) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {

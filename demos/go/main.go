@@ -32,6 +32,7 @@ func main() {
 	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	router.HandleFunc("/", handler.Home)
 	router.HandleFunc("/about", handler.About)
+	router.HandleFunc("/health", handlers.Health)
 
 	log.Println("Starting server on :3005")
 	log.Fatal(server.ListenAndServe())
