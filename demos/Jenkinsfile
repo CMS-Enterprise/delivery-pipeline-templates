@@ -110,7 +110,7 @@ def buildService(svc) {
                 node(POD_LABEL) {
                     unstash 'workspace'
                     container('maven') {
-                        sh 'cd demos/maven && mvn package -DskipTests'
+                        sh 'cd demos/maven && mvn package -DskipTests -Dmaven.repo.local=/home/jenkins/agent/.m2/repository'
                     }
                     stash name: 'maven-build', includes: 'demos/maven/**'
                 }
@@ -144,7 +144,7 @@ def testService(svc) {
                 node(POD_LABEL) {
                     unstash 'maven-build'
                     container('maven') {
-                        sh 'cd demos/maven && mvn test'
+                        sh 'cd demos/maven && mvn test -Dmaven.repo.local=/home/jenkins/agent/.m2/repository'
                     }
                 }
             }
