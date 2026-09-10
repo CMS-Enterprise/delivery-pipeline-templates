@@ -184,12 +184,8 @@ pipeline {
                     env.REPO_NAME = 'delivery-pipeline-templates'
                 }
                 stash name: 'workspace', includes: '**'
-            }
-        }
 
-        // ─── Detect Changed Services ───
-        stage('Detect Changed Services') {
-            steps {
+                // Detect changed services immediately after checkout
                 script {
                     selected = changedServices(services: services, base_dir: 'demos')
                     has_services = !selected.isEmpty()
