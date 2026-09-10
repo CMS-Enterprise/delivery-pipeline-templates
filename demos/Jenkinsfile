@@ -46,6 +46,8 @@ def snykConfig = [
     severity_threshold: 'high'
 ]
 
+def dev_base_url = env.DEV_BASE_URL ?: 'https://dev.delivery-demos.example.com'
+
 // State tracking for monorepo
 def selected = []           // Changed services requiring build
 def has_services = false    // Flag to skip artifact stages on doc-only commits
@@ -459,7 +461,7 @@ pipeline {
 //                            node(POD_LABEL) {
 //                                container('zap') {
 //                                    sh """
-//                                        zap-baseline.py -t https://dev.delivery-demos.example.com \
+//                                        zap-baseline.py -t ${dev_base_url} \
 //                                            -r zap-report.html -J zap-report.json
 //                                    """
 //                                }
