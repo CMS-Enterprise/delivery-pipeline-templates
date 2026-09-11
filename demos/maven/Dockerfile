@@ -15,7 +15,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:27cc0849148c0fd32ee8e95988917becf9bc96a3182a24f99d9763aa8e90f8cb
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:df0192a839e8f1282c3c0eb79be55e991a363a4e573e270a579a2ecf67cac136
 
 WORKDIR /app
 
