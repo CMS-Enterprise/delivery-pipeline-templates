@@ -293,7 +293,7 @@ pipeline {
                             stagingImages[svc.name] = result.image
                         }]
                     }
-                    branches.failFast = true
+                    branches.failFast = false
                     parallel branches
                 }
             }

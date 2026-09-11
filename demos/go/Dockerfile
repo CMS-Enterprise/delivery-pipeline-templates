@@ -7,10 +7,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/g
 WORKDIR /app
 
 # Copy go module files
-COPY go.mod go.sum ./
-
-# Download dependencies
-RUN go mod download
+COPY go.mod ./
 
 # Copy application source
 COPY . .
