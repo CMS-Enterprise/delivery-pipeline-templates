@@ -3,6 +3,7 @@
 
 # Stage 1: Dependencies
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ad3df83be5d86b4a89fc7f7bf8598652f05e20a5112f3fee1e44a079163033af AS builder
+USER 0
 
 WORKDIR /app
 

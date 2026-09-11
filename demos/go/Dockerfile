@@ -3,8 +3,9 @@
 
 # Stage 1: Build
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:63731329f3871af2c02d6eb30d2f1b7d39959f326d9f45db2f4e7277a0bb788c AS builder
+USER 0
 
-WORKDIR /tmp/build
+WORKDIR /build
 
 # Copy go module files
 COPY go.mod ./
@@ -22,11 +23,11 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelin
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /tmp/build/go-site ./
+COPY --from=builder /build/go-site ./
 
 # Copy static assets and templates
-COPY --from=builder /tmp/build/static ./static
-COPY --from=builder /tmp/build/templates ./templates
+COPY --from=builder /build/static ./static
+COPY --from=builder /build/templates ./templates
 
 # Go application runs on port 3005
 EXPOSE 3005
