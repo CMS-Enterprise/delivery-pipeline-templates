@@ -23,10 +23,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/ngi
 
 WORKDIR /usr/share/nginx/html
 
-# Remove default nginx static files
-RUN rm -rf ./*
-
-# Copy built static files from builder
+# Copy built static files from builder (overwrites default nginx content)
 COPY --from=builder /app/dist .
 
 # Copy custom nginx configuration for SPA routing

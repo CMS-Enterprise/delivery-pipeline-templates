@@ -31,7 +31,6 @@ ENV NODE_ENV=production
 # Copy standalone build output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
 # Next.js standalone server runs on port 3000
 EXPOSE 3000

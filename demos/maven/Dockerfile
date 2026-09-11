@@ -4,7 +4,7 @@
 # Stage 1: Build
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17@sha256:fc46e3ef7fb1c118dc4f13e8758069a5afe5134d29e138d3b4be8fb159be832a AS builder
 
-WORKDIR /app
+WORKDIR /tmp/build
 
 # Copy Maven settings and project files
 COPY settings.xml ./
@@ -20,7 +20,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/mav
 WORKDIR /app
 
 # Copy the built JAR from builder
-COPY --from=builder /app/target/site-1.0.0.jar ./app.jar
+COPY --from=builder /tmp/build/target/site-1.0.0.jar ./app.jar
 
 # Spring Boot runs on port 3004
 EXPOSE 3004
