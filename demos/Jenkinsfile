@@ -83,7 +83,7 @@ def lintService(svc) {
             golangciLint(working_dir: "demos/${svc.name}")
             break
         case 'maven':
-            checkstyleLintMaven(working_dir: "demos/${svc.name}")
+            checkstyleLintMaven(working_dir: "demos/${svc.name}", pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
             break
     }
 }
@@ -107,7 +107,7 @@ def buildService(svc) {
             buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: svc.stash)
             break
         case 'maven':
-            buildMaven(stage: "Build: Maven", working_dir: "demos/${svc.name}", stash: svc.stash)
+            buildMaven(stage: "Build: Maven", working_dir: "demos/${svc.name}", stash: svc.stash, pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
             break
       }
   }
@@ -133,7 +133,7 @@ def testService(svc) {
             testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash)
             break
         case 'maven':
-            unitTestMaven(stage: "Test: Maven", working_dir: "demos/${svc.name}", unstash: "maven-build")
+            unitTestMaven(stage: "Test: Maven", working_dir: "demos/${svc.name}", unstash: "maven-build", pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
             break
       }
   }

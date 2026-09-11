@@ -15,8 +15,8 @@ spec:
       type: RuntimeDefault
   restartPolicy: Never
   containers:
-    - name: curl
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/curl/curl:8
+    - name: maven
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17:3.9.16
       command: ["cat"]
       tty: true
       securityContext:
@@ -25,10 +25,10 @@ spec:
           drop: ["ALL"]
       resources:
         requests:
-          cpu: "250m"
-          memory: "128Mi"
-          ephemeral-storage: "200Mi"
+          cpu: "4"
+          memory: "4Gi"
+          ephemeral-storage: "10Gi"
         limits:
-          cpu: "250m"
-          memory: "128Mi"
-          ephemeral-storage: "200Mi"
+          cpu: "4"
+          memory: "4Gi"
+          ephemeral-storage: "10Gi"

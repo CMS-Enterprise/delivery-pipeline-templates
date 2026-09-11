@@ -24,7 +24,7 @@ spec:
     # Flattens the image under test into a plain directory tree so clamscan can
     # walk it without mounting the image as root.
     - name: podman
-      image: artifactory.cloud.cms.gov/docker/podman/stable@sha256:d6f571f9dba42c692281715f4402bdd78884ff16707b08293ebe4cfdea31dbcb
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman:5
       command:
         - sleep
       args:
