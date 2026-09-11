@@ -1,20 +1,21 @@
 # Multi-stage Dockerfile for Maven/Spring Boot demo application
-# Uses Artifactory mirrors per project policy with SHA256 digests
+# Uses IronBank hardened images via Artifactory mirror
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/docker/maven@sha256:880934ae394bf91bc3e57d573e4fc04774f064f3c4df7ccd7cc10b3b126737bf AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17:3.9.16 AS builder
 
 WORKDIR /app
 
-# Copy Maven project files
+# Copy Maven settings and project files
+COPY settings.xml ./
 COPY pom.xml ./
 COPY src ./src
 
 # Build the application (skip tests in container build)
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:27cc0849148c0fd32ee8e95988917becf9bc96a3182a24f99d9763aa8e90f8cb
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/eclipse-temurin/eclipse-temurin-17-jre:17
 
 WORKDIR /app
 

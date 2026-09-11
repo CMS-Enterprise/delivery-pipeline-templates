@@ -459,7 +459,7 @@ pipeline {
         - name: myimage
           image: artifactory.cloud.cms.gov/${params.image}:${params.tag}
         - name: zap
-          image: artifactory.cloud.cms.gov/docker/zaproxy/zap-stable:latest
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/owasp-zap/owasp-zap:v2.17.0
           command: ['zap.sh','-daemon','-config','api.disablekey=true','-config','api.addrs.addr.name=.*','-config','api.addrs.addr.regex=true','-config','spider.maxDuration=5']
           tty: true
           ports:
