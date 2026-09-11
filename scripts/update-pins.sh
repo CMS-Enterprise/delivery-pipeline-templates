@@ -145,7 +145,7 @@ apply_sed() {
   local dir="$3"
 
   if [[ "$APPLY" == true ]]; then
-    find "$dir" -name "*.groovy" -exec sed -i "s|${old}|${new}|g" {} +
+    find "$dir" \( -name "*.groovy" -o -name "*.yaml" \) -exec sed -i "s|${old}|${new}|g" {} +
   fi
 }
 
@@ -278,7 +278,7 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
   fi
 
   # Find current digest in .groovy files
-  current_digest=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$LIBRARIES_DIR" --include="*.groovy" 2>/dev/null | head -1 | grep -oP 'sha256:[a-f0-9]{64}' || true)
+  current_digest=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$LIBRARIES_DIR" --include="*.groovy" --include="*.yaml" 2>/dev/null | head -1 | grep -oP 'sha256:[a-f0-9]{64}' || true)
 
   if [[ -z "$current_digest" ]]; then
     report skip "$image" "not found pinned in libraries"

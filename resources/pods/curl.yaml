@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: curl
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/curl/curl:8
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:2993892800ac41d78f85310c6f3de693492d5d901ee8c2838638b8e92c1f3054
       command: ["cat"]
       tty: true
       securityContext:

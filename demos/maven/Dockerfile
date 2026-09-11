@@ -2,7 +2,7 @@
 # Uses IronBank hardened images via Artifactory mirror
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17:3.9.16 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17@sha256:fc46e3ef7fb1c118dc4f13e8758069a5afe5134d29e138d3b4be8fb159be832a AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/eclipse-temurin/eclipse-temurin-17-jre:17
+FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:27cc0849148c0fd32ee8e95988917becf9bc96a3182a24f99d9763aa8e90f8cb
 
 WORKDIR /app
 

@@ -20,7 +20,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: podman
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman:5
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:7bb7ce9862d63cf8a2b56ff72973d6091dab04ebc8bd25839b93b38aec03ebc6
       command:
         - sleep
       args:

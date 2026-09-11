@@ -24,7 +24,7 @@ spec:
     # Flattens the image under test into a plain directory tree so clamscan can
     # walk it without mounting the image as root.
     - name: podman
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman:5
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:7bb7ce9862d63cf8a2b56ff72973d6091dab04ebc8bd25839b93b38aec03ebc6
       command:
         - sleep
       args:
@@ -46,7 +46,7 @@ spec:
             - CAP_SETUID # Needed by podman
             - CAP_SETGID # Needed by podman
     - name: clamav
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav:1.5.3
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:1011fde6cb06be46848f778c8ee25e47c83a949317b209bd422ce1bceb9f5a70
       command: ["cat"]
       tty: true
       volumeMounts:

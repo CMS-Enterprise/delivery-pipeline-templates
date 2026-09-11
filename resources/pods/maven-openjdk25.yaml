@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: maven
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25:3.9.16
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:df0192a839e8f1282c3c0eb79be55e991a363a4e573e270a579a2ecf67cac136
       command: ["cat"]
       tty: true
       securityContext:

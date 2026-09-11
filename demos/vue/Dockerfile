@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime - Nginx to serve static files
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx:1.28
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:cb4aa5c5742ee8867309157691c122e18d6d6f9c6e1b92b458c2ffc15a5734e5
 
 WORKDIR /usr/share/nginx/html
 
