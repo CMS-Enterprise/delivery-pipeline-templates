@@ -29,6 +29,9 @@ spec:
       image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2@sha256:fbdae2394788e1df2042a56c569ee118648f931796138313507498bb5b6d875c
       command: ["cat"]
       tty: true
+      env:
+        - name: PATH
+          value: "/usr/local/bin:/usr/bin:/bin"
       resources:
         requests:
           cpu: "500m"

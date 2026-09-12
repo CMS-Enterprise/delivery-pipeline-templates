@@ -30,7 +30,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=3003
 
 # Collect static files (WhiteNoise will serve them)
-RUN python manage.py collectstatic --noinput
+RUN python3.14 manage.py collectstatic --noinput
 
 # Django/Gunicorn runs on port 3003
 EXPOSE 3003
@@ -39,5 +39,5 @@ EXPOSE 3003
 RUN mkdir -p /app/data
 
 # Run migrations and start Gunicorn
-CMD python manage.py migrate --noinput && \
+CMD python3.14 manage.py migrate --noinput && \
     gunicorn mysite.wsgi:application --bind 0.0.0.0:3003 --workers 2 --timeout 60
