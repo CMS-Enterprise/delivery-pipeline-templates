@@ -91,7 +91,8 @@ def lintService(svc) {
 def buildService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            buildNpm(stage: "Build: NextJS", working_dir: "demos/${svc.name}", stash: svc.stash)
+            buildNpm(stage: "Build: NextJS", working_dir: "demos/${svc.name}", stash: svc.stash,
+                     s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
         case 'vue':
             buildNpm(stage: "Build: Vue", working_dir: "demos/${svc.name}", stash: svc.stash)
@@ -226,6 +227,16 @@ pipeline {
                         },
                         'Security Scan: Malware': {
                             clamavScan(scan_path: '.')
+                        },
+                        'Audit: NPM Dependencies': {
+                            def npmServices = selected.findAll { it.name in ['nextjs', 'vue', 'sveltekit'] }
+                            npmServices.each { svc ->
+                                auditNpm(
+                                    stage: "Audit: ${svc.name}",
+                                    working_dir: "demos/${svc.name}",
+                                    audit_level: 'high'
+                                )
+                            }
                         }
                     )
                 }

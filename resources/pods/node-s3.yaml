@@ -9,19 +9,33 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1030
+    runAsUser: 1000
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   restartPolicy: Never
   containers:
-    - name: jfrog-cli
-      image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2-jf@sha256:4b6f689bf0827e5897cbb2c30869af1a3d953d42336eb196be1664f0e8bdda58
+    - name: node
+      image: artifactory.cloud.cms.gov/docker/node@sha256:980c5420a7a2ddcb44037726977f2a349e5c7b64217516c7488dce4c74d71583
       command: ["cat"]
       tty: true
-      env:
-        - name: PATH
-          value: "/usr/local/bin:/usr/bin:/bin"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "5Gi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "5Gi"
+    - name: aws-cli
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+      command: ["cat"]
+      tty: true
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:

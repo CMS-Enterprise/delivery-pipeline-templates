@@ -185,7 +185,7 @@ IMAGES["terraform-linters/tflint"]="ghcr latest"
 IMAGES["fluxcd/flux-cli"]="ghcr-semver latest"
 IMAGES["playwright"]="mcr latest"
 IMAGES["twistlock/defender"]="private latest"
-IMAGES["jfrog/jfrog-cli-v2"]="jfrog latest"
+IMAGES["jfrog/jfrog-cli-v2-jf"]="jfrog latest"
 
 get_latest_ghcr_semver() {
   local image="$1"
