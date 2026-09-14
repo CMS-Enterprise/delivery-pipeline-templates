@@ -10,19 +10,20 @@ def call(Map config = [:]) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
             node(POD_LABEL) {
                 container('jfrog-cli') {
-                    withCredentials([string(credentialsId: config.credential ?: 'jfrog-credentials', variable: 'JFROG_ACCESS_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
                                 --url=${jfrog_url} \
+                                --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf rt build-collect-env ${build_name} ${build_number}
+                            jf rt build-collect-env '${build_name}' ${build_number}
 
                             jf sbom-export \
                                 --server-id=${server_id} \
-                                --build-name=${build_name} \
+                                --build-name='${build_name}' \
                                 --build-number=${build_number} \
                                 --format=cyclonedx \
                                 > ${output_name}.cyclonedx.json

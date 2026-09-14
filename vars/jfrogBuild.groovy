@@ -15,20 +15,21 @@ def call(Map config = [:]) {
                     sh "podman build -t ${full_image} ."
                 }
                 container('jfrog-cli') {
-                    withCredentials([string(credentialsId: config.credential ?: 'jfrog-credentials', variable: 'JFROG_ACCESS_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
                                 --url=${jfrog_url} \
+                                --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf podman push ${full_image} ${repo} \
+                            jf rt podman-push ${full_image} ${repo} \
                                 --server-id=${server_id} \
-                                --build-name=${env.JOB_NAME} \
+                                --build-name='${env.JOB_NAME}' \
                                 --build-number=${env.BUILD_NUMBER}
 
-                            jf rt build-publish ${env.JOB_NAME} ${env.BUILD_NUMBER} \
+                            jf rt build-publish '${env.JOB_NAME}' ${env.BUILD_NUMBER} \
                                 --server-id=${server_id}
                         """
                     }

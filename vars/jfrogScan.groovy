@@ -13,15 +13,16 @@ def call(Map config = [:]) {
                     cosignVerify(config)
                 }
                 container('jfrog-cli') {
-                    withCredentials([string(credentialsId: config.credential ?: 'jfrog-credentials', variable: 'JFROG_ACCESS_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
                                 --url=${jfrog_url} \
+                                --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf build-scan ${build_name} ${build_number} \
+                            jf build-scan '${build_name}' ${build_number} \
                                 --server-id=${server_id} \
                                 ${fail_on_violation ? '--fail=true' : '--fail=false'}
                         """

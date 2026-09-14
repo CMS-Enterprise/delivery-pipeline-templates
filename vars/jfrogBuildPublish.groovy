@@ -31,27 +31,25 @@ def call(Map config = [:]) {
                     """
                 }
                 container('jfrog-cli') {
-                    withCredentials([string(credentialsId: config.credential ?: 'jfrog-credentials', variable: 'JFROG_ACCESS_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
                                 --url=${jfrog_url} \
+                                --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf podman push ${full_image} ${repo} \
+                            jf rt podman-push ${full_image} ${repo} \
                                 --server-id=${server_id} \
-                                --build-name=${build_name} \
+                                --build-name='${build_name}' \
                                 --build-number=${env.BUILD_NUMBER}
 
-                            jf rt build-collect-env ${build_name} ${env.BUILD_NUMBER}
+                            jf rt build-collect-env '${build_name}' ${env.BUILD_NUMBER}
 
-                            # build-add-git records the revision into the build
-                            # info, which is what lets an Xray finding be traced
-                            # back to the commit that introduced it.
-                            jf rt build-add-git ${build_name} ${env.BUILD_NUMBER}
+                            jf rt build-add-git '${build_name}' ${env.BUILD_NUMBER}
 
-                            jf rt build-publish ${build_name} ${env.BUILD_NUMBER} \
+                            jf rt build-publish '${build_name}' ${env.BUILD_NUMBER} \
                                 --server-id=${server_id}
                         """
                     }

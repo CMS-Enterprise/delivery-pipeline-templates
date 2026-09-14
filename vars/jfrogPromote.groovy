@@ -13,15 +13,16 @@ def call(Map config = [:], String target = null) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
             node(POD_LABEL) {
                 container('jfrog-cli') {
-                    withCredentials([string(credentialsId: config.credential ?: 'jfrog-credentials', variable: 'JFROG_ACCESS_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
                                 --url=${jfrog_url} \
+                                --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf rt build-promote ${build_name} ${build_number} ${target_repo} \
+                            jf rt build-promote '${build_name}' ${build_number} ${target_repo} \
                                 --server-id=${server_id} \
                                 --source-repo=${source_repo} \
                                 --status=Released \
