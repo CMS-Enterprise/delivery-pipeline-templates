@@ -1,11 +1,14 @@
 <script lang="ts">
   import Nav from '$lib/components/Nav.svelte';
   import '../app.css';
+  import type { Snippet } from 'svelte';
+
+  let { children }: { children: Snippet } = $props();
 </script>
 
 <Nav />
 <main class="container">
-  <slot />
+  {@render children()}
 </main>
 <footer class="footer">
   <p>&copy; 2026 RoboCare Health. Advancing healthcare through robotics.</p>

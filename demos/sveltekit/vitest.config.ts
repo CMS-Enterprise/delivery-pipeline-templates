@@ -11,7 +11,7 @@ export default defineConfig({
   // The sveltekit() plugin from vite.config.ts is not used here: it owns route
   // resolution and expects a dev/build server, which breaks under Vitest. The
   // plain svelte plugin compiles components, and $app/* is aliased below.
-  plugins: [svelte({ hot: false })],
+  plugins: [svelte()],
   resolve: {
     conditions: ['browser'],
     alias: {

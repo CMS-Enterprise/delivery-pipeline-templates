@@ -1,9 +1,9 @@
 # Project Setup
 
 - Node.js 18+ required
-- SvelteKit 2 with Svelte 4
+- SvelteKit 2 with Svelte 5
 - TypeScript strict mode enabled
-- Vite 5 as the build tool
+- Vite 8 as the build tool
 
 # Build & Test
 
@@ -19,7 +19,7 @@
 
 - Use `<script lang="ts">` in all Svelte components
 - 2-space indentation
-- Svelte stores for shared state (`$` auto-subscription syntax)
+- Svelte 5 runes (`$props`, `$state`, `$derived`) for component state; legacy `$` store syntax still works
 - Scoped `<style>` blocks in components for encapsulated CSS
 - Global styles in `src/app.css`
 
@@ -53,4 +53,4 @@
   SvelteKit app, so tests would otherwise fail to resolve them.
 - Import test helpers from `src/testing/app/*` by relative path, not via `$app/*`:
   svelte-check types `$app/*` from SvelteKit and does not see the stand-ins.
-- vitest is pinned to 3.x — vitest 5 requires Vite 6+, and this app is on Vite 5.
+- Layouts use `{@render children()}` (Svelte 5), not `<slot />`.
