@@ -22,13 +22,21 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash config.unstash ?: 'workspace'
                 container('podman') {
-                    sh """
-                        podman build \
-                            ${source_date_epoch ? "--timestamp ${source_date_epoch}" : ''} \
-                            -f ${containerfile} \
-                            -t ${full_image} \
-                            ${context_dir}
-                    """
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
+                        sh """
+                            podman build \
+                                ${source_date_epoch ? "--timestamp ${source_date_epoch}" : ''} \
+                                -f ${containerfile} \
+                                -t ${full_image} \
+                                ${context_dir}
+
+                            podman login ${registry} \
+                                --username=\$JFROG_USER \
+                                --password=\$JFROG_ACCESS_TOKEN
+
+                            podman push ${full_image}
+                        """
+                    }
                 }
                 container('jfrog-cli') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
@@ -39,11 +47,6 @@ def call(Map config = [:]) {
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
-
-                            jf rt podman-push ${full_image} ${repo} \
-                                --server-id=${server_id} \
-                                --build-name='${build_name}' \
-                                --build-number=${env.BUILD_NUMBER}
 
                             jf rt build-collect-env '${build_name}' ${env.BUILD_NUMBER}
 

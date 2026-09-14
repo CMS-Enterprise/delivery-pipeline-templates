@@ -12,7 +12,17 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 checkout scm
                 container('podman') {
-                    sh "podman build -t ${full_image} ."
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
+                        sh """
+                            podman build -t ${full_image} .
+
+                            podman login ${registry} \
+                                --username=\$JFROG_USER \
+                                --password=\$JFROG_ACCESS_TOKEN
+
+                            podman push ${full_image}
+                        """
+                    }
                 }
                 container('jfrog-cli') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
@@ -23,11 +33,6 @@ def call(Map config = [:]) {
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
-
-                            jf rt podman-push ${full_image} ${repo} \
-                                --server-id=${server_id} \
-                                --build-name='${env.JOB_NAME}' \
-                                --build-number=${env.BUILD_NUMBER}
 
                             jf rt build-publish '${env.JOB_NAME}' ${env.BUILD_NUMBER} \
                                 --server-id=${server_id}
