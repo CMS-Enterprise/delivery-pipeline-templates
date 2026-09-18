@@ -20,7 +20,10 @@ def call(Map config = [:]) {
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/podman-jfrog.yaml')) {
             node(POD_LABEL) {
-                unstash config.unstash ?: 'workspace'
+                unstash 'workspace'
+                if (config.unstash && config.unstash != 'workspace') {
+                    unstash config.unstash
+                }
                 container('podman') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
