@@ -4,6 +4,8 @@ def call(Map config = [:]) {
     def ignore_unfixed = config.ignore_unfixed != null ? config.ignore_unfixed : true
     def image = config.image ?: env.IMAGE_TAG ?: error("image is required (env.IMAGE_TAG is not set)")
     def output_name = config.output_name ?: 'trivy'
+    def db_repo = config.db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-db'
+    def java_db_repo = config.java_db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-java-db'
     def stagename = config.stage ?: 'Trivy Container Scan'
 
     stage("${stagename}") {
@@ -17,6 +19,8 @@ def call(Map config = [:]) {
                 container('trivy') {
                     sh """
                         trivy image ${image} \
+                            --db-repository ${db_repo} \
+                            --java-db-repository ${java_db_repo} \
                             --severity ${severity} \
                             --exit-code ${exit_code} \
                             ${ignore_unfixed ? '--ignore-unfixed' : ''} \
