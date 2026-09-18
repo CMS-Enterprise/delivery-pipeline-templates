@@ -7,6 +7,7 @@ def call(Map config = [:], String target = null) {
     def build_name = config.build_name ?: env.JFROG_BUILD_NAME ?: env.JOB_NAME
     def build_number = config.build_number ?: env.JFROG_BUILD_NUMBER ?: env.BUILD_NUMBER
     def stagename = config.stage ?: "Promote to ${target_repo}"
+    def project_flag = config.project ? "--project=${config.project}" : ''
     def promoted = null
 
     stage("${stagename}") {
@@ -20,14 +21,15 @@ def call(Map config = [:], String target = null) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true
+                                --overwrite=true \
+                                --ci
 
                             jf rt build-promote '${build_name}' ${build_number} ${target_repo} \
                                 --server-id=${server_id} \
                                 --source-repo=${source_repo} \
                                 --status=Released \
                                 --comment="Promoted after passing Xray scan" \
-                                ${copy ? '--copy=true' : ''}
+                                ${copy ? '--copy=true' : ''} ${project_flag}
                         """
                     }
                     // Callers that fan out pass an explicit image and use the

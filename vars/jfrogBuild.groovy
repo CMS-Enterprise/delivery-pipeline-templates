@@ -6,6 +6,7 @@ def call(Map config = [:]) {
     def tag = config.tag ?: env.GIT_SHORT_HASH
     def full_image = "${registry}/${repo}/${image_name}:${tag}"
     def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/artifactory'
+    def project_flag = config.project ? "--project=${config.project}" : ''
 
     stage("Podman Build & Push to JFrog") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/podman-jfrog.yaml')) {
@@ -32,10 +33,11 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true
+                                --overwrite=true \
+                                --ci
 
                             jf rt build-publish '${env.JOB_NAME}' ${env.BUILD_NUMBER} \
-                                --server-id=${server_id}
+                                --server-id=${server_id} ${project_flag}
                         """
                     }
                 }

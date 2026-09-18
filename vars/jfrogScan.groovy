@@ -5,6 +5,7 @@ def call(Map config = [:]) {
     def stagename = config.stage ?: 'JFrog Xray Scan'
     def build_name = config.build_name ?: env.JFROG_BUILD_NAME ?: env.JOB_NAME
     def build_number = config.build_number ?: env.JFROG_BUILD_NUMBER ?: env.BUILD_NUMBER
+    def project_flag = config.project ? "--project=${config.project}" : ''
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
@@ -20,11 +21,12 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true
+                                --overwrite=true \
+                                --ci
 
                             jf build-scan '${build_name}' ${build_number} \
                                 --server-id=${server_id} \
-                                ${fail_on_violation ? '--fail=true' : '--fail=false'}
+                                ${fail_on_violation ? '--fail=true' : '--fail=false'} ${project_flag}
                         """
                     }
                 }

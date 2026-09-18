@@ -14,6 +14,7 @@ def call(Map config = [:]) {
     def build_name = config.build_name ?: "${env.JOB_NAME}-${image_name}"
     def stagename = config.stage ?: "Build & Publish: ${image_name}"
     def full_image = "${registry}/${repo}/${image_name}:${tag}"
+    def project_flag = config.project ? "--project=${config.project}" : ''
     // Reproducible builds need a fixed timestamp rather than "now".
     def source_date_epoch = config.source_date_epoch ?: env.GIT_COMMIT_TIMESTAMP
 
@@ -49,14 +50,15 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true
+                                --overwrite=true \
+                                --ci
 
-                            jf rt build-collect-env '${build_name}' ${env.BUILD_NUMBER}
+                            jf rt build-collect-env '${build_name}' ${env.BUILD_NUMBER} ${project_flag}
 
-                            jf rt build-add-git '${build_name}' ${env.BUILD_NUMBER}
+                            jf rt build-add-git '${build_name}' ${env.BUILD_NUMBER} ${project_flag}
 
                             jf rt build-publish '${build_name}' ${env.BUILD_NUMBER} \
-                                --server-id=${server_id}
+                                --server-id=${server_id} ${project_flag}
                         """
                     }
                 }

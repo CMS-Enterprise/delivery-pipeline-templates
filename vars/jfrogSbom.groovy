@@ -5,6 +5,7 @@ def call(Map config = [:]) {
     def build_name = config.build_name ?: env.JFROG_BUILD_NAME ?: env.JOB_NAME
     def build_number = config.build_number ?: env.JFROG_BUILD_NUMBER ?: env.BUILD_NUMBER
     def stagename = config.stage ?: 'JFrog SBOM Export'
+    def project_flag = config.project ? "--project=${config.project}" : ''
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
@@ -17,15 +18,16 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true
+                                --overwrite=true \
+                                --ci
 
-                            jf rt build-collect-env '${build_name}' ${build_number}
+                            jf rt build-collect-env '${build_name}' ${build_number} ${project_flag}
 
                             jf sbom-export \
                                 --server-id=${server_id} \
                                 --build-name='${build_name}' \
                                 --build-number=${build_number} \
-                                --format=cyclonedx \
+                                --format=cyclonedx ${project_flag} \
                                 > ${output_name}.cyclonedx.json
                         """
                     }
