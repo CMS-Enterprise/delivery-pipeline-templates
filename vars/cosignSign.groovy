@@ -1,11 +1,19 @@
 def call(Map config = [:]) {
-    def kms_key_arn = config.kms_key_arn ?: error('kms_key_arn is required for cosign signing')
+    def kms_key_arn = config.kms_key_arn
+    if (!kms_key_arn) {
+        echo 'cosignSign: kms_key_arn not set, skipping image signing'
+        return
+    }
+    def account_id = config.account_id
     def image = config.image ?: env.IMAGE_TAG ?: error('IMAGE_TAG not set')
     def stagename = config.stage ?: 'Cosign Sign'
 
     stage("${stagename}") {
         if (!env.AWS_ACCESS_KEY_ID) {
-            def account_id = config.account_id ?: error('account_id is required when AWS credentials are not already set')
+            if (!account_id) {
+                echo 'cosignSign: account_id not set and no AWS credentials, skipping image signing'
+                return
+            }
             def aws_env = config.aws_environment ?: 'build'
             awsAssumeRole([
                 account_ids: [(aws_env): account_id],
