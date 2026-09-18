@@ -17,16 +17,19 @@ def call(Map config = [:]) {
                     cosignVerify(config + [image: image])
                 }
                 container('trivy') {
-                    sh """
-                        trivy image ${image} \
-                            --db-repository ${db_repo} \
-                            --java-db-repository ${java_db_repo} \
-                            --severity ${severity} \
-                            --exit-code ${exit_code} \
-                            ${ignore_unfixed ? '--ignore-unfixed' : ''} \
-                            --format json \
-                            --output ${output_name}-results.json
-                    """
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
+                        sh """
+                            trivy image ${image} \
+                                --image-src remote \
+                                --db-repository ${db_repo} \
+                                --java-db-repository ${java_db_repo} \
+                                --severity ${severity} \
+                                --exit-code ${exit_code} \
+                                ${ignore_unfixed ? '--ignore-unfixed' : ''} \
+                                --format json \
+                                --output ${output_name}-results.json
+                        """
+                    }
                     archiveArtifacts allowEmptyArchive: true, artifacts: "${output_name}-results.json"
                 }
             }

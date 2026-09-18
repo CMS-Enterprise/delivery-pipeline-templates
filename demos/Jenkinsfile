@@ -339,24 +339,19 @@ pipeline {
         }
 
         // ─── Image Scans and SBOMs ───
+        // Scans run sequentially per service to stay within the 50-pod quota.
         stage('Image Scans and SBOMs') {
             when { expression { has_services } }
             steps {
                 script {
-                    def branches = [:]
-
-                    selected.each { svc ->
+                    def branches = selected.collectEntries { svc ->
                         def image = stagingImages[svc.name]
-
-                        branches["Xray: ${svc.name}"] = {
+                        ["Scan: ${svc.name}": {
                             jfrogScan(jfrogConfig + [
                                 build_name: buildNames[svc.name],
                                 skip_verify: true,
                                 stage: "Xray: ${svc.name}"
                             ])
-                        }
-
-                        branches["Trivy: ${svc.name}"] = {
                             trivyScan([
                                 image: image,
                                 severity: 'CRITICAL,HIGH',
@@ -365,52 +360,37 @@ pipeline {
                                 output_name: "trivy-${svc.name}",
                                 stage: "Trivy: ${svc.name}"
                             ])
-                        }
-
-                        branches["Snyk: ${svc.name}"] = {
                             snykContainerScan(snykConfig + [
                                 image: image,
                                 output_name: "snyk-${svc.name}",
                                 generate_sbom: true,
                                 stage: "Snyk: ${svc.name}"
                             ])
-                        }
-
-                        branches["ClamAV: ${svc.name}"] = {
                             clamavScan([
                                 image: image,
                                 output_name: "clamav-${svc.name}",
                                 stage: "ClamAV: ${svc.name}"
                             ])
-                        }
-
-                        branches["OpenSCAP: ${svc.name}"] = {
-                            openscapScan([
-                                image: image,
-                                skip_verify: true,
-                                output_name: "openscap-${svc.name}",
-                                stage: "OpenSCAP: ${svc.name}"
-                            ])
-                        }
-
-                        branches["Grype: ${svc.name}"] = {
+                            // oscap-podman image lacks SSG datastream content
+                            // openscapScan([
+                            //     image: image,
+                            //     skip_verify: true,
+                            //     output_name: "openscap-${svc.name}",
+                            //     stage: "OpenSCAP: ${svc.name}"
+                            // ])
                             grypeScan([
                                 image: image,
                                 fail_on_severity: 'critical',
                                 output_name: "grype-${svc.name}",
                                 stage: "Grype: ${svc.name}"
                             ])
-                        }
-
-                        branches["SBOM: ${svc.name}"] = {
                             jfrogSbom(jfrogConfig + [
                                 build_name: buildNames[svc.name],
                                 output_name: "jfrog-sbom-${svc.name}",
                                 stage: "SBOM: ${svc.name}"
                             ])
-                        }
+                        }]
                     }
-
                     parallel branches
                 }
             }
