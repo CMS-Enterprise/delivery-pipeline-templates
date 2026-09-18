@@ -45,7 +45,7 @@ spec:
     # Carries the SCAP Security Guide datastreams under
     # /usr/share/xml/scap/ssg/content/, so no content is fetched at scan time.
     - name: openscap
-      image: artifactory.cloud.cms.gov/docker/compliance-as-code/openscap@sha256:3f8c1d5e7a9b2c4d6e8f0a1b3c5d7e9f2a4b6c8d0e1f3a5b7c9d2e4f6a8b0c1d
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/ironbank-pipelines/oscap-podman@sha256:24a219a7a815f7d0ed82b4cf4369150785ae2864cd9dcfdf5dca91d3b7fa6854
       command: ["cat"]
       tty: true
       securityContext:
