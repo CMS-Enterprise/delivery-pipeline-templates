@@ -22,6 +22,8 @@ spec:
       env:
         - name: HOME
           value: "/home/jenkins/agent"
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/busybox:/"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
