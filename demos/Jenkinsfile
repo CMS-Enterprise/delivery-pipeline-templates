@@ -384,14 +384,15 @@ pipeline {
                             ])
                         }
 
-                        branches["OpenSCAP: ${svc.name}"] = {
-                            openscapScan([
-                                image: image,
-                                skip_verify: true,
-                                output_name: "openscap-${svc.name}",
-                                stage: "OpenSCAP: ${svc.name}"
-                            ])
-                        }
+                        // OpenSCAP image not yet mirrored into Artifactory
+                        // branches["OpenSCAP: ${svc.name}"] = {
+                        //     openscapScan([
+                        //         image: image,
+                        //         skip_verify: true,
+                        //         output_name: "openscap-${svc.name}",
+                        //         stage: "OpenSCAP: ${svc.name}"
+                        //     ])
+                        // }
 
                         branches["Grype: ${svc.name}"] = {
                             grypeScan([

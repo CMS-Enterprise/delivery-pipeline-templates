@@ -9,12 +9,21 @@ def call(Map config = [:]) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/grype.yaml')) {
             node(POD_LABEL) {
                 container('grype') {
-                    sh """
-                        grype ${image} \
-                            --fail-on ${fail_on_severity} \
-                            ${only_fixed ? '--only-fixed' : ''} \
-                            -o json=${output_name}-results.json
-                    """
+                    def pull_registry = image.split('/')[0]
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
+                        sh """
+                            mkdir -p \$HOME/.docker
+                            AUTH=\$(printf '%s:%s' "\$JFROG_USER" "\$JFROG_ACCESS_TOKEN" | base64)
+                            cat > \$HOME/.docker/config.json <<DOCKERCFG
+                            {"auths":{"${pull_registry}":{"auth":"\$AUTH"}}}
+DOCKERCFG
+
+                            grype registry:${image} \
+                                --fail-on ${fail_on_severity} \
+                                ${only_fixed ? '--only-fixed' : ''} \
+                                -o json=${output_name}-results.json
+                        """
+                    }
                 }
                 archiveArtifacts allowEmptyArchive: true, artifacts: "${output_name}-results.json"
             }

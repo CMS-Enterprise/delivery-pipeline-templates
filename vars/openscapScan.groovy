@@ -15,15 +15,20 @@ def call(Map config = [:]) {
                     cosignVerify(config + [image: image])
                 }
                 container('podman') {
-                    // oscap-chroot needs a plain directory tree, and exporting a
-                    // flattened container avoids mounting the image as root.
-                    sh """
-                        podman pull ${image}
-                        cid=\$(podman create ${image})
-                        mkdir -p ${rootfs}
-                        podman export "\$cid" | tar -x -C ${rootfs}
-                        podman rm --force "\$cid"
-                    """
+                    def pull_registry = image.split('/')[0]
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
+                        sh """
+                            podman login ${pull_registry} \
+                                --username=\$JFROG_USER \
+                                --password=\$JFROG_ACCESS_TOKEN
+
+                            podman pull ${image}
+                            cid=\$(podman create ${image})
+                            mkdir -p ${rootfs}
+                            podman export "\$cid" | tar -x -C ${rootfs}
+                            podman rm --force "\$cid"
+                        """
+                    }
                 }
                 container('openscap') {
                     def exit_code = sh(

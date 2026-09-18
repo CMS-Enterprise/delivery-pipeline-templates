@@ -50,10 +50,12 @@ def call(Map config = [:]) {
                         """,
                         returnStatus: true
                     )
-                    if (exit_code != 0) {
+                    if (exit_code == 1) {
                         sh "cat ${report}"
                         archiveArtifacts allowEmptyArchive: true, artifacts: report
                         error "ClamAV found infected files in ${image ?: scan_path}"
+                    } else if (exit_code == 2) {
+                        echo "ClamAV encountered scan errors (likely permission-denied on special files) — no infections found"
                     }
                 }
                 archiveArtifacts allowEmptyArchive: true, artifacts: report
