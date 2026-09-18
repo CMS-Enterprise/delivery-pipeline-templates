@@ -12,13 +12,7 @@ def call(Map config = [:]) {
 
     stage("${stagename}") {
         if (!env.AWS_ACCESS_KEY_ID) {
-            def aws_env = config.aws_environment ?: 'build'
-            awsAssumeRole([
-                account_ids: [(aws_env): account_id],
-                role_name: config.role_name ?: 'deploy-role',
-                region: region,
-                pod_yaml: config.aws_pod_yaml,
-            ], aws_env)
+            error('AWS credentials are not set — call awsAssumeRole before dockerBuild')
         }
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/podman.yaml')) {
             node(POD_LABEL) {

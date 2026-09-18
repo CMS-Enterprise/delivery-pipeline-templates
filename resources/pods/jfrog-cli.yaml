@@ -22,6 +22,8 @@ spec:
       env:
         - name: PATH
           value: "/usr/local/bin:/usr/bin:/bin"
+        - name: JFROG_CLI_HOME_DIR
+          value: "/home/jenkins/agent/.jfrog"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:

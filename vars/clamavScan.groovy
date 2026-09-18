@@ -15,14 +15,21 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 if (image) {
                     def rootfs = 'clamav-rootfs'
+                    def pull_registry = image.split('/')[0]
                     container('podman') {
-                        sh """
-                            podman pull ${image}
-                            cid=\$(podman create ${image})
-                            mkdir -p ${rootfs}
-                            podman export "\$cid" | tar -x -C ${rootfs}
-                            podman rm --force "\$cid"
-                        """
+                        withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
+                            sh """
+                                podman login ${pull_registry} \
+                                    --username=\$JFROG_USER \
+                                    --password=\$JFROG_ACCESS_TOKEN
+
+                                podman pull ${image}
+                                cid=\$(podman create ${image})
+                                mkdir -p ${rootfs}
+                                podman export "\$cid" | tar -x -C ${rootfs}
+                                podman rm --force "\$cid"
+                            """
+                        }
                     }
                     scan_path = rootfs
                 } else {
