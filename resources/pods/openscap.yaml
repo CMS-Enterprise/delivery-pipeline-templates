@@ -8,7 +8,6 @@ spec:
     node-pool: agent
   serviceAccountName: jenkins-agents
   terminationGracePeriodSeconds: 30
-  hostUsers: false
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000

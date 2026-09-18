@@ -8,7 +8,6 @@ spec:
   nodeSelector:
     node-pool: agent
   terminationGracePeriodSeconds: 30
-  hostUsers: false
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000

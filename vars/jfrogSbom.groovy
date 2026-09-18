@@ -31,8 +31,10 @@ def call(Map config = [:]) {
                         """
                     }
                     archiveArtifacts artifacts: "${output_name}.cyclonedx.json"
+                    stash name: "${output_name}", includes: "${output_name}.cyclonedx.json"
                 }
             }
         }
     }
+    "${output_name}.cyclonedx.json"
 }

@@ -379,6 +379,26 @@ pipeline {
             }
         }
 
+        // ─── SBOM Attestation ───
+        stage('SBOM Attestation') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
+                        ["Attest SBOM: ${svc.name}": {
+                            cosignAttest(cosignConfig + [
+                                image: stagingImages[svc.name],
+                                sbom_file: "jfrog-sbom-${svc.name}.cyclonedx.json",
+                                unstash: "jfrog-sbom-${svc.name}",
+                                stage: "Attest SBOM: ${svc.name}"
+                            ])
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
         // ─── Promote to Verified Repo ───
         stage('Promote to Verified Repo') {
             when { expression { has_services } }
