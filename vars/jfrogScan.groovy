@@ -21,8 +21,7 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true \
-                                --ci
+                                --overwrite=true
 
                             jf build-scan '${build_name}' ${build_number} \
                                 --server-id=${server_id} \

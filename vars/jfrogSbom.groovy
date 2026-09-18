@@ -18,8 +18,7 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true \
-                                --ci
+                                --overwrite=true
 
                             jf rt build-collect-env '${build_name}' ${build_number} ${project_flag}
 

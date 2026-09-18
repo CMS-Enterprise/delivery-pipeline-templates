@@ -21,8 +21,7 @@ def call(Map config = [:], String target = null) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true \
-                                --ci
+                                --overwrite=true
 
                             jf rt build-promote '${build_name}' ${build_number} ${target_repo} \
                                 --server-id=${server_id} \

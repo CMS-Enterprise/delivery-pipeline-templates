@@ -33,8 +33,7 @@ def call(Map config = [:]) {
                                 --user=\$JFROG_USER \
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
-                                --overwrite=true \
-                                --ci
+                                --overwrite=true
 
                             jf rt build-publish '${env.JOB_NAME}' ${env.BUILD_NUMBER} \
                                 --server-id=${server_id} ${project_flag}
