@@ -170,7 +170,7 @@ pipeline {
                     env.GIT_SHORT_HASH = scmVars.GIT_COMMIT.take(7)
                     env.REPO_NAME = 'delivery-pipeline-templates'
                 }
-                stash name: 'workspace', includes: '**'
+                stash name: 'workspace', includes: '**', useDefaultExcludes: false
 
                 // Detect changed services immediately after checkout
                 script {
