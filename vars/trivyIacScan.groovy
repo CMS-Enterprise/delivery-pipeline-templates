@@ -3,11 +3,12 @@ def call(Map config = [:]) {
     def severity = config.iac_severity ?: 'CRITICAL,HIGH,MEDIUM'
     def fail_on_violation = config.iac_fail_on_violation != false
     def skip_dirs = config.iac_skip_dirs ?: '.terraform,node_modules'
+    def stagename = config.stage ?: 'Trivy IaC Scan'
 
-    stage("Trivy IaC Scan") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/trivy.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash config.unstash ?: 'workspace'
                 container('trivy') {
                     def exit_code = fail_on_violation ? '1' : '0'
                     sh """

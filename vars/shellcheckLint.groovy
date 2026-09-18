@@ -3,11 +3,12 @@ def call(Map config = [:]) {
     def severity = config.severity ?: 'warning'
     def shell_dialect = config.shell ?: 'bash'
     def fail_on_error = config.fail_on_error != false
+    def stagename = config.stage ?: 'ShellCheck Lint'
 
-    stage("ShellCheck Lint") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/shellcheck.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                unstash config.unstash ?: 'workspace'
                 container('shellcheck') {
                     def exit_code = sh(
                         script: """

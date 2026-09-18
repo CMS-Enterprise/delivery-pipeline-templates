@@ -198,6 +198,19 @@ pipeline {
                     def branches = selected.collectEntries { svc ->
                         ["Lint: ${svc.name}": { lintService(svc) }]
                     }
+                    selected.each { svc ->
+                        branches["Hadolint: ${svc.name}"] = {
+                            hadolintLint(
+                                working_dir: "demos/${svc.name}",
+                                fail_on_error: false,
+                                output_name: "hadolint-${svc.name}",
+                                stage: "Hadolint: ${svc.name}"
+                            )
+                        }
+                    }
+                    branches['ShellCheck'] = {
+                        shellcheckLint(paths: 'demos/', fail_on_error: false)
+                    }
                     parallel branches
                 }
             }
@@ -237,6 +250,21 @@ pipeline {
                                     audit_level: 'high'
                                 )
                             }
+                        },
+                        'Policy Scan: OPA': {
+                            opaPolicyScan(
+                                policy_path: 'policy/',
+                                input_paths: 'resources/pods/',
+                                stage: 'OPA Pod Policy Scan'
+                            )
+                        },
+                        'IaC Scan: Trivy': {
+                            trivyIacScan(
+                                iac_scan_path: '.',
+                                iac_fail_on_violation: false,
+                                iac_skip_dirs: '.terraform,node_modules,.git',
+                                stage: 'Trivy IaC Scan'
+                            )
                         }
                     )
                 }
@@ -362,6 +390,15 @@ pipeline {
                                 skip_verify: true,
                                 output_name: "openscap-${svc.name}",
                                 stage: "OpenSCAP: ${svc.name}"
+                            ])
+                        }
+
+                        branches["Grype: ${svc.name}"] = {
+                            grypeScan([
+                                image: image,
+                                fail_on_severity: 'critical',
+                                output_name: "grype-${svc.name}",
+                                stage: "Grype: ${svc.name}"
                             ])
                         }
 
