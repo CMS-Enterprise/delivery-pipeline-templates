@@ -13,10 +13,8 @@ def call(Map config = [:]) {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             mkdir -p \$HOME/.docker
-                            AUTH=\$(printf '%s:%s' "\$JFROG_USER" "\$JFROG_ACCESS_TOKEN" | base64)
-                            cat > \$HOME/.docker/config.json <<DOCKERCFG
-                            {"auths":{"${pull_registry}":{"auth":"\$AUTH"}}}
-DOCKERCFG
+                            AUTH=\$(printf '%s:%s' "\$JFROG_USER" "\$JFROG_ACCESS_TOKEN" | base64 -w0)
+                            printf '{"auths":{"%s":{"auth":"%s"}}}' '${pull_registry}' "\$AUTH" > \$HOME/.docker/config.json
 
                             grype registry:${image} \
                                 --fail-on ${fail_on_severity} \
