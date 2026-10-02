@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: node
-      image: artifactory.cloud.cms.gov/docker/node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a
+      image: artifactory.cloud.cms.gov/docker/node@sha256:980c5420a7a2ddcb44037726977f2a349e5c7b64217516c7488dce4c74d71583
       command: ["cat"]
       tty: true
       securityContext:
@@ -33,7 +33,7 @@ spec:
           memory: "2Gi"
           ephemeral-storage: "5Gi"
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:70b0a41a8bdde388b65e404f2685f42870d5d9e6d5ecbfeabc19aa73601d44a7
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
       command: ["cat"]
       tty: true
       securityContext:
