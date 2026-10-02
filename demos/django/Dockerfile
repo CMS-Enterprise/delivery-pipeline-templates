@@ -2,7 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Dependencies
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ad3df83be5d86b4a89fc7f7bf8598652f05e20a5112f3fee1e44a079163033af AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:6ebb415ade9c41f33864663baa10ea70be59bf5ca7effde2daef18612846a690 AS builder
 USER 0
 
 WORKDIR /app
@@ -14,7 +14,7 @@ COPY requirements.txt ./
 RUN pip3.14 install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Stage 2: Runtime
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ad3df83be5d86b4a89fc7f7bf8598652f05e20a5112f3fee1e44a079163033af
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:6ebb415ade9c41f33864663baa10ea70be59bf5ca7effde2daef18612846a690
 
 WORKDIR /app
 

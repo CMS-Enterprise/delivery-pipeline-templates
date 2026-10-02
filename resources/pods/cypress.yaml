@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: cypress
-      image: artifactory.cloud.cms.gov/docker/cypress/included@sha256:d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2
+      image: artifactory.cloud.cms.gov/docker/cypress/included@sha256:ff49cf81f9c50372b9281235d20ed2793e5424dd1b93f5cfbaad9a57c1ff30be
       command: ["cat"]
       tty: true
       securityContext:

@@ -2,7 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/docker/node@sha256:980c5420a7a2ddcb44037726977f2a349e5c7b64217516c7488dce4c74d71583 AS builder
+FROM artifactory.cloud.cms.gov/docker/node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime - Nginx to serve static files
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:cb4aa5c5742ee8867309157691c122e18d6d6f9c6e1b92b458c2ffc15a5734e5
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:779b8bf0c36291971646465f5bca06a78514b4d976c5e54fc64dce70f6608001
 
 WORKDIR /usr/share/nginx/html
 

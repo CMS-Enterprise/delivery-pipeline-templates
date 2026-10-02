@@ -2,7 +2,7 @@
 # Uses IronBank hardened images via Artifactory mirror
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17@sha256:fc46e3ef7fb1c118dc4f13e8758069a5afe5134d29e138d3b4be8fb159be832a AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-17@sha256:6ffd5544a5faacf3b31913ddb8369f1190d4b9376aa77f15b4c2838527d11d36 AS builder
 USER 0
 
 WORKDIR /build
@@ -16,7 +16,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:df0192a839e8f1282c3c0eb79be55e991a363a4e573e270a579a2ecf67cac136
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:9ab7321cc5f4034c0a039c15bfdbe22be1ac1c7eebef8dda5c8d3040d8fe5402
 
 WORKDIR /app
 

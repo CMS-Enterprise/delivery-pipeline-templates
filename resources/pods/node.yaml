@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: node
-      image: artifactory.cloud.cms.gov/docker/node@sha256:980c5420a7a2ddcb44037726977f2a349e5c7b64217516c7488dce4c74d71583
+      image: artifactory.cloud.cms.gov/docker/node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a
       command: ["cat"]
       tty: true
       securityContext:
