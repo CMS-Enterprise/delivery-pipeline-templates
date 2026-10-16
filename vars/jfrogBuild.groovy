@@ -7,6 +7,16 @@ def call(Map config = [:]) {
     def full_image = "${registry}/${repo}/${image_name}:${tag}"
     def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/artifactory'
     def project_flag = config.project ? "--project=${config.project}" : ''
+    def cache_from = config.cache_from ?: null
+    def cache_to = config.cache_to ?: null
+
+    def cache_flags = ''
+    if (cache_from) {
+        cache_flags += " --cache-from=${cache_from}"
+    }
+    if (cache_to) {
+        cache_flags += " --cache-to=${cache_to}"
+    }
 
     stage("Podman Build & Push to JFrog") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/podman-jfrog.yaml')) {
@@ -15,11 +25,11 @@ def call(Map config = [:]) {
                 container('podman') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
-                            podman build -t ${full_image} .
-
                             podman login ${registry} \
                                 --username=\$JFROG_USER \
                                 --password=\$JFROG_ACCESS_TOKEN
+
+                            podman build -t ${full_image}${cache_flags} .
 
                             podman push ${full_image}
                         """

@@ -1,0 +1,12 @@
+gradle.settingsEvaluated { settings ->
+    settings.buildCache {
+        local {
+            enabled = true
+        }
+        remote(HttpBuildCache) {
+            url = System.getenv('GRADLE_CACHE_URL') ?: ''
+            push = true
+            allowInsecureProtocol = false
+        }
+    }
+}

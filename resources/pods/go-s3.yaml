@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: "true"
+spec:
+  serviceAccountName: jenkins-agents
+  nodeSelector:
+    node-pool: agent
+  terminationGracePeriodSeconds: 30
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  restartPolicy: Never
+  containers:
+    - name: go
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:63731329f3871af2c02d6eb30d2f1b7d39959f326d9f45db2f4e7277a0bb788c
+      command: ["cat"]
+      env:
+        - name: GOCACHE
+          value: /tmp/.cache/go-build
+      tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "2Gi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+          ephemeral-storage: "2Gi"
+    - name: aws-cli
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+      command: ["cat"]
+      tty: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "512Mi"
+          ephemeral-storage: "1Gi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+          ephemeral-storage: "1Gi"

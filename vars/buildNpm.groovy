@@ -12,13 +12,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 if (s3_cache_bucket) {
-                    container('aws-cli') {
-                        sh """
-                            aws s3 sync \
-                                s3://${s3_cache_bucket}/${s3_cache_prefix} \
-                                ${cache_dir} --quiet || true
-                        """
-                    }
+                    s3CacheSync.restore(bucket: s3_cache_bucket, prefix: s3_cache_prefix, local_dir: cache_dir)
                 }
                 container('node') {
                     sh """
@@ -29,13 +23,7 @@ def call(Map config = [:]) {
                     """
                 }
                 if (s3_cache_bucket) {
-                    container('aws-cli') {
-                        sh """
-                            aws s3 sync \
-                                ${cache_dir} \
-                                s3://${s3_cache_bucket}/${s3_cache_prefix} --quiet
-                        """
-                    }
+                    s3CacheSync.save(bucket: s3_cache_bucket, prefix: s3_cache_prefix, local_dir: cache_dir)
                 }
                 stash name: "${mystash}", includes: "${working_dir}/**"
             }

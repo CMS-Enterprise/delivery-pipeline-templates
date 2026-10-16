@@ -8,7 +8,17 @@ def call(Map config = [:]) {
     def containerfile = config.containerfile ?: "${context_dir}/Dockerfile"
     def myunstash = config.unstash ?: 'workspace'
     def stagename = config.stage ?: 'Podman Build & Push to ECR'
+    def cache_from = config.cache_from ?: null
+    def cache_to = config.cache_to ?: null
     def image = "${registry}/${image_name}:${tag}"
+
+    def cache_flags = ''
+    if (cache_from) {
+        cache_flags += " --cache-from=${cache_from}"
+    }
+    if (cache_to) {
+        cache_flags += " --cache-to=${cache_to}"
+    }
 
     stage("${stagename}") {
         if (!env.AWS_ACCESS_KEY_ID) {
@@ -22,7 +32,7 @@ def call(Map config = [:]) {
                         aws ecr get-login-password --region ${region} | \
                             podman login --username AWS --password-stdin ${registry}
 
-                        podman build -f ${containerfile} -t ${image} ${context_dir}
+                        podman build -f ${containerfile} -t ${image}${cache_flags} ${context_dir}
 
                         podman push ${image}
                     """

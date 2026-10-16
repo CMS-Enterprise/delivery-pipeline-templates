@@ -6,19 +6,30 @@ def call(Map config = [:]) {
     def output_name = config.output_name ?: 'trivy'
     def db_repo = config.db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-db'
     def java_db_repo = config.java_db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-java-db'
+    def registry = config.registry ?: 'artifactory.cloud.cms.gov'
     def stagename = config.stage ?: 'Trivy Container Scan'
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/trivy.yaml')) {
             node(POD_LABEL) {
-                // Callers that already verified the signature pass skip_verify to
-                // avoid paying for a second cosign pod per scanner.
                 if (!config.skip_verify) {
                     cosignVerify(config + [image: image])
                 }
                 container('trivy') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
                         sh """
+                            mkdir -p \$HOME/.docker
+                            ENCODED=\$(printf '%s:%s' "\$TRIVY_USERNAME" "\$TRIVY_PASSWORD" | base64 -w 0)
+                            cat > \$HOME/.docker/config.json <<DCEOF
+{
+  "auths": {
+    "${registry}": {
+      "auth": "\$ENCODED"
+    }
+  }
+}
+DCEOF
+
                             trivy image ${image} \
                                 --image-src remote \
                                 --db-repository ${db_repo} \

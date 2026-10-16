@@ -105,10 +105,13 @@ def buildService(svc) {
             echo "No building Django"
             break
         case 'go':
-            buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: svc.stash)
+            buildGo(stage: "Build: Go", working_dir: "demos/${svc.name}", stash: svc.stash,
+                    s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
         case 'maven':
-            buildMaven(stage: "Build: Maven", working_dir: "demos/${svc.name}", stash: svc.stash, pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
+            buildMaven(stage: "Build: Maven", working_dir: "demos/${svc.name}", stash: svc.stash,
+                       pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'),
+                       s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
       }
   }
@@ -131,10 +134,13 @@ def testService(svc) {
                        test_path: 'tests/', source_path: 'pages', requirements_file: 'requirements-dev.txt')
             break
         case 'go':
-            testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash)
+            testGo(stage: "Test: Go", working_dir: "demos/${svc.name}", unstash: svc.stash,
+                   s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
         case 'maven':
-            unitTestMaven(stage: "Test: Maven", working_dir: "demos/${svc.name}", unstash: "maven-build", pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
+            unitTestMaven(stage: "Test: Maven", working_dir: "demos/${svc.name}", unstash: "maven-build",
+                          pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'),
+                          s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
       }
   }
@@ -321,11 +327,14 @@ pipeline {
                 script {
                     def branches = selected.collectEntries { svc ->
                         ["Build & Publish: ${svc.name}": {
+                            def cache_image = "${jfrogConfig.registry}/${jfrogConfig.staging_repo}/${svc.name}:cache"
                             def result = jfrogBuildPublish(jfrogConfig + cosignConfig + [
                                 image_name: svc.name,
                                 context_dir: "demos/${svc.name}",
                                 build_name: buildNames[svc.name],
                                 unstash: svc.stash,
+                                cache_from: cache_image,
+                                cache_to: cache_image,
                                 stage: "Build & Publish: ${svc.name}"
                             ])
                             // Store staging image coordinates for later stages
@@ -354,6 +363,7 @@ pipeline {
                             ])
                             trivyScan([
                                 image: image,
+                                registry: jfrogConfig.registry,
                                 severity: 'CRITICAL,HIGH',
                                 fail_on_vulnerability: true,
                                 skip_verify: true,
