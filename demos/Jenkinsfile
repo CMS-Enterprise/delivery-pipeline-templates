@@ -95,10 +95,16 @@ def buildService(svc) {
                      s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
         case 'vue':
-            buildNpm(stage: "Build: Vue", working_dir: "demos/${svc.name}", stash: svc.stash)
+            buildNpm(stage: "Build: Vue", working_dir: "demos/${svc.name}", stash: svc.stash,
+                     s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET,
+                     s3_cache_prefix: "${env.JOB_NAME}/vue-cache",
+                     cache_dir: "demos/vue/node_modules/.vite")
             break
         case 'sveltekit':
-            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: svc.stash)
+            buildNpm(stage: "Build: Sveltekit", working_dir: "demos/${svc.name}", stash: svc.stash,
+                     s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET,
+                     s3_cache_prefix: "${env.JOB_NAME}/sveltekit-cache",
+                     cache_dir: "demos/sveltekit/node_modules/.vite")
             break
         case 'django':
             //buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: svc.stash)
