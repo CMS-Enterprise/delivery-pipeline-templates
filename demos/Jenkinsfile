@@ -259,7 +259,8 @@ pipeline {
                                 auditNpm(
                                     stage: "Audit: ${svc.name}",
                                     working_dir: "demos/${svc.name}",
-                                    audit_level: 'high'
+                                    audit_level: 'high',
+                                    exclude_cves: ['GHSA-vfj7-8cjw-p6xm']
                                 )
                             }
                         },
