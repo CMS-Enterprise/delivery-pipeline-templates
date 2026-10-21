@@ -334,14 +334,14 @@ pipeline {
                 script {
                     def branches = selected.collectEntries { svc ->
                         ["Build & Publish: ${svc.name}": {
-                            def cache_image = "${jfrogConfig.registry}/${jfrogConfig.staging_repo}/${svc.name}:cache"
+                            def cache_repo = "${jfrogConfig.registry}/${jfrogConfig.staging_repo}/${svc.name}"
                             def result = jfrogBuildPublish(jfrogConfig + cosignConfig + [
                                 image_name: svc.name,
                                 context_dir: "demos/${svc.name}",
                                 build_name: buildNames[svc.name],
                                 unstash: svc.stash,
-                                cache_from: cache_image,
-                                cache_to: cache_image,
+                                cache_from: cache_repo,
+                                cache_to: cache_repo,
                                 stage: "Build & Publish: ${svc.name}"
                             ])
                             // Store staging image coordinates for later stages
