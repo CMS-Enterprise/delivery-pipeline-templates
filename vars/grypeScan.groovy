@@ -12,9 +12,10 @@ def call(Map config = [:]) {
                     def pull_registry = image.split('/')[0]
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
-                            mkdir -p \$HOME/.docker
+                            export DOCKER_CONFIG=\${WORKSPACE:-/home/jenkins/agent}/.docker
+                            mkdir -p \$DOCKER_CONFIG
                             AUTH=\$(printf '%s:%s' "\$JFROG_USER" "\$JFROG_ACCESS_TOKEN" | base64 -w0)
-                            printf '{"auths":{"%s":{"auth":"%s"}}}' '${pull_registry}' "\$AUTH" > \$HOME/.docker/config.json
+                            printf '{"auths":{"%s":{"auth":"%s"}}}' '${pull_registry}' "\$AUTH" > \$DOCKER_CONFIG/config.json
 
                             grype registry:${image} \
                                 --fail-on ${fail_on_severity} \

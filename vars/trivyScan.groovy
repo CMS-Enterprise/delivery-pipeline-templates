@@ -18,9 +18,10 @@ def call(Map config = [:]) {
                 container('trivy') {
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
                         sh """
-                            mkdir -p \$HOME/.docker
+                            export DOCKER_CONFIG=\${WORKSPACE:-/home/jenkins/agent}/.docker
+                            mkdir -p \$DOCKER_CONFIG
                             ENCODED=\$(printf '%s:%s' "\$TRIVY_USERNAME" "\$TRIVY_PASSWORD" | base64 -w 0)
-                            cat > \$HOME/.docker/config.json <<DCEOF
+                            cat > \$DOCKER_CONFIG/config.json <<DCEOF
 {
   "auths": {
     "${registry}": {
