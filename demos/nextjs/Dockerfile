@@ -3,7 +3,7 @@
 
 # Stage 1: Build
 # Node 18 Alpine from Artifactory Docker registry
-FROM artifactory.cloud.cms.gov/docker/node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a AS builder
+FROM artifactory.cloud.cms.gov/docker/node@sha256:7b559cf7f77d837192392499a850abb1a3d1f49fbc2bd0692d54b212c9e38f6d AS builder
 
 WORKDIR /app
 
@@ -21,9 +21,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime
-FROM artifactory.cloud.cms.gov/docker/node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a
-
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+FROM artifactory.cloud.cms.gov/docker/node@sha256:7b559cf7f77d837192392499a850abb1a3d1f49fbc2bd0692d54b212c9e38f6d
 
 WORKDIR /app
 
