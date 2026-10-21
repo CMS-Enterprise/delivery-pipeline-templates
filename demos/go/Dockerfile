@@ -2,8 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:faf981076e559d2815189dbb63f000a8d1fbe9623146eeb9adc57d0c1019c7ef AS builder
-USER 0
+FROM artifactory.cloud.cms.gov/docker/golang@sha256:838da1d688161cd81dee9f6dcddc85fed0686a7bec6e9c0998a20d78bc4e394b AS builder
 
 WORKDIR /build
 

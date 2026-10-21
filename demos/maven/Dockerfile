@@ -17,6 +17,9 @@ RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:9ab7321cc5f4034c0a039c15bfdbe22be1ac1c7eebef8dda5c8d3040d8fe5402
+USER 0
+
+RUN microdnf update -y && microdnf clean all
 
 WORKDIR /app
 

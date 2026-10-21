@@ -4,3 +4,7 @@ django>=5.2,<6.0
 gunicorn>=21.2.0
 pylint-django>=2.7.0
 whitenoise>=6.6.0
+certifi>=2026.10.19
+msgpack>=1.2.1
+setuptools>=78.1.1
+urllib3>=2.8.0
