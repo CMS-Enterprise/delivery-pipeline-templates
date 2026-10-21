@@ -1,6 +1,6 @@
 @Library('delivery-pipeline-templates') _
 
-// Signing fails closed, so these must be set before the Build Images stage
+// Signing fails closed — these must be set before the Build Images stage
 // will pass. Override per-controller rather than committing real values.
 def cosignConfig = [
     kms_key_arn: env.COSIGN_KMS_KEY_ARN,
