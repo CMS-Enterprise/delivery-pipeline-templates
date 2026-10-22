@@ -2,8 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26:latest AS builder
-USER 0
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:f5a458e824d2044b2ba7ccf2b629ea9d45eb7417dded43cafcbccee914fa02f2 AS builder
 
 WORKDIR /build
 
@@ -18,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-site .
 
 # Stage 2: Runtime - minimal Alpine image
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine:latest
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
 
 WORKDIR /app
 
