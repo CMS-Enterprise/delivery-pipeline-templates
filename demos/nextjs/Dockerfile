@@ -2,12 +2,12 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests for reproducibility
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:66e71a96660a4dacab348bda3707885f6790cb731a9fe63cabd857d6e4b1a7de AS builder
+FROM artifactory.cloud.cms.gov/docker/node@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
 
-WORKDIR /home/node/app
+WORKDIR /app
 
 # Copy dependency manifests
-COPY --chown=node:node package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
@@ -20,16 +20,16 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:66e71a96660a4dacab348bda3707885f6790cb731a9fe63cabd857d6e4b1a7de
+FROM artifactory.cloud.cms.gov/docker/node@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 
-WORKDIR /home/node/app
+WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV=production
 
 # Copy standalone build output
-COPY --chown=node:node --from=builder /home/node/app/.next/standalone ./
-COPY --chown=node:node --from=builder /home/node/app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Next.js standalone server runs on port 3000
 EXPOSE 3000

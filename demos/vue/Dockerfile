@@ -2,12 +2,12 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:66e71a96660a4dacab348bda3707885f6790cb731a9fe63cabd857d6e4b1a7de AS builder
+FROM artifactory.cloud.cms.gov/docker/node@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
 
-WORKDIR /home/node/app
+WORKDIR /app
 
 # Copy dependency manifests
-COPY --chown=node:node package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
@@ -24,7 +24,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/ngi
 WORKDIR /usr/share/nginx/html
 
 # Copy built static files from builder (overwrites default nginx content)
-COPY --from=builder /home/node/app/dist .
+COPY --from=builder /app/dist .
 
 # Copy custom nginx configuration for SPA routing
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
