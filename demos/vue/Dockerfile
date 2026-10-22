@@ -4,10 +4,10 @@
 # Stage 1: Build
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:6efb3caa05792d177163f27ef1012c589777532ca94388f23141872fbef3882f AS builder
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 # Copy dependency manifests
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 
 # Install dependencies
 RUN npm ci
@@ -24,7 +24,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/ngi
 WORKDIR /usr/share/nginx/html
 
 # Copy built static files from builder (overwrites default nginx content)
-COPY --from=builder /app/dist .
+COPY --from=builder /home/node/app/dist .
 
 # Copy custom nginx configuration for SPA routing
 COPY <<'EOF' /etc/nginx/conf.d/default.conf

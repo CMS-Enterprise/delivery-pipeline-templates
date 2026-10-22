@@ -4,10 +4,10 @@
 # Stage 1: Build
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:6efb3caa05792d177163f27ef1012c589777532ca94388f23141872fbef3882f AS builder
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 # Copy dependency manifests
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 
 # Install dependencies
 RUN npm ci
@@ -22,14 +22,14 @@ RUN npm run build
 # Stage 2: Runtime
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:6efb3caa05792d177163f27ef1012c589777532ca94388f23141872fbef3882f
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 # Set production environment
 ENV NODE_ENV=production
 
 # Copy standalone build output
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --chown=node:node --from=builder /home/node/app/.next/standalone ./
+COPY --chown=node:node --from=builder /home/node/app/.next/static ./.next/static
 
 # Next.js standalone server runs on port 3000
 EXPOSE 3000
