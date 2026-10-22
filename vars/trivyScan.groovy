@@ -7,6 +7,7 @@ def call(Map config = [:]) {
     def db_repo = config.db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-db'
     def java_db_repo = config.java_db_repository ?: 'artifactory.cloud.cms.gov/docker/aquasecurity/trivy-java-db'
     def registry = config.registry ?: 'artifactory.cloud.cms.gov'
+    def ignore_cves = config.ignore_cves ?: []
     def stagename = config.stage ?: 'Trivy Container Scan'
 
     stage("${stagename}") {
@@ -30,6 +31,17 @@ def call(Map config = [:]) {
   }
 }
 DCEOF
+
+                            ${ignore_cves ? "printf '%s\\n' ${ignore_cves.collect { "'${it}'" }.join(' ')} > .trivyignore" : ''}
+
+                            trivy image ${image} \
+                                --image-src remote \
+                                --db-repository ${db_repo} \
+                                --java-db-repository ${java_db_repo} \
+                                --severity ${severity} \
+                                --exit-code 0 \
+                                ${ignore_unfixed ? '--ignore-unfixed' : ''} \
+                                --format table
 
                             trivy image ${image} \
                                 --image-src remote \

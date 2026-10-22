@@ -22,12 +22,16 @@ def call(Map config = [:]) {
 
                             jf rt build-collect-env '${build_name}' ${build_number} ${project_flag}
 
-                            jf sbom-export \
-                                --server-id=${server_id} \
-                                --build-name='${build_name}' \
-                                --build-number=${build_number} \
-                                --format=cyclonedx ${project_flag} \
-                                > ${output_name}.cyclonedx.json
+                            for attempt in 1 2 3; do
+                                jf sbom-export \
+                                    --server-id=${server_id} \
+                                    --build-name='${build_name}' \
+                                    --build-number=${build_number} \
+                                    --format=cyclonedx ${project_flag} \
+                                    > ${output_name}.cyclonedx.json && break
+                                echo "sbom-export attempt \$attempt failed, retrying in 10s..."
+                                sleep 10
+                            done
                         """
                     }
                     archiveArtifacts artifacts: "${output_name}.cyclonedx.json"
