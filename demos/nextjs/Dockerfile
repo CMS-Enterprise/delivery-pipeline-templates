@@ -2,7 +2,7 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests for reproducibility
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:6efb3caa05792d177163f27ef1012c589777532ca94388f23141872fbef3882f AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:66e71a96660a4dacab348bda3707885f6790cb731a9fe63cabd857d6e4b1a7de AS builder
 
 WORKDIR /home/node/app
 
@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:6efb3caa05792d177163f27ef1012c589777532ca94388f23141872fbef3882f
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22@sha256:66e71a96660a4dacab348bda3707885f6790cb731a9fe63cabd857d6e4b1a7de
 
 WORKDIR /home/node/app
 
