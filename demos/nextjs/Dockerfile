@@ -20,8 +20,8 @@ COPY . .
 # The standalone output includes all necessary dependencies
 RUN npm run build
 
-# Stage 2: Runtime
-FROM artifactory.cloud.cms.gov/docker/node@sha256:7b559cf7f77d837192392499a850abb1a3d1f49fbc2bd0692d54b212c9e38f6d
+# Stage 2: Runtime (Alpine for minimal attack surface)
+FROM artifactory.cloud.cms.gov/docker/node@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 
 WORKDIR /app
 
