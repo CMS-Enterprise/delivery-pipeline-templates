@@ -2,18 +2,18 @@
 # Uses Artifactory mirrors per project policy with SHA256 digests
 
 # Stage 1: Build
-FROM artifactory.cloud.cms.gov/docker/node@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs22:22-slim-amd64 AS builder
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 # Copy dependency manifests
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy application source
-COPY . .
+COPY --chown=node:node . .
 
 # Build Vue SPA (outputs to dist/)
 RUN npm run build
@@ -24,7 +24,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/ngi
 WORKDIR /usr/share/nginx/html
 
 # Copy built static files from builder (overwrites default nginx content)
-COPY --from=builder /app/dist .
+COPY --from=builder /home/node/app/dist .
 
 # Copy custom nginx configuration for SPA routing
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
