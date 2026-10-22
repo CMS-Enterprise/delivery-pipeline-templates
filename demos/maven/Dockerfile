@@ -16,7 +16,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25:3.10
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25:3.10.0
 
 WORKDIR /app
 
