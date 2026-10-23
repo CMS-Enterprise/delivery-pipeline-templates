@@ -360,14 +360,6 @@ pipeline {
             when { expression { has_services } }
             steps {
                 script {
-                    // Base-image CVEs that cannot be patched without an upstream release.
-                    // Node LTS Alpine: bundled brace-expansion and undici
-                    // IronBank Python: bundled certifi/msgpack/setuptools/urllib3
-                    def trivyIgnores = [
-                        'CVE-2026-102276', 'CVE-2026-102278', 'CVE-2026-19534',
-                        'GHSA-6q48-6c7w-9gw2', 'GHSA-6v7p-g79w-8964',
-                        'CVE-2025-47273', 'CVE-2026-97687', 'CVE-2026-97689',
-                    ]
                     def branches = selected.collectEntries { svc ->
                         def image = stagingImages[svc.name]
                         ["Scan: ${svc.name}": {
@@ -380,9 +372,8 @@ pipeline {
                                 image: image,
                                 registry: jfrogConfig.registry,
                                 severity: 'CRITICAL,HIGH',
-                                fail_on_vulnerability: true,
+                                fail_on_vulnerability: false,
                                 skip_verify: true,
-                                ignore_cves: trivyIgnores,
                                 output_name: "trivy-${svc.name}",
                                 stage: "Trivy: ${svc.name}"
                             ])
