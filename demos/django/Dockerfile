@@ -3,6 +3,7 @@
 
 # Stage 1: Dependencies
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273 AS builder
+USER 0
 
 WORKDIR /app
 
@@ -10,16 +11,15 @@ WORKDIR /app
 COPY requirements.txt ./
 
 # Install dependencies into a known location
-RUN pip3 install --no-cache-dir --user -r requirements.txt
+RUN pip3 install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Stage 2: Runtime
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
 
-WORKDIR /home/python/app
+WORKDIR /app
 
 # Copy installed dependencies from builder
-COPY --from=builder /home/python/.local /home/python/.local
-ENV PATH="/home/python/.local/bin:${PATH}"
+COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY . .
@@ -36,7 +36,7 @@ RUN python3 manage.py collectstatic --noinput
 EXPOSE 3003
 
 # Create directory for SQLite database
-RUN mkdir -p /home/python/app/data
+RUN mkdir -p /app/data
 
 # Run migrations and start Gunicorn
 CMD python3 manage.py migrate --noinput && \
