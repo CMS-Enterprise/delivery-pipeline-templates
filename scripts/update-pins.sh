@@ -131,21 +131,6 @@ if tags:
 " 2>/dev/null || true
 }
 
-get_pypi_version() {
-  local package="$1"
-  curl -sf "https://pypi.org/pypi/${package}/json" | python3 -c "import sys,json; print(json.load(sys.stdin)['info']['version'])"
-}
-
-get_github_sha() {
-  local repo="$1"
-  local branch="${2:-master}"
-  curl -sf "https://api.github.com/repos/${repo}/commits/${branch}" | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])"
-}
-
-get_alpine_pkg_version() {
-  local package="$1"
-  curl -sf "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/" | grep -oP "${package}-\K[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+" | head -1
-}
 
 report() {
   local status="$1"
@@ -341,114 +326,6 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
   fi
 done
 
-# =============================================================================
-# pip packages
-# =============================================================================
-
-echo ""
-echo "Checking pip packages..."
-
-declare -A PIP_PACKAGES
-PIP_PACKAGES["pytest"]="libraries/pytest/pytest_test.groovy"
-PIP_PACKAGES["pytest-cov"]="libraries/pytest/pytest_test.groovy"
-PIP_PACKAGES["pylint"]="libraries/pylint/pylint_lint.groovy"
-
-for package in $(echo "${!PIP_PACKAGES[@]}" | tr ' ' '\n' | sort); do
-  file="${LIBRARIES_DIR}/../${PIP_PACKAGES[$package]}"
-
-  new_version=$(get_pypi_version "$package" 2>/dev/null || true)
-  if [[ -z "$new_version" ]]; then
-    report error "$package" "failed to query PyPI"
-    continue
-  fi
-
-  current_version=$(grep -oP "${package}==\K[0-9]+\.[0-9]+\.[0-9]+" "$file" 2>/dev/null || true)
-  if [[ -z "$current_version" ]]; then
-    report skip "$package" "no pinned version found"
-    continue
-  fi
-
-  if [[ "$current_version" == "$new_version" ]]; then
-    report ok "$package" "up-to-date ($current_version)"
-  else
-    report outdated "$package" "$current_version → $new_version"
-    if [[ "$APPLY" == true ]]; then
-      sed -i "s|${package}==${current_version}|${package}==${new_version}|g" "$file"
-    fi
-  fi
-done
-
-# =============================================================================
-# apk packages
-# =============================================================================
-
-echo ""
-echo "Checking apk packages..."
-
-declare -A APK_PACKAGES
-APK_PACKAGES["kustomize"]="libraries/gitops/promote.groovy"
-
-for package in $(echo "${!APK_PACKAGES[@]}" | tr ' ' '\n' | sort); do
-  file="${LIBRARIES_DIR}/../${APK_PACKAGES[$package]}"
-
-  new_version=$(get_alpine_pkg_version "$package" 2>/dev/null || true)
-  if [[ -z "$new_version" ]]; then
-    report error "$package" "failed to query Alpine packages"
-    continue
-  fi
-
-  current_version=$(grep -oP "${package}=\K[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+" "$file" 2>/dev/null || true)
-  if [[ -z "$current_version" ]]; then
-    report skip "$package" "no pinned version found"
-    continue
-  fi
-
-  if [[ "$current_version" == "$new_version" ]]; then
-    report ok "$package" "up-to-date ($current_version)"
-  else
-    report outdated "$package" "$current_version → $new_version"
-    if [[ "$APPLY" == true ]]; then
-      sed -i "s|${package}=${current_version}|${package}=${new_version}|g" "$file"
-    fi
-  fi
-done
-
-# =============================================================================
-# GitHub repos
-# =============================================================================
-
-echo ""
-echo "Checking GitHub repos..."
-
-declare -A GITHUB_REPOS
-# Format: GITHUB_REPOS["owner/repo"]="branch file"
-GITHUB_REPOS["tfutils/tfenv"]="master libraries/terraform/deploy.groovy"
-
-for repo in $(echo "${!GITHUB_REPOS[@]}" | tr ' ' '\n' | sort); do
-  read -r branch file <<<"${GITHUB_REPOS[$repo]}"
-  file="${LIBRARIES_DIR}/../${file}"
-
-  new_sha=$(get_github_sha "$repo" "$branch" 2>/dev/null || true)
-  if [[ -z "$new_sha" ]]; then
-    report error "$repo" "failed to query GitHub API"
-    continue
-  fi
-
-  current_sha=$(grep -oP 'git checkout \K[a-f0-9]{40}' "$file" 2>/dev/null || true)
-  if [[ -z "$current_sha" ]]; then
-    report skip "$repo" "no pinned SHA found"
-    continue
-  fi
-
-  if [[ "$current_sha" == "$new_sha" ]]; then
-    report ok "$repo" "up-to-date (${current_sha:0:12}...)"
-  else
-    report outdated "$repo" "${current_sha:0:12}... → ${new_sha:0:12}..."
-    if [[ "$APPLY" == true ]]; then
-      sed -i "s|${current_sha}|${new_sha}|g" "$file"
-    fi
-  fi
-done
 
 # =============================================================================
 # Summary
