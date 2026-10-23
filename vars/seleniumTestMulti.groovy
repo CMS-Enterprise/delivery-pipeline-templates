@@ -32,7 +32,8 @@ void call(Map args = [:]) {
                             sh "mvn test -Dselenium.remote.url=${selenium_grid}/wd/hub -Dbrowser=${browser} ${args.maven_args ?: ''}"
                         } else if (runtime == "python") {
                             sh """
-                                pip install -r ${args.requirements_file ?: 'requirements.txt'} --quiet
+                                pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
+                                pip3 install -r ${args.requirements_file ?: 'requirements.txt'} --quiet
                                 pytest ${args.test_path ?: 'tests/selenium/'} \
                                     --junitxml=selenium-results.xml \
                                     ${args.pytest_args ?: ''}

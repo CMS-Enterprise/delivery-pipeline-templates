@@ -9,7 +9,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('node') {
                     sh "npm config set registry https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/"
-                    sh "npm install --save-dev eslint next @eslint/js@9 typescript-eslint eslint-plugin-react eslint-config-next globals"
+                    sh "npm install --save-dev eslint@10.13.0 next@16.4.3 @eslint/js@10.0.1 typescript-eslint@8.72.0 eslint-plugin-react@7.37.5 eslint-config-next@16.4.3 globals@17.13.0"
                     def exit_code = sh(
                         script: "cd ${working_dir} && npx eslint ${paths} --format json --output-file eslint-results.json",
                         returnStatus: true
