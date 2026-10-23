@@ -86,6 +86,23 @@ if manifests:
 " 2>/dev/null || true
 }
 
+get_ironbank_digest() {
+  local image="$1"
+  local tag="$2"
+  local registry="${IRONBANK_REGISTRY:-artifactory.cloud.cms.gov}"
+  local repo="gi-gantuar-ironbank"
+  local token
+  token=$(curl -sf --max-time 15 \
+    "https://${registry}/v2/token?service=${registry}&scope=repository:${repo}/${image}:pull" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null || true)
+  if [[ -z "$token" ]]; then return; fi
+  curl -sf --max-time 15 \
+    -H "Authorization: Bearer ${token}" \
+    -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+    "https://${registry}/v2/${repo}/${image}/manifests/${tag}" \
+    -D /dev/stderr -o /dev/null 2>&1 | grep -i 'docker-content-digest' | awk '{print $2}' | tr -d '\r'
+}
+
 get_quay_digest() {
   local image="$1"
   local tag="$2"
@@ -175,6 +192,25 @@ IMAGES["terraform-linters/tflint"]="ghcr latest"
 IMAGES["fluxcd/flux-cli"]="ghcr-semver latest"
 IMAGES["playwright"]="mcr latest"
 IMAGES["jfrog/jfrog-cli-v2-jf"]="jfrog latest"
+# IronBank images (via Artifactory remote-cache)
+IMAGES["ironbank/big-bang/base"]="ironbank latest"
+IMAGES["ironbank/google/golang/ubi9/golang-1.26"]="ironbank latest"
+IMAGES["ironbank/ironbank-pipelines/oscap-podman"]="ironbank latest"
+IMAGES["ironbank/opensource/alpinelinux/alpine"]="ironbank latest"
+IMAGES["ironbank/opensource/ansible/ansible"]="ironbank latest"
+IMAGES["ironbank/opensource/aquasec/trivy"]="ironbank latest"
+IMAGES["ironbank/opensource/argoproj/argocd"]="ironbank latest"
+IMAGES["ironbank/opensource/clamav/clamav"]="ironbank latest"
+IMAGES["ironbank/opensource/containers/podman"]="ironbank latest"
+IMAGES["ironbank/opensource/gradle/gradle-jdk25"]="ironbank latest"
+IMAGES["ironbank/opensource/hadolint/hadolint"]="ironbank latest"
+IMAGES["ironbank/opensource/maven/maven-openjdk-17"]="ironbank latest"
+IMAGES["ironbank/opensource/maven/maven-openjdk-25"]="ironbank latest"
+IMAGES["ironbank/opensource/openpolicyagent/conftest"]="ironbank latest"
+IMAGES["ironbank/opensource/owasp-zap/owasp-zap"]="ironbank latest"
+IMAGES["ironbank/opensource/python"]="ironbank latest"
+IMAGES["ironbank/opensource/shellcheck/shellcheck"]="ironbank latest"
+IMAGES["ironbank/opensource/trufflehog/trufflehog"]="ironbank latest"
 
 get_latest_ghcr_semver() {
   local image="$1"
@@ -237,9 +273,16 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
   jfrog)
     ref="releases-docker.jfrog.io/${image}:${tag}"
     ;;
+  ironbank)
+    ref=""
+    ;;
   esac
 
-  new_digest=$(get_digest "$ref" 2>/dev/null || true)
+  if [[ "$registry" == "ironbank" ]]; then
+    new_digest=$(get_ironbank_digest "$image" "$tag" 2>/dev/null || true)
+  else
+    new_digest=$(get_digest "$ref" 2>/dev/null || true)
+  fi
 
   if [[ -z "$new_digest" ]]; then
     case "$registry" in
@@ -257,6 +300,8 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
       ;;
     jfrog)
       new_digest=$(get_digest "releases-docker.jfrog.io/${image}:${tag}" 2>/dev/null || true)
+      ;;
+    ironbank)
       ;;
     esac
   fi
