@@ -191,10 +191,7 @@ declare -A IMAGES
 # registry: dockerhub, quay, ghcr, mcr
 # tag: the tag to resolve (latest, semver, etc.)
 IMAGES["alpine/helm"]="dockerhub latest"
-IMAGES["argoproj/argocd"]="dockerhub latest"
-IMAGES["clamav/clamav"]="dockerhub latest"
 IMAGES["cypress/included"]="dockerhub latest"
-IMAGES["hadolint/hadolint"]="dockerhub latest"
 IMAGES["justb4/jmeter"]="dockerhub latest"
 IMAGES["node"]="dockerhub 20"
 IMAGES["renovate/renovate"]="dockerhub latest"
@@ -203,7 +200,6 @@ IMAGES["sonarsource/sonar-scanner-cli"]="dockerhub latest"
 IMAGES["amazon/aws-cli"]="dockerhub latest"
 IMAGES["golangci/golangci-lint"]="dockerhub latest"
 IMAGES["anchore/grype"]="dockerhub latest"
-IMAGES["aquasec/trivy"]="dockerhub latest"
 IMAGES["terraform-linters/tflint"]="ghcr latest"
 IMAGES["fluxcd/flux-cli"]="ghcr-semver latest"
 IMAGES["playwright"]="mcr latest"
