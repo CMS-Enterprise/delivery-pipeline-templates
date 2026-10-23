@@ -103,6 +103,22 @@ get_ironbank_digest() {
     -D /dev/stderr -o /dev/null 2>&1 | grep -i 'docker-content-digest' | awk '{print $2}' | tr -d '\r'
 }
 
+get_jfrog_digest() {
+  local image="$1"
+  local tag="$2"
+  local registry="releases-docker.jfrog.io"
+  local token
+  token=$(curl -sf --max-time 15 \
+    "https://${registry}/v2/token?service=${registry}&scope=repository:${image}:pull" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null || true)
+  if [[ -z "$token" ]]; then return; fi
+  curl -sf --max-time 15 \
+    -H "Authorization: Bearer ${token}" \
+    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
+    "https://${registry}/v2/${image}/manifests/${tag}" \
+    -D /dev/stderr -o /dev/null 2>&1 | grep -i 'docker-content-digest' | awk '{print $2}' | tr -d '\r'
+}
+
 get_quay_digest() {
   local image="$1"
   local tag="$2"
@@ -271,7 +287,7 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
     ref="mcr.microsoft.com/${image}:${tag}"
     ;;
   jfrog)
-    ref="releases-docker.jfrog.io/${image}:${tag}"
+    ref=""
     ;;
   ironbank)
     ref=""
@@ -280,6 +296,8 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
 
   if [[ "$registry" == "ironbank" ]]; then
     new_digest=$(get_ironbank_digest "$image" "$tag" 2>/dev/null || true)
+  elif [[ "$registry" == "jfrog" ]]; then
+    new_digest=$(get_jfrog_digest "$image" "$tag" 2>/dev/null || true)
   else
     new_digest=$(get_digest "$ref" 2>/dev/null || true)
   fi
@@ -299,7 +317,7 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
       new_digest=$(get_digest "mcr.microsoft.com/${image}:${tag}" 2>/dev/null || true)
       ;;
     jfrog)
-      new_digest=$(get_digest "releases-docker.jfrog.io/${image}:${tag}" 2>/dev/null || true)
+      new_digest=$(get_jfrog_digest "$image" "$tag" 2>/dev/null || true)
       ;;
     ironbank)
       ;;
