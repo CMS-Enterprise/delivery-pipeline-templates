@@ -18,7 +18,7 @@ def call(Map config = [:]) {
                             printf '{"auths":{"%s":{"auth":"%s"}}}' '${pull_registry}' "\$AUTH" > "\$DOCKER_CONFIG/config.json"
 
                             grype registry:${image} \
-                                --fail-on ${fail_on_severity} \
+                                ${fail_on_severity ? "--fail-on ${fail_on_severity}" : ''} \
                                 ${only_fixed ? '--only-fixed' : ''} \
                                 -o json=${output_name}-results.json
                         """

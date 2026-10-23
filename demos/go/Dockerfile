@@ -18,7 +18,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-site .
 
 # Stage 2: Runtime - minimal Alpine image
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:bf846ead9f772493743d4b3ee9ef891fcc39c8eb9169ba2564fa4128c63677b6
 
 WORKDIR /app
 

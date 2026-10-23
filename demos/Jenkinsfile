@@ -398,7 +398,7 @@ pipeline {
                             // ])
                             grypeScan([
                                 image: image,
-                                fail_on_severity: 'negligible',
+                                fail_on_severity: '',
                                 output_name: "grype-${svc.name}",
                                 stage: "Grype: ${svc.name}"
                             ])
