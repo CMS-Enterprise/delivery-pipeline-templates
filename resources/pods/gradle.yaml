@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: gradle
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/gradle/gradle-jdk25@sha256:7880ef66d8c6d6f899f974ccc92f774d752d7e32cb17886bb6a4bca5c0637536
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/gradle/gradle-jdk25@sha256:a5de0b90c73ae8be30f6f4ff559257052afbb60c1437f64474123c38a245adc0
       command: ["cat"]
       tty: true
       securityContext:

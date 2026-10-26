@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: renovate
-      image: artifactory.cloud.cms.gov/docker/renovate/renovate@sha256:f3a2c7d8e1b9a4c6d5e8f0a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2
+      image: artifactory.cloud.cms.gov/docker/renovate/renovate@sha256:1e46669b55dc39093613abe3e4cf390e64140be5a5eeaf7478d9922d8b85f464
       command: ["cat"]
       tty: true
       securityContext:

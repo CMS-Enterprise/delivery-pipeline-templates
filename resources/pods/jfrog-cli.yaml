@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: jfrog-cli
-      image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2-jf@sha256:4b6f689bf0827e5897cbb2c30869af1a3d953d42336eb196be1664f0e8bdda58
+      image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2-jf@sha256:d2590448a4e25cd3dd2c384e14891c164658d5dec2cdd7e36832d02155394bd4
       command: ["cat"]
       tty: true
       env:

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:25fea7c13a5b32ac8bde048af1cd286e41f07d5d37e6649f23c14a6f9bf284d9
       command: ["cat"]
       tty: true
       securityContext:
@@ -33,7 +33,7 @@ spec:
           memory: "1Gi"
           ephemeral-storage: "2Gi"
     - name: alpine
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:bccbcee08f84544eee3653a35ba80c41099a730cd8dc9824ea04f971ee5a3df4
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
       command: ["cat"]
       tty: true
       securityContext:

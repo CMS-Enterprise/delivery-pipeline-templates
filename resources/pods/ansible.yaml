@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: ansible
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/ansible/ansible@sha256:3111e19d85159c3fc9c33d4bcc8f3e23d684e30d380a0d8fef72dc31fecb5624
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/ansible/ansible@sha256:86bc12e11011f7026877f882d7b8adb7781f4fc13838b03143107b3aadf76a8a
       command: ["cat"]
       tty: true
       securityContext:

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: sonar-scanner
-      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli@sha256:c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9
+      image: artifactory.cloud.cms.gov/docker/sonarsource/sonar-scanner-cli@sha256:47956b669bf486bdad919e1cbd0533223515aa0b6d1d31763e5a3754942df6d7
       command: ["cat"]
       tty: true
       securityContext:
