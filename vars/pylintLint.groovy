@@ -10,10 +10,10 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('python') {
                     sh """
-                        pip3 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
+                        pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         cd ${working_dir}
-                        pip3 install pylint==4.1.3 pylint-django==2.8.0
-                        [ -f ${requirements_file} ] && pip3 install -r ${requirements_file}
+                        pip3.14 install pylint==4.1.3 pylint-django==2.8.0
+                        [ -f ${requirements_file} ] && pip3.14 install -r ${requirements_file}
                         pylint ${paths} \
                             --output-format=json:pylint-results.json,text \
                             --fail-under=${min_score}
