@@ -9,8 +9,8 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
+    runAsUser: 1001
+    runAsGroup: 1001
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
@@ -22,7 +22,7 @@ spec:
       tty: true
       env:
         - name: PATH
-          value: "/home/jenkins/agent/.local/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+          value: "/home/python/python-env/bin:/home/jenkins/agent/.local/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
         - name: HOME
           value: "/home/jenkins/agent"
       securityContext:
