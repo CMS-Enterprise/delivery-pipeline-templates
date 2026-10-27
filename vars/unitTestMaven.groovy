@@ -19,7 +19,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 container('maven') {
-                    sh "cd ${working_dir} && mvn test -s ${settings_file} -Dmaven.repo.local=${m2_repo} ${cache_flags}"
+                    sh "cd ${working_dir} && mvn --no-transfer-progress test -s ${settings_file} -Dmaven.repo.local=${m2_repo} ${cache_flags}"
                 }
                 junit allowEmptyResults: true, testResults: "${working_dir}/**/target/surefire-reports/*.xml"
             }

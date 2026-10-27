@@ -10,7 +10,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 container('maven') {
-                    sh "cd ${working_dir} && mvn checkstyle:check -s ${settings_file} -Dmaven.repo.local=${m2_repo}"
+                    sh "cd ${working_dir} && mvn --no-transfer-progress checkstyle:check -s ${settings_file} -Dmaven.repo.local=${m2_repo}"
                 }
             }
         }

@@ -13,7 +13,7 @@ COPY pom.xml ./
 COPY src ./src
 
 # Build the application (skip tests in container build)
-RUN mvn clean package -DskipTests -s settings.xml
+RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
 
 # Stage 2: Runtime - Java JRE only
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:47a05928a05c7944f7ab7b4706ced8f6e30d685361e3daaf51a67cdcbf43b1d0

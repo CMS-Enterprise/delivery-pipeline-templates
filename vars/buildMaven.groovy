@@ -20,7 +20,7 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 container('maven') {
-                    sh "cd ${working_dir} && mvn package -DskipTests -s ${settings_file} -Dmaven.repo.local=${m2_repo} ${cache_flags}"
+                    sh "cd ${working_dir} && mvn --no-transfer-progress package -DskipTests -s ${settings_file} -Dmaven.repo.local=${m2_repo} ${cache_flags}"
                 }
                 stash name: "${mystash}", includes: "${working_dir}/**"
             }
