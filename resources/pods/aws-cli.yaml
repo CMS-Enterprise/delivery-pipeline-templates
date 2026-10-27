@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:25fea7c13a5b32ac8bde048af1cd286e41f07d5d37e6649f23c14a6f9bf284d9
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:47063eec803ca44f25d2d43530ce159d12e42d183b726c585aedd10f8aded171
       command: ['cat']
       tty: true
       securityContext:

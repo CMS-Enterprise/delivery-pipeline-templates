@@ -107,18 +107,18 @@ declare -A IMAGES
 
 # Docker Hub images (via artifactory docker remote)
 IMAGES["alpine/helm"]="docker latest"
-IMAGES["cypress/included"]="docker latest"
-IMAGES["justb4/jmeter"]="docker latest"
-IMAGES["renovate/renovate"]="docker latest"
+IMAGES["alpine/jmeter"]="docker latest"
 IMAGES["snyk/snyk"]="docker node"
-IMAGES["sonarsource/sonar-scanner-cli"]="docker latest"
-IMAGES["amazon/aws-cli"]="docker latest"
 IMAGES["golangci/golangci-lint"]="docker latest"
 IMAGES["anchore/grype"]="docker latest"
 IMAGES["jfrog/jfrog-cli-v2-jf"]="docker latest"
-IMAGES["playwright"]="docker latest"
-# IronBank tflint (moved from GHCR)
+# IronBank images (moved from Docker Hub / GHCR)
 IMAGES["ironbank/opensource/tflint/tflint"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/opensource/microsoft/playwright/node"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/container-hardening-tools/renovate/renovate"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/sonarsource/sonar-scanner-cli"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/cypress/included"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/opensource/amazon/aws-cli"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/afdco/fluxcd/flux-cli"]="gi-gantuar-ironbank latest"
 # IronBank images (via artifactory gi-gantuar-ironbank remote)
 IMAGES["ironbank/big-bang/base"]="gi-gantuar-ironbank latest"
