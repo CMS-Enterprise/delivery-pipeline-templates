@@ -13,7 +13,7 @@ def jfrogConfig = [
     url: 'https://artifactory.cloud.cms.gov/',
     registry: 'artifactory.cloud.cms.gov',
     staging_repo: 'itopsplatf-cloudpipe',
-    prod_repo: 'docker-prod-local',
+    prod_repo: 'itopsplatf-prod',
     credential: 'jfrog-credentials'
 ]
 
