@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: tflint
-      image: artifactory.cloud.cms.gov/docker/ghcr/terraform-linters/tflint@sha256:d0fe0cd3b3d625b1583cdbb0b7d115089023db00e200d199740458042366276c
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/tflint/tflint@sha256:7a456bb566153e8dd8ccf684850fb98161dca31facbe32a501344669e541f52e
       command: ["cat"]
       tty: true
       securityContext:

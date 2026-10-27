@@ -117,8 +117,8 @@ IMAGES["golangci/golangci-lint"]="docker latest"
 IMAGES["anchore/grype"]="docker latest"
 IMAGES["jfrog/jfrog-cli-v2-jf"]="docker latest"
 IMAGES["playwright"]="docker latest"
-# GHCR images (via artifactory docker remote, prefixed with ghcr/)
-IMAGES["ghcr/terraform-linters/tflint"]="docker latest"
+# IronBank tflint (moved from GHCR)
+IMAGES["ironbank/opensource/tflint/tflint"]="gi-gantuar-ironbank latest"
 IMAGES["fluxcd/flux-cli"]="docker latest"
 # IronBank images (via artifactory gi-gantuar-ironbank remote)
 IMAGES["ironbank/big-bang/base"]="gi-gantuar-ironbank latest"
