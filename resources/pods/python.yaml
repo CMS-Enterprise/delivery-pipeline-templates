@@ -9,8 +9,7 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1001
-    runAsGroup: 1001
+    runAsUser: 1000
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
@@ -26,6 +25,8 @@ spec:
         - name: HOME
           value: "/home/jenkins/agent"
       securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
         allowPrivilegeEscalation: false
         capabilities:
           drop: ["ALL"]
