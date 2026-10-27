@@ -25,8 +25,6 @@ spec:
         - name: HOME
           value: "/home/jenkins/agent"
       securityContext:
-        runAsUser: 1001
-        runAsGroup: 1001
         allowPrivilegeEscalation: false
         capabilities:
           drop: ["ALL"]

@@ -13,7 +13,7 @@ COPY . .
 
 # Install dependencies and collect static files
 RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt && \
-    /home/python/python-env/bin/python manage.py collectstatic --noinput && \
+    python manage.py collectstatic --noinput && \
     mkdir -p /app/data
 
 # Stage 2: Runtime
