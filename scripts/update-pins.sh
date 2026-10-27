@@ -119,7 +119,7 @@ IMAGES["jfrog/jfrog-cli-v2-jf"]="docker latest"
 IMAGES["playwright"]="docker latest"
 # IronBank tflint (moved from GHCR)
 IMAGES["ironbank/opensource/tflint/tflint"]="gi-gantuar-ironbank latest"
-IMAGES["fluxcd/flux-cli"]="docker latest"
+IMAGES["ironbank/afdco/fluxcd/flux-cli"]="gi-gantuar-ironbank latest"
 # IronBank images (via artifactory gi-gantuar-ironbank remote)
 IMAGES["ironbank/big-bang/base"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/google/golang/ubi9/golang-1.26"]="gi-gantuar-ironbank latest"

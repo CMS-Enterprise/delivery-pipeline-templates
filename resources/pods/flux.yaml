@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: flux
-      image: artifactory.cloud.cms.gov/docker/fluxcd/flux-cli@sha256:248a0520ff70894b39bc79960649293d937b5b7dc55376947a8bbc68dba7d71f
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/afdco/fluxcd/flux-cli@sha256:b55aa6e578fddf67251fce4a7d98286dd93e811b2a6fbb3f36939a86aa3be375
       command: ["cat"]
       tty: true
       securityContext:
