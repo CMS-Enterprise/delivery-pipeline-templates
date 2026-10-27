@@ -10,9 +10,9 @@ def call(Map config = [:]) {
                 unstash "${myunstash}"
                 container('python') {
                     sh """
-                        pip3.14 config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
+                        /home/python/python-env/bin/pip config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         cd ${working_dir}
-                        pip3.14 install -r requirements.txt
+                        /home/python/python-env/bin/pip install -r requirements.txt
                         ${mycommand}
                     """
                 }
