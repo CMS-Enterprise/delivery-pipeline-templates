@@ -17,7 +17,7 @@ spec:
   containers:
     - name: grype
       image: artifactory.cloud.cms.gov/docker/anchore/grype@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239f0c20195fab8c16f7ea
-      command: ["cat"]
+      command: ["/busybox/cat"]
       tty: true
       env:
         - name: HOME
