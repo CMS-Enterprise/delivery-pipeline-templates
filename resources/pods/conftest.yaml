@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: conftest
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/openpolicyagent/conftest@sha256:a233c9227c7e180e35f70f2ebd6862df34f1e02b9b2c1fbd7fd3dcde95df7a08
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/openpolicyagent/conftest@sha256:c2b9a1c994ae3b2597964667fb656523d2c1aa679ff51eb06d484d7d3c376a3f
       command: ["cat"]
       tty: true
       securityContext:

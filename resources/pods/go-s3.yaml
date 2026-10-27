@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: go
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:6b84ef4b1d67b2a90f0a1bdfb30a4c20a3e584edf18404aa7d110d8bf1925586
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:2fda0980cf608400d320d856320c5bedf0822110ab06016fbea5936d33cf3013
       command: ["cat"]
       env:
         - name: GOCACHE

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: hadolint
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/hadolint/hadolint@sha256:2f2084541f5ce09733d547920c3031c7e7a40a9e34959f292b7c8295d3f4bcd4
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/hadolint/hadolint@sha256:a95919d5245b3de5c1a46f25802ddcff9be68de802d0a111e51fc64ea0b074d5
       command: ["cat"]
       tty: true
       securityContext:

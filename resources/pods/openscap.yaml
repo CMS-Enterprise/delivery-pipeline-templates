@@ -21,7 +21,7 @@ spec:
     # Flattens the image under test into a plain directory tree so that oscap
     # can evaluate it with oscap-chroot instead of needing a privileged mount.
     - name: podman
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:b1d685b5ce596e66f556d88c086156d00ef3c58ea6ebc062fe0994cf32d5e860
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:f428957950db408c22ad4404d3693bf1b5a0264aab13f3e7beca68a5e8deb717
       command:
         - sleep
       args:

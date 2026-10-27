@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: golangci-lint
-      image: artifactory.cloud.cms.gov/docker/golangci/golangci-lint@sha256:f4ea5f12ca354cc8682c1c3565c358915ff9e49f7ff7aea4e253f23f1e8422dc
+      image: artifactory.cloud.cms.gov/docker/golangci/golangci-lint@sha256:fbfcfd12a6f8d7f1b97b3362ca80fc2a244d46863148c73cb88e7793af96c481
       command: ["cat"]
       env:
         - name: GOLANGCI_LINT_CACHE

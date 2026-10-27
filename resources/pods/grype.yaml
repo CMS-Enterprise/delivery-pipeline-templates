@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: grype
-      image: artifactory.cloud.cms.gov/docker/anchore/grype@sha256:d39f3ac8a9f55477aadacd051cc4199a9d2dda30600ef00fdf5c406c9f40f0b7
+      image: artifactory.cloud.cms.gov/docker/anchore/grype@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239f0c20195fab8c16f7ea
       command: ["cat"]
       tty: true
       env:

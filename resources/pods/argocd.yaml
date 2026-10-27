@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: argocd
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:e1021cc0c0a6ef3da6efb417b95a4033ed1a6629a32bf78a134be2ff3401eb43
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:460010f1969efeaea2edc58516d29c1149cd8745e0f3b2ea8dc99854dbfa5b1d
       command: ["cat"]
       tty: true
       securityContext:

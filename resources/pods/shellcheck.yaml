@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: shellcheck
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/shellcheck/shellcheck@sha256:e1a62327406ddabca6fca5150e8945d969d63c98694236b3d5e9cdc8b52e6fa3
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/shellcheck/shellcheck@sha256:3c99c001ca5d0030bbaac7ea5de607147ac6074cc7b69b31bca339e4dd424cb7
       command: ["cat"]
       tty: true
       securityContext:

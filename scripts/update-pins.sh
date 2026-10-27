@@ -31,8 +31,8 @@ get_artifactory_digest() {
   local tag="$3"
   local token
   token=$(curl -sf --max-time 15 \
-    "https://${ARTIFACTORY}/v2/token?service=${ARTIFACTORY}&scope=repository:${repo}/${image}:pull" \
-    | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null || true)
+    "https://${ARTIFACTORY}/v2/token?service=${ARTIFACTORY}&scope=repository:${repo}/${image}:pull" |
+    python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null || true)
   if [[ -z "$token" ]]; then return; fi
   curl -sf --max-time 15 \
     -H "Authorization: Bearer ${token}" \
@@ -119,7 +119,7 @@ IMAGES["ironbank/container-hardening-tools/renovate/renovate"]="gi-gantuar-ironb
 IMAGES["ironbank/sonarsource/sonar-scanner-cli"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/cypress/included"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/amazon/aws-cli"]="gi-gantuar-ironbank latest"
-IMAGES["ironbank/afdco/fluxcd/flux-cli"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/afdco/fluxcd/flux-cli"]="gi-gantuar-ironbank v2.9.5"
 # IronBank images (via artifactory gi-gantuar-ironbank remote)
 IMAGES["ironbank/big-bang/base"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/google/golang/ubi9/golang-1.26"]="gi-gantuar-ironbank latest"
