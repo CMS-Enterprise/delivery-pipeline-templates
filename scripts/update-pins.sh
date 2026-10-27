@@ -138,7 +138,7 @@ IMAGES["ironbank/opensource/openpolicyagent/conftest"]="gi-gantuar-ironbank late
 IMAGES["ironbank/opensource/owasp-zap/owasp-zap"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/python"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/shellcheck/shellcheck"]="gi-gantuar-ironbank latest"
-IMAGES["ironbank/opensource/trufflehog/trufflehog3"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/opensource/trufflehog/trufflehog"]="gi-gantuar-ironbank latest"
 
 echo "Checking container images..."
 

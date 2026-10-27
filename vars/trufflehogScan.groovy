@@ -8,7 +8,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('trufflehog') {
                     def exit_code = sh (
-                        script: "/home/trufflehog/.local/bin/trufflehog3 filesystem ${scan_path} --json ${fail_on_secret ? '--fail' : ''} > trufflehog-results.json",
+                        script: "cp /opt/trufflehog/trufflehog /home/jenkins/agent/trufflehog && /home/jenkins/agent/trufflehog filesystem ${scan_path} --json ${fail_on_secret ? '--fail' : ''} > trufflehog-results.json",
                         returnStatus: true
                     )
                     if (exit_code != 0 && fail_on_secret) {
