@@ -70,6 +70,7 @@ STATIC_URL = "/staticURL/"
 # Must not be BASE_DIR / "static": collectstatic refuses a STATIC_ROOT that is
 # also a STATICFILES_DIRS entry (check staticfiles.E002).
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT.mkdir(exist_ok=True)
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
 

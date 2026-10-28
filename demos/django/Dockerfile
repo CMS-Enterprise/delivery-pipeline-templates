@@ -36,5 +36,6 @@ EXPOSE 3003
 # Run migrations and start Gunicorn
 ENV PATH="/home/python/python-env/bin:${PATH}"
 
+USER 1001
 CMD python manage.py migrate --noinput && \
     gunicorn mysite.wsgi:application --bind 0.0.0.0:3003 --workers 2 --timeout 60

@@ -39,4 +39,5 @@ COPY --chown=node:node --from=builder /home/node/app/build ./build
 EXPOSE 3002
 
 # Run the SvelteKit node server
+USER 1001
 CMD ["node", "build/index.js"]

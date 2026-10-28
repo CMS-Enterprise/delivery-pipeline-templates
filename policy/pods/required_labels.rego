@@ -11,3 +11,8 @@ deny contains msg if {
     input.metadata.labels["jenkins-agent"] != "true"
     msg := sprintf("label 'jenkins-agent' must be 'true', got '%s'", [input.metadata.labels["jenkins-agent"]])
 }
+
+pass contains msg if {
+    input.metadata.labels["jenkins-agent"] == "true"
+    msg := "jenkins-agent label is set"
+}

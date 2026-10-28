@@ -51,4 +51,5 @@ EOF
 # Nginx runs on port 3001 for this demo
 EXPOSE 3001
 
+USER 101
 CMD ["nginx", "-g", "daemon off;"]

@@ -27,4 +27,5 @@ COPY --from=builder /build/target/site-1.0.0.jar ./app.jar
 EXPOSE 3004
 
 # Run the Spring Boot application
+USER 1001
 CMD ["java", "-jar", "app.jar"]

@@ -33,4 +33,5 @@ COPY --from=builder /build/templates ./templates
 EXPOSE 3005
 
 # Run the binary
+USER 1000
 CMD ["./go-site"]

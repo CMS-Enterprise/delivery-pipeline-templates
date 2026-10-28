@@ -16,3 +16,13 @@ deny contains msg if {
     not input.spec.restartPolicy
     msg := "pod must set spec.restartPolicy"
 }
+
+pass contains msg if {
+    input.spec.securityContext.runAsUser
+    msg := "runAsUser is set"
+}
+
+pass contains msg if {
+    input.spec.restartPolicy == "Never"
+    msg := "restartPolicy is Never"
+}

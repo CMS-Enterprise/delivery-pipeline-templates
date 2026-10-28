@@ -17,3 +17,10 @@ image_from_approved_registry(image) if {
     some prefix in approved_prefixes
     startswith(image, prefix)
 }
+
+pass contains msg if {
+    every container in input.spec.containers {
+        image_from_approved_registry(container.image)
+    }
+    msg := "all images use approved registries"
+}

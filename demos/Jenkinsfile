@@ -107,7 +107,6 @@ def buildService(svc) {
                      cache_dir: "demos/sveltekit/node_modules/.vite")
             break
         case 'django':
-            //buildPython(stage: "Build: Django", working_dir: "demos/${svc.name}", command: "python3.14 manage.py collectstatic --noinput", stash: svc.stash)
             echo "No building Django"
             break
         case 'go':
@@ -268,13 +267,14 @@ pipeline {
                             opaPolicyScan(
                                 policy_path: 'policy/',
                                 input_paths: 'resources/pods/',
+                                namespace: 'pods',
                                 stage: 'OPA Pod Policy Scan'
                             )
                         },
                         'IaC Scan: Trivy': {
                             trivyIacScan(
                                 iac_scan_path: '.',
-                                iac_fail_on_violation: false,
+                                iac_fail_on_violation: true,
                                 iac_skip_dirs: '.terraform,node_modules,.git',
                                 stage: 'Trivy IaC Scan'
                             )

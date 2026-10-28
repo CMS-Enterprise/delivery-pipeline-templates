@@ -35,4 +35,5 @@ COPY --chown=node:node --from=builder /home/node/app/.next/static ./.next/static
 EXPOSE 3000
 
 # Run the application
+USER 1001
 CMD ["node", "server.js"]

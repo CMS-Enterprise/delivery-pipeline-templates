@@ -42,3 +42,13 @@ deny contains msg if {
     not container.resources.limits["ephemeral-storage"]
     msg := sprintf("container '%s' must define an ephemeral-storage limit", [container.name])
 }
+
+pass contains msg if {
+    every container in input.spec.containers {
+        container.resources.limits.cpu
+        container.resources.limits.memory
+        container.resources.limits["ephemeral-storage"]
+        container.resources.requests
+    }
+    msg := "all containers have resource limits and requests"
+}

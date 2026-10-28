@@ -14,6 +14,12 @@ def call(Map config = [:]) {
                     sh """
                         trivy config ${scan_path} \
                             --severity ${severity} \
+                            --exit-code 0 \
+                            --skip-dirs ${skip_dirs} \
+                            --format table
+
+                        trivy config ${scan_path} \
+                            --severity ${severity} \
                             --exit-code ${exit_code} \
                             --skip-dirs ${skip_dirs} \
                             --format json \
