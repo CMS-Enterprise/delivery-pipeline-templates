@@ -21,10 +21,10 @@ def call(Map config = [:]) {
                 container('gradle') {
                     if (cache_url) {
                         withEnv(["GRADLE_CACHE_URL=${cache_url}"]) {
-                            sh "./gradlew ${task} --no-daemon ${cache_flags}"
+                            sh "gradle ${task} --no-daemon --console=plain ${cache_flags}"
                         }
                     } else {
-                        sh "./gradlew ${task} --no-daemon ${cache_flags}"
+                        sh "gradle ${task} --no-daemon --console=plain ${cache_flags}"
                     }
                 }
                 junit allowEmptyResults: true, testResults: '**/build/test-results/**/*.xml'
