@@ -125,7 +125,8 @@ def buildService(svc) {
             break
         case 'gradle':
             buildGradle(stage: "Build: Gradle", working_dir: "demos/${svc.name}",
-                        stash: svc.stash, pod_yaml: readTrusted('resources/pods/gradle.yaml'))
+                        stash: svc.stash, pod_yaml: readTrusted('resources/pods/gradle.yaml'),
+                        s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
       }
   }

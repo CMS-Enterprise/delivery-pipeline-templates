@@ -1,1 +1,19 @@
+plugins {
+    id 'com.github.burrunan.s3-build-cache' version '1.8.2'
+}
+
 rootProject.name = 'site'
+
+def s3Bucket = System.getenv('S3_BUILD_CACHE_BUCKET')
+if (s3Bucket) {
+    buildCache {
+        local { enabled = true }
+        remote(com.github.burrunan.s3cache.AwsS3BuildCache) {
+            region = System.getenv('AWS_REGION') ?: 'us-east-1'
+            bucket = s3Bucket
+            prefix = System.getenv('S3_BUILD_CACHE_PREFIX') ?: "${rootProject.name}/gradle-cache"
+            push = true
+            enabled = true
+        }
+    }
+}
