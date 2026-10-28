@@ -385,7 +385,7 @@ pipeline {
                                 image: image,
                                 registry: jfrogConfig.registry,
                                 severity: 'CRITICAL,HIGH',
-                                fail_on_vulnerability: false,
+                                fail_on_vulnerability: true,
                                 skip_verify: true,
                                 output_name: "trivy-${svc.name}",
                                 stage: "Trivy: ${svc.name}"
@@ -411,7 +411,7 @@ pipeline {
                             // ])
                             grypeScan([
                                 image: image,
-                                fail_on_severity: '',
+                                fail_on_severity: 'critical',
                                 output_name: "grype-${svc.name}",
                                 stage: "Grype: ${svc.name}"
                             ])

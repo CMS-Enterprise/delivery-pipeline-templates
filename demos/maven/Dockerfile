@@ -15,9 +15,16 @@ COPY src ./src
 # Build the application (skip tests in container build)
 RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
 
-# Stage 2: Runtime - Java JRE only
+# Stage 2: Patch base image OS packages
 USER 65534
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:47a05928a05c7944f7ab7b4706ced8f6e30d685361e3daaf51a67cdcbf43b1d0
+
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:47a05928a05c7944f7ab7b4706ced8f6e30d685361e3daaf51a67cdcbf43b1d0 AS patched
+USER 0
+RUN dnf upgrade -y --nodocs && dnf clean all || microdnf update -y && microdnf clean all || true
+USER 65534
+
+# Stage 3: Runtime - Java JRE only
+FROM patched
 
 WORKDIR /app
 

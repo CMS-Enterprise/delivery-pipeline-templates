@@ -16,9 +16,16 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt &
     python manage.py collectstatic --noinput && \
     mkdir -p /app/data
 
-# Stage 2: Runtime
+# Stage 2: Patch base image OS packages
 USER 65534
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
+
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273 AS patched
+USER 0
+RUN dnf upgrade -y --nodocs && dnf clean all || microdnf update -y && microdnf clean all || true
+USER 65534
+
+# Stage 3: Runtime
+FROM patched
 
 WORKDIR /app
 
