@@ -17,6 +17,7 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt &
     mkdir -p /app/data
 
 # Stage 2: Runtime
+USER 65534
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
 
 WORKDIR /app
@@ -37,5 +38,4 @@ EXPOSE 3003
 ENV PATH="/home/python/python-env/bin:${PATH}"
 
 USER 1001
-CMD python manage.py migrate --noinput && \
-    gunicorn mysite.wsgi:application --bind 0.0.0.0:3003 --workers 2 --timeout 60
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn mysite.wsgi:application --bind 0.0.0.0:3003 --workers 2 --timeout 60"]

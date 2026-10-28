@@ -226,14 +226,14 @@ pipeline {
                         branches["Hadolint: ${svc.name}"] = {
                             hadolintLint(
                                 working_dir: "demos/${svc.name}",
-                                fail_on_error: false,
+                                fail_on_error: true,
                                 output_name: "hadolint-${svc.name}",
                                 stage: "Hadolint: ${svc.name}"
                             )
                         }
                     }
                     branches['ShellCheck'] = {
-                        shellcheckLint(paths: 'demos/', fail_on_error: false)
+                        shellcheckLint(paths: 'demos/', fail_on_error: true)
                     }
                     parallel branches
                 }
