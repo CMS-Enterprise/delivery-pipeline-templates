@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { resolve } from '$app/paths';
+  import { page } from '#app/stores';
+  import { resolve } from '#app/paths';
 </script>
 
 <nav class="navbar">

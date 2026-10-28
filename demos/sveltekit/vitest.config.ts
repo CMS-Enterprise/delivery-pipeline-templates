@@ -15,8 +15,8 @@ export default defineConfig({
   resolve: {
     conditions: ['browser'],
     alias: {
-      $app: dir('./src/testing/app'),
-      $lib: dir('./src/lib'),
+      '#app': dir('./src/testing/app'),
+      '#lib': dir('./src/lib'),
     },
   },
   test: {
