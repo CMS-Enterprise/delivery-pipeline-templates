@@ -272,7 +272,7 @@ pipeline {
                                     stage: "Audit: ${svc.name}",
                                     working_dir: "demos/${svc.name}",
                                     audit_level: 'high',
-                                    exclude_cves: ['GHSA-mrhx-c7xc-m3w5', 'GHSA-gcqx-w48m-w2h4']
+                                    exclude_cves: ['GHSA-gcqx-w48m-w2h4']
                                 )
                             }
                         },
