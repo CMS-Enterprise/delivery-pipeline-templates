@@ -1,6 +1,7 @@
 def call(Map config = [:]) {
     def test_task = config.test_task ?: 'seleniumTest'
     def base_url = config.base_url ?: env.DEPLOY_URL
+    def selenium_url = config.selenium_url ?: 'https://selenium.cloud.cms.gov'
 
     stage("Selenium Test") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/gradle.yaml')) {
@@ -9,7 +10,7 @@ def call(Map config = [:]) {
                 container('gradle') {
                     sh """
                         ./gradlew ${test_task} --no-daemon \
-                            -Dselenium.hub=https://seleniumbox.cloud.cms.gov/wd/hub \
+                            -Dselenium.hub=${selenium_url}/wd/hub \
                             -Dbase.url=${base_url}
                     """
                 }

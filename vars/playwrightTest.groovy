@@ -1,5 +1,6 @@
 def call(Map config = [:]) {
     def base_url = config.base_url ?: env.DEPLOY_URL
+    def selenium_url = config.selenium_url ?: 'https://selenium.cloud.cms.gov/'
     def project = config.project ?: ''
     def workers = config.workers ?: 4
 
@@ -9,7 +10,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('playwright') {
                     sh """
-                        export SELENIUM_REMOTE_URL="https://seleniumbox.cloud.cms.gov/"
+                        export SELENIUM_REMOTE_URL="${selenium_url}"
                         npx playwright test \
                             --reporter=junit,html \
                             --workers=${workers} \
