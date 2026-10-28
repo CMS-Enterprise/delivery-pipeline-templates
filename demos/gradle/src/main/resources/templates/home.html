@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head(${pageTitle})}">
+    <title>Home</title>
+</head>
+<body>
+
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main>
+    <section class="hero">
+        <div class="container">
+            <h1>Engineering the Next Era of Patient Care</h1>
+            <p class="hero-subtitle">RoboCare Health designs and manufactures robotic platforms for surgical precision, hospital logistics, and clinical rehabilitation.</p>
+            <a href="/about" class="btn btn-primary">Learn More</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Our Robotic Solutions</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">&#129302;</div>
+                    <h3>Surgical Robotics</h3>
+                    <p>Multi-arm surgical systems with 7 degrees of freedom, sub-millimeter accuracy, and real-time tissue analysis for minimally invasive procedures.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128200;</div>
+                    <h3>Diagnostic AI</h3>
+                    <p>Computer vision models that analyze radiology scans, pathology slides, and dermatological images to flag abnormalities for physician review.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#9881;</div>
+                    <h3>Rehabilitation Exoskeletons</h3>
+                    <p>Wearable robotic devices that assist stroke and spinal cord injury patients in regaining mobility through adaptive, sensor-guided therapy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-section">
+        <div class="container">
+            <div class="feature-grid">
+                <div class="stat-card">
+                    <span class="stat-number">8,000+</span>
+                    <span class="stat-label">Procedures Performed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">75</span>
+                    <span class="stat-label">Partner Hospitals</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">18</span>
+                    <span class="stat-label">Countries Deployed</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+
+</body>
+</html>

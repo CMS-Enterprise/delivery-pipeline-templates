@@ -64,6 +64,7 @@ def services = [
     [name: 'django',    stash: 'workspace'],
     [name: 'go',        stash: 'go-build'],
     [name: 'maven',     stash: 'maven-build'],
+    [name: 'gradle',    stash: 'gradle-build'],
 ]
 def lintService(svc) {
     switch (svc.name) {
@@ -84,6 +85,10 @@ def lintService(svc) {
             break
         case 'maven':
             checkstyleLintMaven(working_dir: "demos/${svc.name}", pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'))
+            break
+        case 'gradle':
+            checkstyleLint(working_dir: "demos/${svc.name}", pod_yaml: readTrusted('resources/pods/gradle.yaml'),
+                           stage: "Lint: Gradle")
             break
     }
 }
@@ -118,6 +123,10 @@ def buildService(svc) {
                        pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'),
                        s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
             break
+        case 'gradle':
+            buildGradle(stage: "Build: Gradle", working_dir: "demos/${svc.name}",
+                        pod_yaml: readTrusted('resources/pods/gradle.yaml'))
+            break
       }
   }
 
@@ -146,6 +155,10 @@ def testService(svc) {
             unitTestMaven(stage: "Test: Maven", working_dir: "demos/${svc.name}", unstash: "maven-build",
                           pod_yaml: readTrusted('resources/pods/maven-openjdk17.yaml'),
                           s3_cache_bucket: env.S3_BUILD_CACHE_BUCKET)
+            break
+        case 'gradle':
+            unitTestGradle(stage: "Test: Gradle", working_dir: "demos/${svc.name}",
+                           pod_yaml: readTrusted('resources/pods/gradle.yaml'))
             break
       }
   }
