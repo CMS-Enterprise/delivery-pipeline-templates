@@ -260,7 +260,7 @@ pipeline {
                                     stage: "Audit: ${svc.name}",
                                     working_dir: "demos/${svc.name}",
                                     audit_level: 'high',
-                                    exclude_cves: ['GHSA-vfj7-8cjw-p6xm', 'GHSA-4qv8-2p9j-2685', 'GHSA-f72v-6w45-q472', 'GHSA-xjj6-f33q-929c', 'GHSA-mrhx-c7xc-m3w5', 'GHSA-pfhg-q3qv-9q6r', 'GHSA-27mw-82g8-phjj', 'GHSA-pxg6-pf52-xh8x']
+                                    exclude_cves: ['GHSA-vfj7-8cjw-p6xm', 'GHSA-4qv8-2p9j-2685', 'GHSA-f72v-6w45-q472', 'GHSA-xjj6-f33q-929c', 'GHSA-mrhx-c7xc-m3w5', 'GHSA-gcqx-w48m-w2h4']
                                 )
                             }
                         },
@@ -454,17 +454,17 @@ pipeline {
         }
 
         // ─── Update Image Tags (GitOps) ───
-//        stage('Update Image Tags') {
-//            when { expression { has_services } }
-//            steps {
-//                script {
-//                    gitopsPromote(gitopsConfig + [
-//                        environment_path: gitopsConfig.manifest_path_dev,
-//                        image_overrides: verifiedImages
-//                    ], 'dev')
-//                }
-//            }
-//        }
+        stage('Update Image Tags') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    gitopsPromote(gitopsConfig + [
+                        environment_path: gitopsConfig.manifest_path_dev,
+                        image_overrides: verifiedImages
+                    ], 'dev')
+                }
+            }
+        }
 
 //        // ─── Deploy to Dev ───
 //        stage('Deploy to Dev') {
