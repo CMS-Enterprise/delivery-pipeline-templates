@@ -1,6 +1,6 @@
-import { fileURLToPath } from 'node:url';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from "node:url";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { defineConfig } from "vitest/config";
 
 // fileURLToPath, not URL.pathname: pathname percent-encodes, so a workspace path
 // containing a space resolves to a directory that does not exist. Jenkins job
@@ -13,16 +13,16 @@ export default defineConfig({
   // plain svelte plugin compiles components, and $app/* is aliased below.
   plugins: [svelte()],
   resolve: {
-    conditions: ['browser'],
+    conditions: ["browser"],
     alias: {
-      '#app': dir('./src/testing/app'),
-      '#lib': dir('./src/lib'),
+      "#app": dir("./src/testing/app"),
+      "#lib": dir("./src/lib"),
     },
   },
   test: {
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    include: ['src/**/*.spec.ts'],
-    setupFiles: ['./src/testing/setup.ts'],
+    include: ["src/**/*.spec.ts"],
+    setupFiles: ["./src/testing/setup.ts"],
   },
 });
