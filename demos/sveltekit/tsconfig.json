@@ -1,4 +1,17 @@
 {
+  "compilerOptions": {
+    "paths": {
+      "#lib": [
+        "./src/lib"
+      ],
+      "#lib/*": [
+        "./src/lib/*"
+      ]
+    }
+  },
+  "exclude": [
+    "eslint.config.js"
+  ],
   "extends": "$app/tsconfig",
   "include": [
     "src",

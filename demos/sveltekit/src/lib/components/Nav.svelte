@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { resolve } from '$app/paths';
 </script>
 
@@ -7,8 +7,8 @@
   <div class="nav-container">
     <a href={resolve('/')}  class="nav-brand">RoboCare Health</a>
     <ul class="nav-links">
-      <li><a href={resolve('/')} class:active={$page.url.pathname === '/'}>Home</a></li>
-      <li><a href={resolve('/about')} class:active={$page.url.pathname === '/about'}>About</a></li>
+      <li><a href={resolve('/')} class:active={page.url.pathname === '/'}>Home</a></li>
+      <li><a href={resolve('/about')} class:active={page.url.pathname === '/about'}>About</a></li>
     </ul>
   </div>
 </nav>

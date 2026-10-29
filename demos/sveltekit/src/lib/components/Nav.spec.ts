@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-// Imported by real path, not via $app/stores: the vitest alias makes these the
-// same module, but svelte-check types $app/stores from SvelteKit, which has no
+// Imported by real path, not via $app/state: the vitest alias makes these the
+// same module, but svelte-check types $app/state from SvelteKit, which has no
 // setPathname.
-import { setPathname } from '../../testing/app/stores';
+import { setPathname } from '../../testing/app/state';
 import Nav from './Nav.svelte';
 
 describe('Nav', () => {

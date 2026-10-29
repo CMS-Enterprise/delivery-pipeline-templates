@@ -24,7 +24,7 @@
   "private": true,
   "scripts": {
     "build": "svelte-kit sync && vite build",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "dev": "vite dev --port 3002",
     "preview": "vite preview --port 3002",
     "test": "vitest run"
