@@ -10,10 +10,11 @@ COPY src ./src
 RUN gradle --no-daemon --console=plain assemble -x test
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:c1096b382fc79eb1ad17f1594a97279b63a376af3538d0adc14074ed2c8fe271
-
+USER 0
+RUN dnf -y upgrade && dnf clean all
+USER 1000
 WORKDIR /app
 COPY --from=builder /build/build/libs/site-1.0.0.jar ./app.jar
 EXPOSE 3006
 
-USER 1001
 CMD ["java", "-jar", "app.jar"]

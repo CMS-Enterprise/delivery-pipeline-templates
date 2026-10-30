@@ -11,7 +11,9 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt &
   mkdir -p /app/data
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:bf846ead9f772493743d4b3ee9ef891fcc39c8eb9169ba2564fa4128c63677b6
-
+USER 0
+RUN apk update --no-cache && apk upgrade --no-cache
+USER 1000
 WORKDIR /app
 
 COPY --from=builder /home/python/python-env /home/python/python-env
@@ -24,5 +26,4 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 3003
 
-USER 1001
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn mysite.wsgi:application --bind 0.0.0.0:3003 --workers 2 --timeout 60"]

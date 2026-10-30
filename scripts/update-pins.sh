@@ -5,7 +5,7 @@ APPLY=false
 if [[ "${1:-}" == "--apply" ]]; then APPLY=true; fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIBRARIES_DIR="$SCRIPT_DIR/../resources/pods/"
+REPO_ROOT="$SCRIPT_DIR/.."
 
 OUTDATED=0
 UP_TO_DATE=0
@@ -87,7 +87,7 @@ apply_sed() {
   local dir="$3"
 
   if [[ "$APPLY" == true ]]; then
-    find "$dir" \( -name "*.groovy" -o -name "*.yaml" \) -exec sed -i "s|${old}|${new}|g" {} +
+    find "$dir" \( -name "*.groovy" -o -name "*.yaml" -o -name "Dockerfile" \) -exec sed -i "s|${old}|${new}|g" {} +
   fi
 }
 
@@ -136,9 +136,11 @@ IMAGES["ironbank/opensource/maven/maven-openjdk-17"]="gi-gantuar-ironbank latest
 IMAGES["ironbank/opensource/maven/maven-openjdk-25"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/openpolicyagent/conftest"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/owasp-zap/owasp-zap"]="gi-gantuar-ironbank latest"
+IMAGES["ironbank/opensource/nginx/nginx"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/python"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/shellcheck/shellcheck"]="gi-gantuar-ironbank latest"
 IMAGES["ironbank/opensource/trufflehog/trufflehog"]="gi-gantuar-ironbank 3.99.7"
+IMAGES["ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim"]="gi-gantuar-ironbank latest"
 
 echo "Checking container images..."
 
@@ -152,8 +154,8 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
     continue
   fi
 
-  # Find current digest in pod YAML and groovy files
-  current_digest=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$LIBRARIES_DIR" --include="*.groovy" --include="*.yaml" 2>/dev/null | head -1 | grep -oP 'sha256:[a-f0-9]{64}' || true)
+  # Find current digest in pod YAML, groovy files, and Dockerfiles
+  current_digest=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$REPO_ROOT" --include="*.groovy" --include="*.yaml" --include="Dockerfile" 2>/dev/null | head -1 | grep -oP 'sha256:[a-f0-9]{64}' || true)
 
   if [[ -z "$current_digest" ]]; then
     report skip "$image" "not found pinned in libraries"
@@ -164,7 +166,7 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
     report ok "$image" "up-to-date (${current_digest:0:19}...)"
   else
     report outdated "$image" "${current_digest:0:19}... → ${new_digest:0:19}..."
-    apply_sed "${image}@${current_digest}" "${image}@${new_digest}" "$LIBRARIES_DIR"
+    apply_sed "${image}@${current_digest}" "${image}@${new_digest}" "$REPO_ROOT"
   fi
 done
 
