@@ -17,9 +17,6 @@
     <name>site</name>
     <description>Spring Boot + Thymeleaf Starter Site</description>
 
-    <properties>
-        <java.version>25</java.version>
-    </properties>
 
     <dependencies>
         <dependency>
