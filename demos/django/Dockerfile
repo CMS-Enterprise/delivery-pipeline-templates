@@ -10,7 +10,9 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt &
   mkdir -p /app/data
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
+USER 0
 RUN dnf upgrade -y --nodocs && dnf clean all || microdnf update -y && microdnf clean all || true
+USER 1001
 
 WORKDIR /app
 

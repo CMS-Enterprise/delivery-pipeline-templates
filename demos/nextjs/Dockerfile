@@ -9,7 +9,9 @@ COPY --chown=node:node . .
 RUN npm run build
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:74237b1ccbe3f523fcd8b5a999a934595da60fe4f337ad9fa50303179ae16dc8
+USER 0
 RUN apk update --no-cache && apk upgrade --no-cache
+USER 1001
 
 WORKDIR /home/node/app
 
