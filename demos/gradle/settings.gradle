@@ -1,3 +1,11 @@
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://artifactory.cloud.cms.gov/artifactory/maven-public'
+        }
+    }
+}
+
 plugins {
     id 'com.github.burrunan.s3-build-cache' version '1.8.2'
 }
