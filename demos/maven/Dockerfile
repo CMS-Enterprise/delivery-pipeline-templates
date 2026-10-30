@@ -9,7 +9,7 @@ COPY src ./src
 
 RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
 
-FROM artifactory.cloud.cms.gov/docker/eclipse-temurin@sha256:56f273059de6b13a6b49fe0ded691ed2d0399bbee76156a8f2d385f7524a3d43
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:c1096b382fc79eb1ad17f1594a97279b63a376af3538d0adc14074ed2c8fe271
 
 WORKDIR /app
 COPY --from=builder /build/target/site-1.0.0.jar ./app.jar
