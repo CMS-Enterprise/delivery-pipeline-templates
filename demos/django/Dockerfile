@@ -1,4 +1,5 @@
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273 AS builder
+# hadolint ignore=DL3002
 USER 0
 
 WORKDIR /app

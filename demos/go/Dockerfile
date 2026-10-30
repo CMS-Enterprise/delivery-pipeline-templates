@@ -1,4 +1,5 @@
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:f5a458e824d2044b2ba7ccf2b629ea9d45eb7417dded43cafcbccee914fa02f2 AS builder
+# hadolint ignore=DL3002
 USER 0
 
 WORKDIR /build
