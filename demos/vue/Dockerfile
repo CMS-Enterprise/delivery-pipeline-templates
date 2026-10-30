@@ -8,7 +8,7 @@ RUN npm ci
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:779b8bf0c36291971646465f5bca06a78514b4d976c5e54fc64dce70f6608001
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:add74d903c9a691882e5732c0e78f8abdc50b493cd39f5ddffc29132f50d65da
 
 WORKDIR /usr/share/nginx/html
 COPY --from=builder /home/node/app/dist .

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: trufflehog
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/trufflehog/trufflehog@sha256:b61be1402b61af010f6c1203cf307942373a5dcaf398d3e649fc76d3ac0ed000
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/trufflehog/trufflehog@sha256:f2e402123aab25ae0302fc83ae858436de87328588401976a4b8e42dc1e2ca4f
       command: ["cat"]
       tty: true
       securityContext:
