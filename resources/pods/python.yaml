@@ -10,7 +10,6 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
-    fsGroup: 1000
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
@@ -22,11 +21,12 @@ spec:
       tty: true
       env:
         - name: PATH
-          value: "/home/python/python-env/bin:/home/jenkins/agent/.local/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+          value: "/home/jenkins/agent/.local/bin:/home/python/python-env/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
         - name: HOME
           value: "/home/jenkins/agent"
+        - name: PIP_USER
+          value: "1"
       securityContext:
-        runAsUser: 1001
         allowPrivilegeEscalation: false
         capabilities:
           drop: ["ALL"]
