@@ -25,7 +25,7 @@ spec:
         - name: HOME
           value: "/home/python"
         - name: PIP_USER
-          value: "1"
+          value: "0"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
