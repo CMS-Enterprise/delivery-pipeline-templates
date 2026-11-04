@@ -9,7 +9,7 @@ spec:
     node-pool: agent
   terminationGracePeriodSeconds: 30
   securityContext:
-    runAsUser: 1000
+    runAsUser: 1001
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
@@ -17,13 +17,13 @@ spec:
   containers:
     - name: python
       image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:6fe650c14d10a1ca3522bc0168a0dafb7ed8a605d8255ad32ed456aae02e65a2
-      command: ["sh", "-c", "cp -a /home/python/python-env /home/jenkins/agent/python-env && cat"]
+      command: ["cat"]
       tty: true
       env:
         - name: PATH
-          value: "/home/jenkins/agent/python-env/bin:/home/jenkins/agent/.local/bin:/home/jenkins/agent/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+          value: "/home/python/python-env/bin:/home/python/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
         - name: HOME
-          value: "/home/jenkins/agent"
+          value: "/home/python"
         - name: PIP_USER
           value: "1"
       securityContext:

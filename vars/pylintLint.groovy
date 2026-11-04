@@ -10,7 +10,7 @@ def call(Map config = [:]) {
                 unstash "workspace"
                 container('python') {
                     sh """
-                        export PATH="/home/jenkins/agent/python-env/bin:/home/jenkins/agent/.local/bin:$PATH"
+                        export PATH="/home/python/python-env/bin:/home/python/.local/bin:$PATH"
                         python -m pip config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         cd ${working_dir}
                         python -m pip install pylint==4.1.3 pylint-django==2.8.0

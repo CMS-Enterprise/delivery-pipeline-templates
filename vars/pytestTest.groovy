@@ -13,7 +13,7 @@ def call(Map config = [:]) {
                 unstash "${myunstash}"
                 container('python') {
                     sh """
-                        export PATH="/home/jenkins/agent/python-env/bin:/home/jenkins/agent/.local/bin:$PATH"
+                        export PATH="/home/python/python-env/bin:/home/python/.local/bin:$PATH"
                         python -m pip config set global.index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple
                         python -m pip install pytest==9.1.1 pytest-cov==7.1.0
                         cd ${working_dir}
