@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:74237b1ccbe3f523fcd8b5a999a934595da60fe4f337ad9fa50303179ae16dc8 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e AS builder
 # hadolint ignore=DL3002
 USER 0
 RUN apk update --no-cache && apk upgrade --no-cache
@@ -10,7 +10,7 @@ RUN npm ci
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:74237b1ccbe3f523fcd8b5a999a934595da60fe4f337ad9fa50303179ae16dc8
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e
 USER 0
 RUN apk update --no-cache && apk upgrade --no-cache && \
   npm install -g npm@12.2.2 --registry=https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/

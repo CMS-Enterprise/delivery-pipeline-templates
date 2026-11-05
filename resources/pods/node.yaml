@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: node
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:74237b1ccbe3f523fcd8b5a999a934595da60fe4f337ad9fa50303179ae16dc8
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e
       command: ["cat"]
       tty: true
       securityContext:

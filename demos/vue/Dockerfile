@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:74237b1ccbe3f523fcd8b5a999a934595da60fe4f337ad9fa50303179ae16dc8 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e AS builder
 # hadolint ignore=DL3002
 WORKDIR /home/node/app
 
@@ -9,6 +9,8 @@ COPY --chown=node:node . .
 RUN npm run build
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:add74d903c9a691882e5732c0e78f8abdc50b493cd39f5ddffc29132f50d65da
+USER 0
+RUN dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf
 
 WORKDIR /usr/share/nginx/html
 COPY --from=builder /home/node/app/dist .
