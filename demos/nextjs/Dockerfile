@@ -1,7 +1,7 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:de5abd554ce2d5b736f0d85592f50d8648d80a7c0ab4d59ef45eeeb4edf6f66e AS builder
 # hadolint ignore=DL3002
 USER 0
-RUN apk update --no-cache && apk upgrade --no-cache
+RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/*
 WORKDIR /home/node/app
 
 COPY --chown=node:node package*.json .npmrc ./
@@ -10,11 +10,11 @@ RUN npm ci
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/nodejs26@sha256:e15065bd6c719aaa8985190779e633f6479b1ac4cc51427f5f7d55662a3ac06e
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:de5abd554ce2d5b736f0d85592f50d8648d80a7c0ab4d59ef45eeeb4edf6f66e
 USER 0
-RUN apk update --no-cache && apk upgrade --no-cache && \
+RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/* && \
   npm install -g npm@12.2.2 --registry=https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/
-USER 1001
+USER 1000
 
 WORKDIR /home/node/app
 
