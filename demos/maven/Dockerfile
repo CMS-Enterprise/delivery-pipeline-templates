@@ -10,7 +10,7 @@ COPY src ./src
 RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:c1096b382fc79eb1ad17f1594a97279b63a376af3538d0adc14074ed2c8fe271
-RUN dnf -y upgrade && dnf clean all
+RUN microdnf -y upgrade && microdnf clean all
 USER 1000
 WORKDIR /app
 COPY --from=builder /build/target/site-1.0.0.jar ./app.jar
