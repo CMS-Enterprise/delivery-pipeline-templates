@@ -110,7 +110,7 @@ IMAGES["alpine/helm"]="docker latest"
 IMAGES["alpine/jmeter"]="docker latest"
 IMAGES["snyk/snyk"]="docker node"
 IMAGES["golangci/golangci-lint"]="docker latest"
-IMAGES["anchore/grype"]="docker latest"
+IMAGES["anchore/grype"]="docker debug"
 IMAGES["jfrog/jfrog-cli-v2-jf"]="docker latest"
 # IronBank images (moved from Docker Hub / GHCR)
 IMAGES["ironbank/opensource/tflint/tflint"]="gi-gantuar-ironbank latest"
