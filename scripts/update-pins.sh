@@ -108,6 +108,7 @@ declare -A IMAGES
 # Docker Hub images (via artifactory docker remote)
 IMAGES["alpine/helm"]="docker latest"
 IMAGES["alpine/jmeter"]="docker latest"
+IMAGES["alpine/git"]="docker latest"
 IMAGES["snyk/snyk"]="docker node"
 IMAGES["golangci/golangci-lint"]="docker latest"
 IMAGES["anchore/grype"]="docker debug"
