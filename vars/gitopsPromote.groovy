@@ -1,5 +1,6 @@
 def call(Map config = [:], String environment) {
     def manifest_repo = config.manifest_repo ?: error("manifest_repo is required")
+    def manifest_host_path = manifest_repo.replaceFirst('^https?://', '')
     def manifest_branch = config.manifest_branch ?: 'main'
     def image_tag = env.IMAGE_TAG ?: env.GIT_SHORT_HASH
     def environment_path = config.environment_path ?: environment
@@ -12,7 +13,7 @@ def call(Map config = [:], String environment) {
                 container('git') {
                     withCredentials([usernamePassword(credentialsId: config.git_credential ?: 'github-org-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
-                            git clone https://\${GIT_USER}:\${GIT_PASS}@${manifest_repo} manifests
+                            git clone https://\${GIT_USER}:\${GIT_PASS}@${manifest_host_path} manifests
                         """
                     }
                 }
