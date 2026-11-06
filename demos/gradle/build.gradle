@@ -23,10 +23,34 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation platform('io.cucumber:cucumber-bom:8.0.4')
+    testImplementation 'io.cucumber:cucumber-java'
+    testImplementation 'io.cucumber:cucumber-spring'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine'
+    testImplementation 'org.junit.platform:junit-platform-suite'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Unit tests and Cucumber scenarios run as separate tasks so each reports on
+// its own; the suite engine only discovers RunCucumberTest.
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeEngines 'junit-platform-suite'
+    }
+}
+
+tasks.register('cucumber', Test) {
+    description = 'Runs the Cucumber acceptance scenarios.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeEngines 'junit-platform-suite'
+    }
+    def tags = System.getProperty('cucumber.filter.tags')
+    if (tags) {
+        systemProperty 'cucumber.filter.tags', tags
+    }
 }
 
 checkstyle {
