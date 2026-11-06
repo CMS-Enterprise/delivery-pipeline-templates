@@ -20,7 +20,7 @@ pipeline {
                       type: RuntimeDefault
                   containers:
                     - name: aws-cli
-                      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:0b894cdaa3836d70050f293b9e993c546e222458e64e145b93a783efd24a7046
+                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:4f1211d7a4539d08384dc1b6f72788ba0c52d8643862fb0ae655f2616392d286
                       command: ['cat']
                       tty: true
                       securityContext:

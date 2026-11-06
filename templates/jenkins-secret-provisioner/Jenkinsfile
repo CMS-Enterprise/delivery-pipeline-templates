@@ -23,7 +23,7 @@ pipeline {
             type: RuntimeDefault
         containers:
         - name: kubectl
-          image: artifactory.cloud.cms.gov/docker/bitnami/kubectl:1.29
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/kubernetes/kubectl@sha256:fc78c8cb158b318a493e11d827b1367190a9fbc566b3d5616f6471afb932f586
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           securityContext:

@@ -84,18 +84,18 @@ pipeline {
           - name: squid-log
             mountPath: /var/log/squid
         - name: setup
-          image: artifactory.cloud.cms.gov/docker/alpine:latest
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: podman
-          image: artifactory.cloud.cms.gov/docker/podman/stable:latest
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:eba2ce21abb42a0f0d4d9ac557587d9f0f24611873eafdf17e0eda350aec973d
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
               memory: "${params.build_memory_limit}"
         - name: clamav
-          image: artifactory.cloud.cms.gov/docker/clamav/clamav:latest
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:9ec432cd3c0dda4e7f3828c8b3af48678a919d5e4f63068aa982d747a25e723f
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           volumeMounts:
@@ -117,8 +117,7 @@ pipeline {
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: skopeo
-          # pull through from quay.io
-          image: artifactory.cloud.cms.gov/docker/skopeo/stable:v1
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/skopeo@sha256:fcf48c59256196c7f30e28753fd03121a1cf8203dad7099e68ba1336c82837e5
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
       """

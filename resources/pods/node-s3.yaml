@@ -33,7 +33,7 @@ spec:
           memory: "2Gi"
           ephemeral-storage: "5Gi"
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/docker/amazon/aws-cli@sha256:25fea7c13a5b32ac8bde048af1cd286e41f07d5d37e6649f23c14a6f9bf284d9
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:4f1211d7a4539d08384dc1b6f72788ba0c52d8643862fb0ae655f2616392d286
       command: ["cat"]
       tty: true
       securityContext:
