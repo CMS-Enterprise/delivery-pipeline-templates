@@ -101,7 +101,7 @@ def registryPrefix(svc) {
 }
 
 // Runs inside the service's existing container, so this cannot reuse the
-// eslintLint/pylintLint steps — those each allocate their own pod. Lint findings
+// eslint*Lint/pylintLint steps — those each allocate their own pod. Lint findings
 // are archived by the caller from the service directory.
 def lintInPod(svc) {
     switch (svc.lint) {
