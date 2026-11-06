@@ -6,6 +6,9 @@ def call(Map config = [:]) {
     def myunstash = config.unstash ?: 'workspace'
     def output_name = config.output_name ?: 'jmeter'
     def stagename = config.stage ?: 'JMeter Performance Test'
+    // Each entry becomes -Jkey=value, read in the plan with ${__P(key,default)}.
+    def properties = config.properties ?: [:]
+    def property_flags = properties.collect { k, v -> "-J${k}=${v}" }.join(' ')
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jmeter.yaml')) {
@@ -18,6 +21,7 @@ def call(Map config = [:]) {
                             -Jthreads=${threads} \
                             -Jrampup=${ramp_up} \
                             -Jduration=${duration} \
+                            ${property_flags} \
                             -l ${output_name}-results.jtl \
                             -e -o ${output_name}-report/
                     """

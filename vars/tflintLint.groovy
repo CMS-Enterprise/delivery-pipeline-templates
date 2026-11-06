@@ -2,11 +2,17 @@ def call(Map config = [:]) {
     def terraform_dir = config.terraform_dir ?: 'terraform/'
     def fail_on_error = config.fail_on_error != false
     def minimum_severity = config.minimum_severity ?: 'warning'
+    def myunstash = config.unstash ?: ''
+    def stagename = config.stage ?: 'TFLint'
 
-    stage("TFLint") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/tflint.yaml')) {
             node(POD_LABEL) {
-                checkout scm
+                if (myunstash) {
+                    unstash "${myunstash}"
+                } else {
+                    checkout scm
+                }
                 container('tflint') {
                     dir(terraform_dir) {
                         def exit_code = sh(
