@@ -48,7 +48,7 @@ def snykConfig = [
 
 def dev_base_url = env.DEV_BASE_URL ?: 'https://dev.delivery-demos.example.com'
 
-// Image Tests run each freshly built image as a sidecar in the test pod, so the
+// Image Tests run each promoted image as a sidecar in the test pod, so the
 // tests reach it on localhost. uid matches the image's USER; health is the
 // startup probe and smoke-test path.
 def appTargets = [
@@ -59,6 +59,13 @@ def appTargets = [
     maven:     [port: 3004, health: '/health', uid: 1000],
     go:        [port: 3005, health: '/health', uid: 1000],
     gradle:    [port: 3006, health: '/health', uid: 1000],
+]
+
+// Nodes pull the promoted images from the prod repo with this dockerconfigjson
+// Secret in the agent namespace. Leave IMAGE_PULL_SECRET unset if the nodes
+// already have pull access.
+def imageTestConfig = [
+    image_pull_secret: env.IMAGE_PULL_SECRET ?: '',
 ]
 
 // The Terraform stage runs once AWS_DEMO_ACCOUNT_ID is set on the controller.
@@ -485,66 +492,6 @@ pipeline {
             }
         }
 
-        // ─── Image Tests ───
-        // Each test pod runs the staging image as a native sidecar, so the
-        // image is exercised before it is promoted. Steps run in sequence per
-        // service to keep one test pod per service alive at a time.
-        stage('Image Tests') {
-            when { expression { has_services } }
-            steps {
-                script {
-                    def branches = selected.collectEntries { svc ->
-                        def target = appTargets[svc.name]
-                        def image = stagingImages[svc.name]
-                        def local_url = "http://localhost:${target.port}"
-                        def withApp = { String pod_file ->
-                            appSidecarPod([
-                                image: image,
-                                port: target.port,
-                                run_as_user: target.uid,
-                                probe_path: target.health
-                            ], readTrusted(pod_file))
-                        }
-                        ["Image Tests: ${svc.name}": {
-                            smokeTest(
-                                url: "${local_url}${target.health}",
-                                retries: 3,
-                                retry_delay_seconds: 5,
-                                pod_yaml: withApp('resources/pods/curl.yaml'),
-                                stage: "Smoke: ${svc.name}"
-                            )
-                            playwrightTest(
-                                base_url: local_url,
-                                selenium_url: '',
-                                working_dir: 'demos/e2e',
-                                workers: 2,
-                                output_name: "playwright-${svc.name}",
-                                pod_yaml: withApp('resources/pods/playwright.yaml'),
-                                stage: "Playwright: ${svc.name}"
-                            )
-                            jmeterTest(
-                                test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
-                                properties: [HOST: 'localhost', PORT: target.port],
-                                output_name: "jmeter-${svc.name}",
-                                pod_yaml: withApp('resources/pods/jmeter.yaml'),
-                                stage: "JMeter: ${svc.name}"
-                            )
-                            postmanTest(
-                                collection: 'postman/site.postman_collection.json',
-                                working_dir: 'demos/e2e',
-                                env_vars: [baseUrl: local_url, healthPath: target.health],
-                                output_name: "newman-${svc.name}",
-                                pod_yaml: withApp('resources/pods/node.yaml'),
-                                stage: "Postman: ${svc.name}"
-                            )
-                        }]
-                    }
-                    branches.failFast = false
-                    parallel branches
-                }
-            }
-        }
-
         // ─── SBOM Attestation ───
         stage('SBOM Attestation') {
             when { expression { has_services } }
@@ -579,6 +526,59 @@ pipeline {
                             ], jfrogConfig.prod_repo)
                         }]
                     }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Image Tests ───
+        // Each test pod runs the promoted (scanned) image as a native sidecar,
+        // so tests reach it on localhost. Steps run in sequence per service to
+        // keep one test pod per service alive at a time.
+        stage('Image Tests') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
+                        def target = appTargets[svc.name]
+                        def image = verifiedImages[svc.name]
+                        def local_url = "http://localhost:${target.port}"
+                        def withApp = { String pod_file ->
+                            appSidecarPod([
+                                image: image,
+                                port: target.port,
+                                run_as_user: target.uid,
+                                probe_path: target.health,
+                                image_pull_secret: imageTestConfig.image_pull_secret
+                            ], readTrusted(pod_file))
+                        }
+                        ["Image Tests: ${svc.name}": {
+                            smokeTest(
+                                url: "${local_url}${target.health}",
+                                retries: 3,
+                                retry_delay_seconds: 5,
+                                pod_yaml: withApp('resources/pods/curl.yaml'),
+                                stage: "Smoke: ${svc.name}"
+                            )
+                            playwrightTest(
+                                base_url: local_url,
+                                selenium_url: '',
+                                working_dir: 'demos/e2e',
+                                workers: 2,
+                                output_name: "playwright-${svc.name}",
+                                pod_yaml: withApp('resources/pods/playwright.yaml'),
+                                stage: "Playwright: ${svc.name}"
+                            )
+                            jmeterTest(
+                                test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+                                properties: [HOST: 'localhost', PORT: target.port],
+                                output_name: "jmeter-${svc.name}",
+                                pod_yaml: withApp('resources/pods/jmeter.yaml'),
+                                stage: "JMeter: ${svc.name}"
+                            )
+                        }]
+                    }
+                    branches.failFast = false
                     parallel branches
                 }
             }
@@ -649,11 +649,6 @@ pipeline {
 //                            playwrightTest(base_url: svc_url, working_dir: 'demos/e2e',
 //                                           output_name: "playwright-dev-${svc.name}",
 //                                           stage: "Dev Playwright: ${svc.name}")
-//                            postmanTest(collection: 'postman/site.postman_collection.json',
-//                                        working_dir: 'demos/e2e',
-//                                        env_vars: [baseUrl: svc_url, healthPath: target.health],
-//                                        output_name: "newman-dev-${svc.name}",
-//                                        stage: "Dev Postman: ${svc.name}")
 //                        }
 //                    }
 //
