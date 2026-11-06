@@ -10,7 +10,7 @@
 - `npm run dev` - start dev server on port 3000
 - `npm run build` - production build
 - `npm run check` - type-check only (tsc --noEmit)
-- `npm test` - run the Vitest suite
+- `npm test` - run the Jest suite (`jest.config.mjs`, via `next/jest`)
 - `npm run start` - serve production build on port 3000
 - `./run.sh` - install and start dev server
 
@@ -28,7 +28,7 @@
 - `src/app/globals.css` - Global styles with CSS variables
 - `src/app/layout.tsx` - Root layout with nav and footer
 - Pages are directories with `page.tsx` files (e.g., `src/app/about/page.tsx`)
-- `src/testing/setup.ts` - Vitest setup (jest-dom matchers)
+- `src/testing/setup.ts` - Jest setup (jest-dom matchers)
 - `*.spec.tsx` files sit beside what they cover
 
 # Workflow
