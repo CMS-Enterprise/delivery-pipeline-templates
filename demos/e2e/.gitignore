@@ -3,5 +3,3 @@ node_modules/
 test-results/
 *-report/
 *-junit.xml
-*-results.xml
-*-results.json
