@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: "true"
+spec:
+  serviceAccountName: jenkins-agents
+  nodeSelector:
+    node-pool: agent
+  terminationGracePeriodSeconds: 30
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  restartPolicy: Never
+  volumes:
+    - name: clamav-db
+      emptyDir: {}
+  containers:
+    - name: terraform
+      image: artifactory.cloud.cms.gov/docker/hashicorp/terraform@sha256:a5d5a5a892c98f60fcbfa81eac2a40fc19e7b3fa7719bccae10ff6111d22524a
+      command: ["cat"]
+      tty: true
+      env:
+        - name: HOME
+          value: "/home/jenkins/agent"
+        - name: TF_IN_AUTOMATION
+          value: "1"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "1"
+          memory: "1Gi"
+          ephemeral-storage: "2Gi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+          ephemeral-storage: "2Gi"
+    - name: clamav
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:9ec432cd3c0dda4e7f3828c8b3af48678a919d5e4f63068aa982d747a25e723f
+      command: ["cat"]
+      tty: true
+      volumeMounts:
+        - name: clamav-db
+          mountPath: /var/lib/clamav
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests:
+          cpu: "1"
+          memory: "4Gi"
+          ephemeral-storage: "2Gi"
+        limits:
+          cpu: "1"
+          memory: "4Gi"
+          ephemeral-storage: "2Gi"

@@ -1,54 +1,53 @@
+// Terraform comes from the pinned image in the pod rather than a tfenv
+// download, so no unscanned binary is fetched at run time. tfenv's
+// .terraform-version file is still honored: the step fails if the image's
+// terraform does not match it. Providers fetched by `terraform init` must match
+// the committed .terraform.lock.hcl and are ClamAV-scanned before plan.
 void call(Map config = [:], String environment) {
-    stage("Terraform Deploy (${environment})") {
-        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/terraform.yaml')) {
+    def tf_dir = config.terraform_dir ?: "terraform/environments/${environment}"
+    def var_file = config.var_files?."${environment}" ?: "${environment}.tfvars"
+    def backend_config = config.backend_config?."${environment}" ?: ''
+    def auto_approve = config.auto_approve != null ? config.auto_approve : true
+    def myunstash = config.unstash ?: ''
+    def stagename = config.stage ?: "Terraform Deploy (${environment})"
+
+    stage("${stagename}") {
+        podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/terraform-scan.yaml')) {
             node(POD_LABEL) {
-                checkout scm
-
-                container('alpine') {
-                    def tf_dir = config.terraform_dir ?: "terraform/environments/${environment}"
-                    def tf_version = config.terraform_version ?: ""
-                    def freshclam_mirror = config.freshclam_mirror ?: "https://artifactory.cloud.cms.gov/clamav-db"
-
-                    sh """
-                        apk add --no-cache git bash curl unzip clamav clamav-libunrar
-                        freshclam --quiet --DatabaseMirror=${freshclam_mirror}
-
-                        git clone --depth 1 https://github.com/tfutils/tfenv.git /opt/tfenv
-                        clamscan -r --infected /opt/tfenv \
-                            || { echo "ClamAV detected malware in tfenv"; exit 1; }
-
-                        export PATH="/opt/tfenv/bin:\$PATH"
-                        cd ${tf_dir}
-                        ${tf_version ? "tfenv install ${tf_version} && tfenv use ${tf_version}" : 'tfenv install && tfenv use'}
-
-                        clamscan -r --infected ~/.tfenv/versions/ \
-                            || { echo "ClamAV detected malware in terraform binary"; exit 1; }
-
-                        terraform --version
-                    """
+                if (myunstash) {
+                    unstash "${myunstash}"
+                } else {
+                    checkout scm
                 }
-
-                container('aws-cli') {
-                    def tf_dir = config.terraform_dir ?: "terraform/environments/${environment}"
-                    def var_file = config.var_files?."${environment}" ?: "${environment}.tfvars"
-                    def backend_config = config.backend_config?."${environment}" ?: ""
-                    def auto_approve = config.auto_approve != null ? config.auto_approve : true
-
-                    dir(tf_dir) {
+                dir(tf_dir) {
+                    container('terraform') {
                         sh """
-                            export PATH="/opt/tfenv/bin:\$PATH"
-                            terraform init \
-                                ${backend_config ? "-backend-config=${backend_config}" : ''} \
-                                -input=false
-                            terraform plan \
-                                -var-file=${var_file} \
-                                -out=tfplan \
-                                -input=false
-                            ${auto_approve ? "terraform apply -input=false tfplan" : ''}
+                            set -e
+                            if [ -f .terraform-version ]; then
+                                want=\$(tr -d '[:space:]' < .terraform-version)
+                                have=\$(terraform version -json | sed -n 's/.*"terraform_version": *"\\([^"]*\\)".*/\\1/p')
+                                if [ "\$want" != "\$have" ]; then
+                                    echo ".terraform-version wants \$want but the pod image provides \$have"
+                                    exit 1
+                                fi
+                            fi
+                            terraform init -input=false -lockfile=readonly \
+                                ${backend_config ? "-backend-config=${backend_config}" : ''}
                         """
-
-                        archiveArtifacts allowEmptyArchive: true, artifacts: 'tfplan'
                     }
+                    container('clamav') {
+                        sh """
+                            freshclam
+                            clamscan --infected --recursive .terraform/providers
+                        """
+                    }
+                    container('terraform') {
+                        sh "terraform plan -input=false -var-file=${var_file} -out=tfplan"
+                        if (auto_approve) {
+                            sh 'terraform apply -input=false tfplan'
+                        }
+                    }
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'tfplan'
                 }
             }
         }

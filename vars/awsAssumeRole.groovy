@@ -8,20 +8,37 @@ def call(Map config = [:], String environment) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/aws-cli.yaml')) {
             node(POD_LABEL) {
                 container('aws-cli') {
-                    def creds = sh(
-                        script: """
-                            aws sts assume-role \
-                                --role-arn ${role_arn} \
-                                --role-session-name jenkins-${env.BUILD_NUMBER} \
-                                --region ${region} \
-                                --output json
-                        """,
-                        returnStdout: true
-                    ).trim()
-                    def parsed = readJSON text: creds
+                    def assume = {
+                        sh(
+                            script: """
+                                aws sts assume-role \
+                                    --role-arn ${role_arn} \
+                                    --role-session-name jenkins-${env.BUILD_NUMBER} \
+                                    --region ${region} \
+                                    --output json
+                            """,
+                            returnStdout: true
+                        ).trim()
+                    }
+                    // Without a credential the pod's own identity (e.g. IRSA on
+                    // the service account) is used to call sts:AssumeRole.
+                    def creds
+                    if (config.credential) {
+                        withCredentials([usernamePassword(credentialsId: config.credential,
+                                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                            creds = assume()
+                        }
+                    } else {
+                        creds = assume()
+                    }
+                    // JsonSlurperClassic, not readJSON: Pipeline Utility Steps
+                    // is not a guaranteed plugin on the controller.
+                    def parsed = new groovy.json.JsonSlurperClassic().parseText(creds)
                     env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId
                     env.AWS_SECRET_ACCESS_KEY = parsed.Credentials.SecretAccessKey
                     env.AWS_SESSION_TOKEN = parsed.Credentials.SessionToken
+                    env.AWS_REGION = region
                 }
             }
         }
