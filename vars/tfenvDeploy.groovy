@@ -1,4 +1,4 @@
-// Terraform comes from the pinned image in the pod rather than a tfenv
+// Terraform comes from the pinned IronBank image in the pod rather than a tfenv
 // download, so no unscanned binary is fetched at run time. tfenv's
 // .terraform-version file is still honored: the step fails if the image's
 // terraform does not match it. Providers fetched by `terraform init` must match

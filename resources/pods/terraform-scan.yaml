@@ -19,7 +19,7 @@ spec:
       emptyDir: {}
   containers:
     - name: terraform
-      image: artifactory.cloud.cms.gov/docker/hashicorp/terraform@sha256:a5d5a5a892c98f60fcbfa81eac2a40fc19e7b3fa7719bccae10ff6111d22524a
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/hashicorp/terraform/terraform@sha256:1d766e119305eebe07b27a3b2edc364f8bec66674070d8d9ac9bbe7fd31f08df
       command: ["cat"]
       tty: true
       env:
