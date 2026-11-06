@@ -19,6 +19,8 @@ spec:
       image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:4371ddc9eba5d1f80899ad86fc88fc29f15bf2ef0dd9c52eb91e2445e8535eeb
       command: ["cat"]
       env:
+        - name: GOPROXY
+          value: "https://artifactory.cloud.cms.gov/artifactory/api/go/go"
         - name: GOCACHE
           value: /tmp/.cache/go-build
       tty: true

@@ -6,7 +6,9 @@ WORKDIR /app
 COPY requirements.txt ./
 COPY . .
 
-RUN /home/python/python-env/bin/pip install --no-cache-dir -r requirements.txt && \
+RUN /home/python/python-env/bin/pip install --no-cache-dir \
+    --index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple \
+    -r requirements.txt && \
   /home/python/python-env/bin/python manage.py collectstatic --noinput && \
   mkdir -p /app/data && \
   /home/python/python-env/bin/python -m pip uninstall -y pip

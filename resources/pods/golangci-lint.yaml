@@ -19,6 +19,8 @@ spec:
       image: artifactory.cloud.cms.gov/docker/golangci/golangci-lint@sha256:fbfcfd12a6f8d7f1b97b3362ca80fc2a244d46863148c73cb88e7793af96c481
       command: ["cat"]
       env:
+        - name: GOPROXY
+          value: "https://artifactory.cloud.cms.gov/artifactory/api/go/go"
         - name: GOLANGCI_LINT_CACHE
           value: /tmp/.cache/golangci-lint
         - name: GOCACHE

@@ -2,7 +2,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/de
 # hadolint ignore=DL3002
 WORKDIR /home/node/app
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node package*.json .npmrc ./
 RUN npm ci
 
 COPY --chown=node:node . .
@@ -17,7 +17,7 @@ USER 1000
 WORKDIR /home/node/app
 ENV NODE_ENV=production
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node package*.json .npmrc ./
 RUN npm ci --production
 COPY --chown=node:node --from=builder /home/node/app/build ./build
 
