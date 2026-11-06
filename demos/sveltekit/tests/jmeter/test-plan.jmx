@@ -9,11 +9,11 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="HOST" elementType="Argument">
             <stringProp name="Argument.name">HOST</stringProp>
-            <stringProp name="Argument.value">localhost</stringProp>
+            <stringProp name="Argument.value">${__P(HOST,localhost)}</stringProp>
           </elementProp>
           <elementProp name="PORT" elementType="Argument">
             <stringProp name="Argument.name">PORT</stringProp>
-            <stringProp name="Argument.value">3002</stringProp>
+            <stringProp name="Argument.value">${__P(PORT,3002)}</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>

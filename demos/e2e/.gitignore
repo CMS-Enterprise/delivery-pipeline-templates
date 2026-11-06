@@ -1,0 +1,7 @@
+node_modules/
+.npm/
+test-results/
+*-report/
+*-junit.xml
+*-results.xml
+*-results.json

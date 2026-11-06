@@ -1,0 +1,25 @@
+{
+  "description": "Image-level browser and API tests shared by every demo service",
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "newman": "6.2.3"
+  },
+  "name": "demo-e2e",
+  "overrides": {
+    "flatted": "3.4.4",
+    "handlebars": "4.7.10",
+    "httpntlm": "1.8.14",
+    "jose": "4.15.9",
+    "lodash": "4.18.1",
+    "node-forge": "1.4.3",
+    "qs": "6.17.1",
+    "underscore": "1.13.8",
+    "uuid": "11.1.1"
+  },
+  "private": true,
+  "scripts": {
+    "api": "newman run postman/site.postman_collection.json",
+    "test": "playwright test"
+  },
+  "version": "0.1.0"
+}
