@@ -48,6 +48,52 @@ def snykConfig = [
 
 def dev_base_url = env.DEV_BASE_URL ?: 'https://dev.delivery-demos.example.com'
 
+// Image Tests run each freshly built image as a sidecar in the test pod, so the
+// tests reach it on localhost. uid matches the image's USER; health is the
+// startup probe and smoke-test path.
+def appTargets = [
+    nextjs:    [port: 3000, health: '/',       uid: 1000],
+    vue:       [port: 3001, health: '/',       uid: 101],
+    sveltekit: [port: 3002, health: '/',       uid: 1000],
+    django:    [port: 3003, health: '/health', uid: 1001],
+    maven:     [port: 3004, health: '/health', uid: 1000],
+    go:        [port: 3005, health: '/health', uid: 1000],
+    gradle:    [port: 3006, health: '/health', uid: 1000],
+]
+
+// The Terraform stage runs once AWS_DEMO_ACCOUNT_ID is set on the controller.
+// The credential holds the base access key (username) and secret (password)
+// used to assume role_name in that account.
+def terraformConfig = [
+    account_ids: [dev: env.AWS_DEMO_ACCOUNT_ID],
+    role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
+    credential: 'aws-demo-credentials',
+    terraform_dir: 'demos/terraform/environments/dev',
+]
+
+// Notifications are best effort: a missing credential is logged, never fails
+// the build. The Jira issue comes from JIRA_ISSUE_KEY or the first key found
+// in this build's commit messages.
+def notifyConfig = [
+    slack_webhook_credential: 'slack-webhook-url',
+    slack_channel: '#delivery-demos',
+    jira_site: 'https://jiraent.cms.gov',
+    jira_token_credential: 'jira-api-token',
+]
+
+@NonCPS
+def jiraIssueKey(changeSets) {
+    for (changeSet in changeSets) {
+        for (entry in changeSet.items) {
+            def match = entry.msg =~ /\b[A-Z][A-Z0-9]+-\d+\b/
+            if (match.find()) {
+                return match.group()
+            }
+        }
+    }
+    return null
+}
+
 // State tracking for monorepo
 def selected = []           // Changed services requiring build
 def has_services = false    // Flag to skip artifact stages on doc-only commits
@@ -134,7 +180,8 @@ def buildService(svc) {
 def testService(svc) {
     switch (svc.name) {
         case 'nextjs':
-            testNpm(stage: "Test: NextJS", working_dir: "demos/${svc.name}", unstash: "nextjs-build", stash: "nextjs-build")
+            // Type checking already ran in `next build`; this exercises jestTest.
+            jestTest(stage: "Test: NextJS", working_dir: "demos/${svc.name}", unstash: "nextjs-build")
             break
         case 'vue':
             testNpm(stage: "Test: Vue", working_dir: "demos/${svc.name}", unstash: "vue-build", stash: "vue-build")
@@ -160,6 +207,8 @@ def testService(svc) {
         case 'gradle':
             unitTestGradle(stage: "Test: Gradle", working_dir: "demos/${svc.name}",
                            unstash: "gradle-build", pod_yaml: readTrusted('resources/pods/gradle.yaml'))
+            cucumberTest(stage: "Cucumber: Gradle", working_dir: "demos/${svc.name}",
+                         unstash: "gradle-build", pod_yaml: readTrusted('resources/pods/gradle.yaml'))
             break
       }
   }
@@ -291,6 +340,13 @@ pipeline {
                                 iac_fail_on_violation: true,
                                 iac_skip_dirs: '.terraform,node_modules,.git',
                                 stage: 'Trivy IaC Scan'
+                            )
+                        },
+                        'IaC Lint: TFLint': {
+                            tflintLint(
+                                terraform_dir: terraformConfig.terraform_dir,
+                                unstash: 'workspace',
+                                stage: 'TFLint'
                             )
                         }
                     )
@@ -429,6 +485,66 @@ pipeline {
             }
         }
 
+        // ─── Image Tests ───
+        // Each test pod runs the staging image as a native sidecar, so the
+        // image is exercised before it is promoted. Steps run in sequence per
+        // service to keep one test pod per service alive at a time.
+        stage('Image Tests') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
+                        def target = appTargets[svc.name]
+                        def image = stagingImages[svc.name]
+                        def local_url = "http://localhost:${target.port}"
+                        def withApp = { String pod_file ->
+                            appSidecarPod([
+                                image: image,
+                                port: target.port,
+                                run_as_user: target.uid,
+                                probe_path: target.health
+                            ], readTrusted(pod_file))
+                        }
+                        ["Image Tests: ${svc.name}": {
+                            smokeTest(
+                                url: "${local_url}${target.health}",
+                                retries: 3,
+                                retry_delay_seconds: 5,
+                                pod_yaml: withApp('resources/pods/curl.yaml'),
+                                stage: "Smoke: ${svc.name}"
+                            )
+                            playwrightTest(
+                                base_url: local_url,
+                                selenium_url: '',
+                                working_dir: 'demos/e2e',
+                                workers: 2,
+                                output_name: "playwright-${svc.name}",
+                                pod_yaml: withApp('resources/pods/playwright.yaml'),
+                                stage: "Playwright: ${svc.name}"
+                            )
+                            jmeterTest(
+                                test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+                                properties: [HOST: 'localhost', PORT: target.port],
+                                output_name: "jmeter-${svc.name}",
+                                pod_yaml: withApp('resources/pods/jmeter.yaml'),
+                                stage: "JMeter: ${svc.name}"
+                            )
+                            postmanTest(
+                                collection: 'postman/site.postman_collection.json',
+                                working_dir: 'demos/e2e',
+                                env_vars: [baseUrl: local_url, healthPath: target.health],
+                                output_name: "newman-${svc.name}",
+                                pod_yaml: withApp('resources/pods/node.yaml'),
+                                stage: "Postman: ${svc.name}"
+                            )
+                        }]
+                    }
+                    branches.failFast = false
+                    parallel branches
+                }
+            }
+        }
+
         // ─── SBOM Attestation ───
         stage('SBOM Attestation') {
             when { expression { has_services } }
@@ -464,6 +580,23 @@ pipeline {
                         }]
                     }
                     parallel branches
+                }
+            }
+        }
+
+        // ─── Terraform Plan (dev) ───
+        // Plan only (auto_approve: false); flip it once the demo account and
+        // a remote state backend are settled.
+        stage('Terraform Plan (dev)') {
+            when { expression { env.AWS_DEMO_ACCOUNT_ID } }
+            steps {
+                script {
+                    awsAssumeRole(terraformConfig, 'dev')
+                    tfenvDeploy(terraformConfig + [
+                        auto_approve: false,
+                        unstash: 'workspace',
+                        stage: 'Terraform: plan dev'
+                    ], 'dev')
                 }
             }
         }
@@ -506,11 +639,31 @@ pipeline {
 //                script {
 //                    def branches = [:]
 //
+//                    // Same suites as Image Tests, pointed at the dev ingress.
+//                    // Assumes each service is routed at ${dev_base_url}/<name>.
+//                    selected.each { svc ->
+//                        def target = appTargets[svc.name]
+//                        def svc_url = "${dev_base_url}/${svc.name}"
+//                        branches["Dev Checks: ${svc.name}"] = {
+//                            smokeTest(url: "${svc_url}${target.health}", stage: "Dev Smoke: ${svc.name}")
+//                            playwrightTest(base_url: svc_url, working_dir: 'demos/e2e',
+//                                           output_name: "playwright-dev-${svc.name}",
+//                                           stage: "Dev Playwright: ${svc.name}")
+//                            postmanTest(collection: 'postman/site.postman_collection.json',
+//                                        working_dir: 'demos/e2e',
+//                                        env_vars: [baseUrl: svc_url, healthPath: target.health],
+//                                        output_name: "newman-dev-${svc.name}",
+//                                        stage: "Dev Postman: ${svc.name}")
+//                        }
+//                    }
+//
 //                    // JMeter load tests per service
 //                    selected.each { svc ->
 //                        branches["JMeter: ${svc.name}"] = {
 //                            jmeterTest([
 //                                test_plan: "demos/${svc.name}/tests/jmeter/test-plan.jmx",
+//                                // The plans hard-code protocol http; add a PROTOCOL
+//                                // property before pointing them at an https ingress.
 //                                threads: '10',
 //                                ramp_up: '30',
 //                                duration: '60',
@@ -543,5 +696,39 @@ pipeline {
 //        // TODO: Staging and Production deployment stages can be added here
 //        // following the pattern from templates/pod-pipeline/Jenkinsfile
 
+    }
+
+    post {
+        always {
+            script {
+                def result = currentBuild.currentResult
+                try {
+                    slackNotify([
+                        webhook_credential: notifyConfig.slack_webhook_credential,
+                        channel: notifyConfig.slack_channel,
+                        stage: 'Notify: Slack'
+                    ], "build #${env.BUILD_NUMBER} ${result}")
+                } catch (err) {
+                    echo "Slack notification skipped: ${err.message}"
+                }
+
+                def issue_key = env.JIRA_ISSUE_KEY ?: jiraIssueKey(currentBuild.changeSets)
+                if (issue_key) {
+                    try {
+                        jiraUpdate(
+                            site: notifyConfig.jira_site,
+                            token_credential: notifyConfig.jira_token_credential,
+                            issue_key: issue_key,
+                            comment: "${env.JOB_NAME} build #${env.BUILD_NUMBER} ${result}: ${env.BUILD_URL}",
+                            stage: 'Notify: Jira'
+                        )
+                    } catch (err) {
+                        echo "Jira update skipped for ${issue_key}: ${err.message}"
+                    }
+                } else {
+                    echo 'Jira update skipped: no issue key in JIRA_ISSUE_KEY or commit messages'
+                }
+            }
+        }
     }
 }
