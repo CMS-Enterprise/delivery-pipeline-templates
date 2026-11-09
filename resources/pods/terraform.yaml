@@ -14,11 +14,19 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   restartPolicy: Never
+  volumes:
+    - name: clamav-db
+      emptyDir: {}
   containers:
-    - name: aws-cli
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:4f1211d7a4539d08384dc1b6f72788ba0c52d8643862fb0ae655f2616392d286
+    - name: terraform
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/hashicorp/terraform/terraform@sha256:1d766e119305eebe07b27a3b2edc364f8bec66674070d8d9ac9bbe7fd31f08df
       command: ["cat"]
       tty: true
+      env:
+        - name: HOME
+          value: "/home/jenkins/agent"
+        - name: TF_IN_AUTOMATION
+          value: "1"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -32,10 +40,13 @@ spec:
           cpu: "1"
           memory: "1Gi"
           ephemeral-storage: "2Gi"
-    - name: alpine
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
+    - name: clamav
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:9ec432cd3c0dda4e7f3828c8b3af48678a919d5e4f63068aa982d747a25e723f
       command: ["cat"]
       tty: true
+      volumeMounts:
+        - name: clamav-db
+          mountPath: /var/lib/clamav
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -43,9 +54,9 @@ spec:
       resources:
         requests:
           cpu: "1"
-          memory: "1Gi"
+          memory: "4Gi"
           ephemeral-storage: "2Gi"
         limits:
           cpu: "1"
-          memory: "1Gi"
+          memory: "4Gi"
           ephemeral-storage: "2Gi"
