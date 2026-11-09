@@ -552,7 +552,10 @@ pipeline {
                                 image_pull_secret: imageTestConfig.image_pull_secret
                             ], readTrusted(pod_file))
                         }
-                        ["Image Tests: ${svc.name}": {
+                        // A sidecar that cannot be pulled leaves its pod Pending
+                        // forever; the plugin's pull-backoff check does not cover
+                        // init containers, so bound each service's tests.
+                        ["Image Tests: ${svc.name}": { timeout(time: 20, unit: 'MINUTES') {
                             smokeTest(
                                 url: "${local_url}${target.health}",
                                 retries: 3,
@@ -576,7 +579,7 @@ pipeline {
                                 pod_yaml: withApp('resources/pods/jmeter.yaml'),
                                 stage: "JMeter: ${svc.name}"
                             )
-                        }]
+                        } }]
                     }
                     branches.failFast = false
                     parallel branches
