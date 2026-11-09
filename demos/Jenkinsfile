@@ -76,6 +76,9 @@ def terraformConfig = [
     role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
     credential: 'aws-demo-credentials',
     terraform_dir: 'demos/terraform/environments/dev',
+    // Set TF_PROVIDER_MIRROR once Artifactory proxies the Terraform registry;
+    // until then providers come from registry.terraform.io behind the lock file.
+    provider_mirror: env.TF_PROVIDER_MIRROR ?: '',
 ]
 
 // Notifications are best effort: a missing credential is logged, never fails
