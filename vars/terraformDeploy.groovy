@@ -1,52 +1,60 @@
-def call(Map config = [:], String environment) {
-    def tf_version = config.tf_version ?: ''
-    def terraform_dir = config.terraform_dir ?: 'terraform/environments'
-    def auto_approve = config.auto_approve ?: false
-    def var_file = config.var_file ?: "${environment}.tfvars"
+// Terraform runs from the pinned IronBank image in the pod, so no binary is
+// downloaded at run time; the code's required_version constrains it. Providers
+// fetched by `terraform init` must match the committed .terraform.lock.hcl and
+// are ClamAV-scanned before plan. auto_approve: false stops after plan.
+void call(Map config = [:], String environment) {
+    def tf_dir = config.terraform_dir ?: "terraform/environments/${environment}"
+    def var_file = config.var_files?."${environment}" ?: "${environment}.tfvars"
+    def backend_config = config.backend_config?."${environment}" ?: ''
+    def auto_approve = config.auto_approve != null ? config.auto_approve : false
+    def token_credential = config.token_credential ?: ''
+    def myunstash = config.unstash ?: ''
+    def stagename = config.stage ?: "Terraform Deploy (${environment})"
 
-    stage("Terraform Deploy (${environment})") {
+    stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/terraform.yaml')) {
             node(POD_LABEL) {
-                checkout scm
-                container('alpine') {
-                    def freshclam_mirror = config.freshclam_mirror ?: "https://artifactory.cloud.cms.gov/clamav-db"
-                    sh """
-                        apk add --no-cache git bash curl unzip clamav clamav-libunrar
-                        freshclam --quiet --DatabaseMirror=${freshclam_mirror}
-
-                        git clone --depth 1 https://github.com/tfutils/tfenv.git /opt/tfenv
-                        clamscan -r --infected /opt/tfenv
-                        if [ \$? -eq 1 ]; then echo "ClamAV detected malware in tfenv" && exit 1; fi
-
-                        export PATH="/opt/tfenv/bin:\$PATH"
-                        cd ${terraform_dir}/${environment}
-                        ${tf_version ? "tfenv install ${tf_version} && tfenv use ${tf_version}" : 'tfenv install && tfenv use'}
-
-                        clamscan -r --infected ~/.tfenv/versions/ 2>/dev/null || true
-                    """
+                if (myunstash) {
+                    unstash "${myunstash}"
+                } else {
+                    checkout scm
                 }
-                container('aws-cli') {
-                    dir("${terraform_dir}/${environment}") {
-                        withCredentials([string(credentialsId: config.token_credential ?: 'terraform-token', variable: 'TF_TOKEN')]) {
+                // Terraform Cloud/Enterprise token, only for code that uses a
+                // remote backend or private registry on app.terraform.io.
+                def withToken = { Closure body ->
+                    if (token_credential) {
+                        withCredentials([string(credentialsId: token_credential, variable: 'TF_TOKEN_app_terraform_io')]) {
+                            body()
+                        }
+                    } else {
+                        body()
+                    }
+                }
+                dir(tf_dir) {
+                    container('terraform') {
+                        withToken {
                             sh """
-                                export PATH="/opt/tfenv/bin:\$PATH"
-                                export TF_TOKEN_app_terraform_io=\$TF_TOKEN
-
-                                terraform --version
-                                terraform init -input=false
-                                terraform plan -var-file=${var_file} -out=tfplan
-                                ${auto_approve ? 'terraform apply -auto-approve tfplan' : ''}
+                                terraform version
+                                terraform init -input=false -lockfile=readonly \
+                                    ${backend_config ? "-backend-config=${backend_config}" : ''}
                             """
-                            if (!auto_approve) {
-                                input "Apply Terraform changes to ${environment}?"
-                                sh """
-                                    export PATH="/opt/tfenv/bin:\$PATH"
-                                    export TF_TOKEN_app_terraform_io=\$TF_TOKEN
-                                    terraform apply tfplan
-                                """
+                        }
+                    }
+                    container('clamav') {
+                        sh """
+                            freshclam
+                            clamscan --infected --recursive .terraform/providers
+                        """
+                    }
+                    container('terraform') {
+                        withToken {
+                            sh "terraform plan -input=false -var-file=${var_file} -out=tfplan"
+                            if (auto_approve) {
+                                sh 'terraform apply -input=false tfplan'
                             }
                         }
                     }
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'tfplan'
                 }
             }
         }

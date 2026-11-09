@@ -99,7 +99,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `cosignAttest` | Attach SBOM attestation | Same as `cosignSign` | Runs, skips attestation |
 | `cosignVerify` | Verify image signature | Same as `cosignSign` | Commented |
 | `awsAssumeRole` | AWS STS AssumeRole | `aws-demo-credentials`, `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`) | Terraform Plan (dev) |
-| `tfenvDeploy` | Terraform init/plan/apply from the IronBank image | Same as `awsAssumeRole` | Terraform Plan (dev), plan only |
+| `terraformDeploy` | Terraform init/plan/apply from the pinned IronBank image | Same as `awsAssumeRole` | Terraform Plan (dev), plan only |
 | `s3CacheSync` | Restore/save build caches in S3 | `S3_BUILD_CACHE_BUCKET` and AWS access | Build steps, skipped when unset |
 | `slackNotify` | Slack webhook notification | `slack-webhook-url` | post, best effort |
 | `jiraUpdate` | Comment on / transition a Jira issue | `jira-api-token`; issue key in `JIRA_ISSUE_KEY` or a commit message | post, best effort |
@@ -119,7 +119,6 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `openscapScan` | OpenSCAP policy scan of an image | The pinned oscap image ships no SCAP Security Guide datastreams |
 | `dockerBuild` | Podman build + push to registry | Superseded by `jfrogBuildPublish` here; still used by `templates/web-app` |
 | `jfrogBuild` | Podman build + push to JFrog Artifactory | Superseded by `jfrogBuildPublish` here; still used by `templates/jfrog-secure` |
-| `terraformDeploy` | Terraform via tfenv + Terraform Cloud token | Installs tools with `apk` in a non-root pod and downloads tfenv/terraform at run time; the demo uses `tfenvDeploy` |
 | `cloudformationDeploy` | CloudFormation stack deploy | No CloudFormation demo (and needs AWS credentials) |
 | `ansibleDeploy` | Ansible playbook run | No inventory or target hosts for the demos |
 | `cypressTest` | Cypress browser tests | No Cypress suite; browser tests use Playwright |

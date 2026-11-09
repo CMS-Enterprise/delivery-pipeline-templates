@@ -595,7 +595,7 @@ pipeline {
             steps {
                 script {
                     awsAssumeRole(terraformConfig, 'dev')
-                    tfenvDeploy(terraformConfig + [
+                    terraformDeploy(terraformConfig + [
                         auto_approve: false,
                         unstash: 'workspace',
                         stage: 'Terraform: plan dev'

@@ -23,8 +23,8 @@ CI stages.
 - **MUST NOT** pipe `curl` into a shell. No `curl ... | bash`, no `wget ... | sh`.
 - **MUST** scan any artifact or container originating outside JFrog with ClamAV
   before use. `freshclam` points at `artifactory.cloud.cms.gov` for its cache.
-- **MUST** scan the `tfenv` and `terraform` binaries before use, as with any
-  other externally sourced binary.
+- **MUST** scan the `terraform` binary and the providers `terraform init`
+  downloads before use, as with any other externally sourced binary.
 - **MUST** give every download a static hash, updated by `scripts/update-pins.sh`
   and by Renovate.
 - **MUST** keep a rotate script for every credential, connecting to the service
@@ -70,8 +70,9 @@ CI stages.
 - **MUST** run `vars/awsAssumeRole.groovy` before anything that touches AWS —
   including terraform, cloudformation, and ansible when used with AWS SSM — in
   order to obtain the correct credentials.
-- **DEFAULT**: use terraform to stand up and tear down an environment, with
-  `tfenv` allowing the code to specify the version.
+- **DEFAULT**: use terraform to stand up and tear down an environment, run from
+  the pinned IronBank `ironbank/hashicorp/terraform` image (no tfenv); the
+  code's `required_version` constrains it. See `vars/terraformDeploy.groovy`.
 - **DEFAULT**: use cloudformation to stand up and tear down an environment,
   including a stack to stand up DLTA and one to tear it down.
 
