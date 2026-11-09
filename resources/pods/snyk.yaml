@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: snyk
-      image: artifactory.cloud.cms.gov/docker/snyk/snyk@sha256:f905f99880ae071a1c54c6039c6627fdce4f0abc96cab9a867992a5cf884eed8
+      image: artifactory.cloud.cms.gov/docker/snyk/snyk@sha256:d4a83258a5eb8747b03405526e1c969a3887931f3e8cb875435e29d6302f77ef
       command: ["cat"]
       tty: true
       securityContext:

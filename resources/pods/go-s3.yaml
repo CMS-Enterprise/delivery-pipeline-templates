@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: go
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:4371ddc9eba5d1f80899ad86fc88fc29f15bf2ef0dd9c52eb91e2445e8535eeb
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:debc6b991f77dbed3c1b38e0f956f080932397eb5cb30f10170aa3ac3f6c0b67
       command: ["cat"]
       env:
         - name: GOPROXY
@@ -38,7 +38,7 @@ spec:
           memory: "2Gi"
           ephemeral-storage: "2Gi"
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:4f1211d7a4539d08384dc1b6f72788ba0c52d8643862fb0ae655f2616392d286
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:b7ae1216a61736803dd136339ef36c07bebc718a560f0c0b142857fc67d9b5ef
       command: ["cat"]
       tty: true
       securityContext:

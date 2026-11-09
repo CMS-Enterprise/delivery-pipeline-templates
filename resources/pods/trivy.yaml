@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: trivy
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/aquasec/trivy@sha256:5268f00d62b3fda4af793e16421a58489ea01782283b9b591bced52bad04e72a
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/aquasec/trivy@sha256:90535c4425f5f54d885f0bfb1640d3ecc87393eea65a4c42f15733f3930bfe9c
       command: ["cat"]
       tty: true
       env:

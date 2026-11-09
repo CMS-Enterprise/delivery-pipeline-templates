@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:de5abd554ce2d5b736f0d85592f50d8648d80a7c0ab4d59ef45eeeb4edf6f66e AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:d991b8e0a7a368047eb217d2a6214804a679b5a2c862334aace37360be0683f3 AS builder
 # hadolint ignore=DL3002
 WORKDIR /home/node/app
 
@@ -8,7 +8,7 @@ RUN npm ci
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:de5abd554ce2d5b736f0d85592f50d8648d80a7c0ab4d59ef45eeeb4edf6f66e
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:d991b8e0a7a368047eb217d2a6214804a679b5a2c862334aace37360be0683f3
 USER 0
 RUN apt-get -o APT::Sandbox::User=root update && apt-get -o APT::Sandbox::User=root -y upgrade && rm -rf /var/lib/apt/lists/* && \
   npm install -g npm@12.2.2 --registry=https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: tflint
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/tflint/tflint@sha256:8e8631831901262c194d8433f15596e92fc06b3ab3485d9231c0a23372d3e6d4
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/tflint/tflint@sha256:ddc939473e6233aad72fde306b4ad4205cec21324d08d30231794872610ee20d
       command: ["cat"]
       tty: true
       securityContext:

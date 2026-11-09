@@ -9,7 +9,7 @@ COPY src ./src
 
 RUN gradle --no-daemon --console=plain assemble -x test
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:c1096b382fc79eb1ad17f1594a97279b63a376af3538d0adc14074ed2c8fe271
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:d555c231981728f60a5b55237c19d829c2c149c36a7e13bb6aac3fedf98d321f
 USER 0
 RUN microdnf -y upgrade && microdnf clean all
 USER 1000
