@@ -1,0 +1,231 @@
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey
+import com.cloudbees.plugins.credentials.CredentialsScope
+import com.cloudbees.plugins.credentials.SecretBytes
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider
+import com.cloudbees.plugins.credentials.domains.Domain
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl
+import hudson.model.PasswordParameterDefinition
+import hudson.model.StringParameterDefinition
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+// Every credential ID the shared library (vars/) resolves by default, plus the
+// ones it takes by config with no default (AWS, terraform). Values are asked for
+// with an `input` step rather than build parameters so that they are never
+// written to the build record or shown on "Rebuild"/"Build with Parameters".
+//
+// The store is the controller's global (system) store, as with
+// credential-rotation; this job therefore needs to run outside the Groovy
+// sandbox, or have its signatures approved in In-process Script Approval.
+//
+// Field conventions in the input form:
+//   - a field left blank means "skip this credential"; nothing is changed
+//   - a username/password credential needs both halves, or it is skipped
+//   - file and SSH key values are base64, because a password field cannot hold
+//     newlines: `base64 -w0 ~/.kube/dev-cluster.yaml`
+def credentialSpecs() {
+    def specs = [
+        [id: 'jfrog-credentials', type: 'usernamePassword',
+         description: 'JFrog Artifactory user and access token',
+         usedBy: 'jfrogBuild, jfrogBuildPublish, jfrogPromote, jfrogSbom, jfrogScan, trivyScan, grypeScan, clamavScan, openscapScan'],
+        [id: 'github-org-token', type: 'usernamePassword',
+         description: 'GitHub user and token for the GitOps manifest repository',
+         usedBy: 'gitopsPromote'],
+        [id: "${aws_credential_id}", type: 'usernamePassword',
+         description: 'AWS access key ID (username) and secret access key (password) used to call sts:AssumeRole',
+         usedBy: 'awsAssumeRole (config.credential)'],
+        [id: 'snyk-api-token', type: 'string',
+         description: 'Snyk API token',
+         usedBy: 'snykCodeScan, snykDependencyScan, snykContainerScan'],
+        [id: 'sonarqube-token', type: 'string',
+         description: 'SonarQube authentication token',
+         usedBy: 'sonarqubeScan'],
+        [id: 'argocd-auth-token', type: 'string',
+         description: 'Argo CD authentication token',
+         usedBy: 'argocdDeploy'],
+        [id: 'slack-webhook-url', type: 'string',
+         description: 'Slack incoming webhook URL',
+         usedBy: 'slackNotify'],
+        [id: 'jira-api-token', type: 'string',
+         description: 'Jira API token',
+         usedBy: 'jiraUpdate'],
+        [id: 'servicenow-api-token', type: 'string',
+         description: 'ServiceNow API token',
+         usedBy: 'serviceNowUpdate'],
+        [id: "${terraform_token_credential_id}", type: 'string',
+         description: 'Terraform Cloud/Enterprise API token',
+         usedBy: 'terraformDeploy (config.token_credential)'],
+    ]
+    splitList("${kubeconfig_clusters}").each { cluster ->
+        specs << [id: "kubeconfig-${cluster}", type: 'file', fileName: 'kubeconfig',
+                  description: "kubeconfig for cluster ${cluster}",
+                  usedBy: 'deployToK8s, helmDeploy, kustomizeDeploy, fluxcdDeploy, rollbackK8s']
+    }
+    splitList("${ansible_environments}").each { environment ->
+        specs << [id: "ansible-ssh-key-${environment}", type: 'sshKey',
+                  description: "Ansible SSH private key for ${environment}",
+                  usedBy: 'ansibleDeploy']
+    }
+    // Template values arrive as GStrings; map lookups against the String keys
+    // input returns would silently miss.
+    specs.each { it.id = it.id.toString() }
+    return specs
+}
+
+pipeline {
+    // Nothing here needs a workspace: the input step and the credential store
+    // both live on the controller, so no pod is scheduled.
+    agent none
+
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    stages {
+        stage('Collect and Store Credentials') {
+            steps {
+                script {
+                    def specs = credentialSpecs()
+                    def answers = input(
+                        message: 'Enter the credentials to create or update. Blank fields are skipped.',
+                        ok: 'Store credentials',
+                        parameters: inputParameters(specs)
+                    )
+                    def results = storeCredentials(specs, answers)
+                    // Drop the plaintext-bearing map before anything else can
+                    // capture it in a CPS checkpoint.
+                    answers = null
+
+                    echo '=== Credential Bootstrap Summary ==='
+                    results.each { r -> echo "  ${r.status.padRight(9)} ${r.id}${r.note ? " (${r.note})" : ''}" }
+                    echo '===================================='
+
+                    if (results.any { it.status == 'INVALID' }) {
+                        unstable('One or more credentials were not stored; see the summary above.')
+                    }
+                }
+            }
+        }
+    }
+}
+
+def splitList(String value) {
+    return value.split(',').collect { it.trim() }.findAll { it }
+}
+
+def inputParameters(List specs) {
+    def params = []
+    specs.each { s ->
+        def label = "${s.description}. Used by: ${s.usedBy}."
+        switch (s.type) {
+            case 'string':
+                params << new PasswordParameterDefinition("${s.id}", '', label)
+                break
+            case 'usernamePassword':
+                params << new StringParameterDefinition("${s.id}__username", '', "${label} Username.")
+                params << new PasswordParameterDefinition("${s.id}__password", '', "${s.id}: password / token.")
+                break
+            case 'file':
+                params << new PasswordParameterDefinition("${s.id}", '', "${label} Base64 of the file contents.")
+                break
+            case 'sshKey':
+                params << new StringParameterDefinition("${s.id}__username", '', "${label} SSH username (optional).")
+                params << new PasswordParameterDefinition("${s.id}__key", '', "${s.id}: base64 of the private key.")
+                params << new PasswordParameterDefinition("${s.id}__passphrase", '', "${s.id}: key passphrase (optional).")
+                break
+            default:
+                error("credential-bootstrap: unknown credential type ${s.type} for ${s.id}")
+        }
+    }
+    return params
+}
+
+// NonCPS: the credential store and the credential objects are not
+// serializable, and holding them across a CPS checkpoint would fail the build
+// (and write secrets into program.dat). Only the plain summary is returned.
+@NonCPS
+def storeCredentials(List specs, def answers) {
+    // input returns a bare value rather than a map when there is one parameter.
+    def values = (answers instanceof Map) ? answers : [(specs[0].id): answers]
+    def text = { String key ->
+        def v = values[key]
+        if (v == null) {
+            return ''
+        }
+        return (v instanceof Secret) ? v.plainText : v.toString()
+    }
+
+    def store = SystemCredentialsProvider.instance.store
+    def domain = Domain.global()
+    def results = []
+
+    specs.each { s ->
+        def cred = null
+        def note = ''
+        try {
+            switch (s.type) {
+                case 'string':
+                    def value = text(s.id)
+                    if (value) {
+                        cred = new StringCredentialsImpl(CredentialsScope.GLOBAL, s.id, s.description, Secret.fromString(value))
+                    }
+                    break
+                case 'usernamePassword':
+                    def user = text("${s.id}__username").trim()
+                    def pass = text("${s.id}__password")
+                    if (user && pass) {
+                        cred = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, s.id, s.description, user, pass)
+                    } else if (user || pass) {
+                        results << [id: s.id, status: 'INVALID', note: 'username and password must both be given']
+                        return
+                    }
+                    break
+                case 'file':
+                    def encoded = text(s.id)
+                    if (encoded) {
+                        def bytes = Base64.mimeDecoder.decode(encoded)
+                        cred = new FileCredentialsImpl(CredentialsScope.GLOBAL, s.id, s.description, s.fileName, SecretBytes.fromBytes(bytes))
+                    }
+                    break
+                case 'sshKey':
+                    def encoded = text("${s.id}__key")
+                    if (encoded) {
+                        def key = new String(Base64.mimeDecoder.decode(encoded), 'UTF-8')
+                        if (!key.contains('PRIVATE KEY')) {
+                            results << [id: s.id, status: 'INVALID', note: 'decoded value is not a PEM/OpenSSH private key']
+                            return
+                        }
+                        def passphrase = text("${s.id}__passphrase") ?: null
+                        cred = new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, s.id, text("${s.id}__username").trim(),
+                            new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(key), passphrase, s.description)
+                    }
+                    break
+            }
+        } catch (IllegalArgumentException e) {
+            // Base64 decoding failure. The message never contains the value.
+            results << [id: s.id, status: 'INVALID', note: 'value is not valid base64']
+            return
+        }
+
+        if (cred == null) {
+            results << [id: s.id, status: 'SKIPPED', note: 'not filled in']
+            return
+        }
+
+        def existing = store.getCredentials(domain).find { it.id == s.id }
+        if (existing) {
+            if (existing.class != cred.class) {
+                note = "type changed from ${existing.class.simpleName}"
+            }
+            store.updateCredentials(domain, existing, cred)
+            results << [id: s.id, status: 'UPDATED', note: note]
+        } else {
+            store.addCredentials(domain, cred)
+            results << [id: s.id, status: 'CREATED', note: note]
+        }
+    }
+    return results
+}

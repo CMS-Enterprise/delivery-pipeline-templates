@@ -1,0 +1,37 @@
+version: 1
+type: pipeline-template
+name: credential-bootstrap
+displayName: Credential Bootstrap Pipeline
+description: >-
+  Prompts for every credential the shared library (vars/) uses and creates or
+  updates them in the controller's global credential store. Blank fields are
+  skipped.
+parameters:
+  - name: kubeconfig_clusters
+    displayName: Kubernetes Clusters
+    description: >-
+      Comma-separated cluster names; a kubeconfig-<cluster> file credential is
+      requested for each.
+    type: string
+    defaultValue: "dev-cluster,staging-cluster,prod-cluster"
+  - name: ansible_environments
+    displayName: Ansible Environments
+    description: >-
+      Comma-separated environment names; an ansible-ssh-key-<environment> SSH
+      key credential is requested for each.
+    type: string
+    defaultValue: "dev,staging,prod"
+  - name: aws_credential_id
+    displayName: AWS Credential ID
+    description: >-
+      ID to store the AWS access key pair under (the value passed to
+      awsAssumeRole as config.credential).
+    type: string
+    defaultValue: aws-demo-credentials
+  - name: terraform_token_credential_id
+    displayName: Terraform Token Credential ID
+    description: >-
+      ID to store the Terraform Cloud/Enterprise token under (the value passed to
+      terraformDeploy as config.token_credential).
+    type: string
+    defaultValue: terraform-token
