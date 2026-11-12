@@ -203,7 +203,16 @@ pipeline {
             steps {
                 container('aws-cli') {
                     script {
-                        rotateStringCredential(credentialStore, 'github-org-token', fetchSecret('ci/github', 'org_token'), 'GitHub organization token')
+                        // gitopsPromote binds github-org-token as usernamePassword
+                        // and clones with https://user:token@..., so it must be
+                        // stored as one; secret text breaks the binding.
+                        // GitHub ignores the username for personal access tokens
+                        // and requires 'x-access-token' for App installation
+                        // tokens, so that is the fallback when ci/github has no
+                        // 'username' key.
+                        def githubCreds = fetchSecretJson('ci/github')
+                        def githubToken = params.DRY_RUN ? 'dry-run' : githubCreds.org_token
+                        rotateUsernamePassword(credentialStore, 'github-org-token', githubCreds.username ?: 'x-access-token', githubToken, 'GitHub organization user and token')
                     }
                 }
             }
