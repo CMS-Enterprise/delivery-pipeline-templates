@@ -33,7 +33,7 @@ spec:
           memory: "256Mi"
           ephemeral-storage: "500Mi"
     - name: aws-cli
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:b7ae1216a61736803dd136339ef36c07bebc718a560f0c0b142857fc67d9b5ef
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:a302b18401e699d23a83029632b0239144d63e51548f02b2ef670e10c7a7d52c
       command: ["cat"]
       tty: true
       securityContext:

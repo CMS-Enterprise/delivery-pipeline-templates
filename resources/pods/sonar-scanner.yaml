@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: sonar-scanner
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/sonarsource/sonar-scanner-cli@sha256:90bb7fc26ff1db167f1e49d731b779a1a30f78c119b534ebb7eff764538bb7ba
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/sonarsource/sonar-scanner-cli@sha256:79524d137f0765d142efd09653d1aefcf9a821cd96af8c013e80e6abd220c9ef
       command: ["cat"]
       tty: true
       securityContext:

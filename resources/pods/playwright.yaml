@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: playwright
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/microsoft/playwright/node@sha256:2fc386070f718cf5bcd0ad8cf4e2ff8f51d6e69a8071cab4562f1d4148e27214
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/microsoft/playwright/node@sha256:193e3ca05eb5515b29c9bf73c259c53f54e33c347c995ab4e49e0528c3ca41bb
       command: ["cat"]
       tty: true
       securityContext:

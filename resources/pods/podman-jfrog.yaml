@@ -10,10 +10,13 @@ spec:
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
   restartPolicy: Never
   containers:
     - name: podman
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:3df60a5490f23b528270f264747933274632b8576f165bc70aba209a46bbebf9
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:243d31adc96418556098818748901f9031e1180768fee76567f3994bd327f3ba
       command: ["cat"]
       tty: true
       resources:
@@ -26,7 +29,7 @@ spec:
           memory: "4Gi"
           ephemeral-storage: "20Gi"
     - name: jfrog-cli
-      image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2-jf@sha256:9d25a4c05732074fe8d4922207d450ba526b6bd97d41a6988242a56007168935
+      image: artifactory.cloud.cms.gov/docker/jfrog/jfrog-cli-v2-jf@sha256:b8168753f5561a05ad59618a5ba9ea30b0d500d8d0248b8333e851c4cfe9cd58
       command: ["cat"]
       tty: true
       env:

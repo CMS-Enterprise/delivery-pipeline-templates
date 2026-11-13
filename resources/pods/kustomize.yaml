@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: kustomize
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:63a23fdba2f5aa80088f38ea78dfcb2adb5930b502920d353ba40001373378ed
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:9975b725c659341a65d4ae1f358597f341f397897986ba8dddb00ea92e3c5a84
       command: ["cat"]
       tty: true
       securityContext:
@@ -33,7 +33,7 @@ spec:
           memory: "512Mi"
           ephemeral-storage: "500Mi"
     - name: git
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:63a23fdba2f5aa80088f38ea78dfcb2adb5930b502920d353ba40001373378ed
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/argoproj/argocd@sha256:9975b725c659341a65d4ae1f358597f341f397897986ba8dddb00ea92e3c5a84
       command: ["cat"]
       tty: true
       securityContext:

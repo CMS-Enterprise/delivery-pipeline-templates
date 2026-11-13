@@ -16,7 +16,7 @@ spec:
       emptyDir: {}
   containers:
     - name: clamav
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:ed2e0b237fa39a29c54860d486b1eade23f72fc33d3ed113171ed03db6ef7a5a
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:1e54b46a42af97f1d311aa78eb4be39bd4839f37547e3efd6ebe01a2d94792cc
       command: ["cat"]
       tty: true
       volumeMounts:

@@ -19,7 +19,7 @@ spec:
       emptyDir: {}
   containers:
     - name: terraform
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/hashicorp/terraform@sha256:96d50e7b22d99e15446e84d27fc6e02a71d23168a25bb036d8ef4e48d8429f72
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/hashicorp/terraform@sha256:bd79fcceccfc955fc896826487f9ff6c4608f09ecdf27af9475d2ebbd62e9a63
       command: ["cat"]
       tty: true
       env:
@@ -41,7 +41,7 @@ spec:
           memory: "1Gi"
           ephemeral-storage: "2Gi"
     - name: clamav
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:ed2e0b237fa39a29c54860d486b1eade23f72fc33d3ed113171ed03db6ef7a5a
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:1e54b46a42af97f1d311aa78eb4be39bd4839f37547e3efd6ebe01a2d94792cc
       command: ["cat"]
       tty: true
       volumeMounts:

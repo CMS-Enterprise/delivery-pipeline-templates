@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: zap
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/owasp-zap/owasp-zap@sha256:476aa34248f2a2150005db82145c526322c088d273f3a8bc501953c43edb5d50
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/owasp-zap/owasp-zap@sha256:8648d86adff338aa270ee77c9e5b4c2e5975e8fef017746329339919b5a96130
       command: ["cat"]
       tty: true
       securityContext:

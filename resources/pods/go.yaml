@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: go
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:debc6b991f77dbed3c1b38e0f956f080932397eb5cb30f10170aa3ac3f6c0b67
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/google/golang/ubi9/golang-1.26@sha256:75c040632ff82e60c47f75ca96216dd51c4c51156f6067f4d1434b72b147aaa5
       command: ["cat"]
       env:
         - name: GOPROXY

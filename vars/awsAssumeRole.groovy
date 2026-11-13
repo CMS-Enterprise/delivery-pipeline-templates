@@ -32,8 +32,6 @@ def call(Map config = [:], String environment) {
                     } else {
                         creds = assume()
                     }
-                    // JsonSlurperClassic, not readJSON: Pipeline Utility Steps
-                    // is not a guaranteed plugin on the controller.
                     def parsed = new groovy.json.JsonSlurperClassic().parseText(creds)
                     env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId
                     env.AWS_SECRET_ACCESS_KEY = parsed.Credentials.SecretAccessKey

@@ -10,11 +10,6 @@ import hudson.util.Secret
 import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
 
-// Every credential ID the shared library (vars/) resolves by default, plus the
-// ones it takes by config with no default (AWS, terraform). Values are asked for
-// with an `input` step rather than build parameters so that they are never
-// written to the build record or shown on "Rebuild"/"Build with Parameters".
-//
 // The store is the controller's global (system) store, as with
 // credential-rotation; this job therefore needs to run outside the Groovy
 // sandbox, or have its signatures approved in In-process Script Approval.
@@ -32,9 +27,6 @@ def credentialSpecs() {
         [id: 'github-org-token', type: 'usernamePassword',
          description: 'GitHub user and token for the GitOps manifest repository',
          usedBy: 'gitopsPromote'],
-        [id: "${aws_credential_id}", type: 'usernamePassword',
-         description: 'AWS access key ID (username) and secret access key (password) used to call sts:AssumeRole',
-         usedBy: 'awsAssumeRole (config.credential)'],
         [id: 'snyk-api-token', type: 'string',
          description: 'Snyk API token',
          usedBy: 'snykCodeScan, snykDependencyScan, snykContainerScan'],
@@ -53,9 +45,6 @@ def credentialSpecs() {
         [id: 'servicenow-api-token', type: 'string',
          description: 'ServiceNow API token',
          usedBy: 'serviceNowUpdate'],
-        [id: "${terraform_token_credential_id}", type: 'string',
-         description: 'Terraform Cloud/Enterprise API token',
-         usedBy: 'terraformDeploy (config.token_credential)'],
     ]
     splitList("${kubeconfig_clusters}").each { cluster ->
         specs << [id: "kubeconfig-${cluster}", type: 'file', fileName: 'kubeconfig',
