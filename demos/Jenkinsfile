@@ -47,8 +47,8 @@ def snykConfig = [
 ]
 
 def sonarqubeConfig = [
-    project_key: 'misp-doom-delivery-pipeline'
-    quality_gate_wait : 'true'
+    project_key: 'misp-doom-delivery-pipeline',
+    quality_gate_wait : 'true',
     source_path : 'demos/'
 ]
 
