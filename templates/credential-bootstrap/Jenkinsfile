@@ -13,6 +13,24 @@ import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
 // The store is the controller's global (system) store, as with
 // credential-rotation; this job therefore needs to run outside the Groovy
 // sandbox, or have its signatures approved in In-process Script Approval.
+
+/* Requires:
+method com.cloudbees.plugins.credentials.CredentialsStore addCredentials com.cloudbees.plugins.credentials.domains.Domain com.cloudbees.plugins.credentials.Credentials
+method com.cloudbees.plugins.credentials.CredentialsStore getCredentials com.cloudbees.plugins.credentials.domains.Domain
+method com.cloudbees.plugins.credentials.SystemCredentialsProvider getStore
+method com.cloudbees.plugins.credentials.common.IdCredentials getId
+method hudson.util.Secret getPlainText
+new com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl com.cloudbees.plugins.credentials.CredentialsScope java.lang.String java.lang.String java.lang.String java.lang.String
+new hudson.model.PasswordParameterDefinition java.lang.String java.lang.String java.lang.String
+new hudson.model.StringParameterDefinition java.lang.String java.lang.String java.lang.String
+new org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl com.cloudbees.plugins.credentials.CredentialsScope java.lang.String java.lang.String hudson.util.Secret
+staticField com.cloudbees.plugins.credentials.CredentialsScope GLOBAL
+staticMethod com.cloudbees.plugins.credentials.SystemCredentialsProvider getInstance
+staticMethod com.cloudbees.plugins.credentials.domains.Domain global
+staticMethod hudson.util.Secret fromString java.lang.String
+*/
+
+
 //
 // Field conventions in the input form:
 //   - a field left blank means "skip this credential"; nothing is changed

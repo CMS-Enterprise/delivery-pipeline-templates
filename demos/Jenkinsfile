@@ -46,6 +46,12 @@ def snykConfig = [
     severity_threshold: 'high'
 ]
 
+def sonarqubeConfig = [
+    project_key: 'misp-doom-delivery-pipeline'
+    quality_gate_wait : 'true'
+    source_path : 'demos/'
+]
+
 def dev_base_url = env.DEV_BASE_URL ?: 'https://dev.delivery-demos.example.com'
 
 // Image Tests run each promoted image as a sidecar in the test pod, so the
@@ -306,15 +312,9 @@ pipeline {
                 script {
                     parallel(
 
-      /*            Need Sonarqube Project Key and token_credential
-       *            'Code Quality Scan': {
-                            sonarqubeScan(
-                                project_key: "${sonarqube_project_key}",
-                                url: "https://sonarqube.cloud.cms.gov/",
-                                token_credential: "${sonarqube_token_credential}",
-                                source_path: 'demos/'
-                            )
-                        }, */
+                        'Code Quality Scan': {
+                            sonarqubeScan(sonarqubeConfig)
+                        },
                         /*  Need Snyk API Token as a credential
                         'Code Security Scan': {
                             snykCodeScan(snykConfig)
