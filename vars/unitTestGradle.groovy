@@ -9,7 +9,10 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 container('gradle') {
-                    sh "cd ${working_dir} && gradle ${task} --no-daemon --console=plain"
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials',
+                                                      usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_TOKEN')]) {
+                        sh "cd ${working_dir} && gradle ${task} --no-daemon --console=plain"
+                    }
                 }
                 junit allowEmptyResults: true, testResults: "${working_dir}/**/build/test-results/**/*.xml"
             }

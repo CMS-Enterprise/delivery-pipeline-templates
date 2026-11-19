@@ -16,8 +16,11 @@ def call(Map config = [:]) {
                     if (s3_cache_bucket) {
                         envVars.add("S3_BUILD_CACHE_BUCKET=${s3_cache_bucket}")
                     }
-                    withEnv(envVars) {
-                        sh "cd ${working_dir} && gradle ${task} --no-daemon --console=plain ${cache_flags}"
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials',
+                                                      usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_TOKEN')]) {
+                        withEnv(envVars) {
+                            sh "cd ${working_dir} && gradle ${task} --no-daemon --console=plain ${cache_flags}"
+                        }
                     }
                 }
                 stash name: "${mystash}", includes: "${working_dir}/**"

@@ -11,7 +11,10 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash "${myunstash}"
                 container('gradle') {
-                    sh "cd ${working_dir} && ${gradle_cmd} ${task} --no-daemon --console=plain"
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials',
+                                                      usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_TOKEN')]) {
+                        sh "cd ${working_dir} && ${gradle_cmd} ${task} --no-daemon --console=plain --stacktrace"
+                    }
                 }
                 archiveArtifacts allowEmptyArchive: true, artifacts: "${working_dir}/**/build/reports/checkstyle/*.xml"
             }

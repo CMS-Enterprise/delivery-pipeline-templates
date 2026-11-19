@@ -16,6 +16,15 @@ repositories {
     maven {
         url 'https://artifactory.cloud.cms.gov/artifactory/maven-public'
         allowInsecureProtocol = false
+        // Authenticated when the pipeline supplies jfrog-credentials;
+        // anonymous otherwise. Anonymous access only serves artifacts
+        // Artifactory has already cached and answers 401 for the rest.
+        if (System.getenv('ARTIFACTORY_USER')) {
+            credentials {
+                username = System.getenv('ARTIFACTORY_USER')
+                password = System.getenv('ARTIFACTORY_TOKEN')
+            }
+        }
     }
 }
 
