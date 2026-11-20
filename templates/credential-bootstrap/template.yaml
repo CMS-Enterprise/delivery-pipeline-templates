@@ -21,6 +21,13 @@ parameters:
       key credential is requested for each.
     type: string
     defaultValue: "dev,staging,prod"
+  - name: sonarqube_token_prefix
+    displayName: SonarQube Token Name Prefix
+    description: >-
+      Must match credential-rotation's sonarqube_token_prefix. Shown in the
+      sonarqube-token prompt so the seeded token is named for rotation to revoke.
+    type: string
+    defaultValue: jenkins-ci-sonarqube
   - name: aws_credential_id
     displayName: AWS Credential ID
     description: >-

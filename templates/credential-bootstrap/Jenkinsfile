@@ -50,7 +50,9 @@ def credentialSpecs() {
          usedBy: 'snykCodeScan, snykDependencyScan, snykContainerScan'],
         [id: 'sonarqube-token', type: 'string',
          description: 'SonarQube authentication token',
-         usedBy: 'sonarqubeScan'],
+         usedBy: 'sonarqubeScan',
+         hint: 'Use a user token (not an analysis token) for a user with Execute Analysis on the scanned projects, ' +
+               "named ${sonarqube_token_prefix}-<anything> so credential-rotation revokes it on its first run."],
         [id: 'argocd-auth-token', type: 'string',
          description: 'Argo CD authentication token',
          usedBy: 'argocdDeploy'],
@@ -126,7 +128,7 @@ def splitList(String value) {
 def inputParameters(List specs) {
     def params = []
     specs.each { s ->
-        def label = "${s.description}. Used by: ${s.usedBy}."
+        def label = "${s.description}. Used by: ${s.usedBy}.${s.hint ? " ${s.hint}" : ''}"
         switch (s.type) {
             case 'string':
                 params << new PasswordParameterDefinition("${s.id}", '', label)

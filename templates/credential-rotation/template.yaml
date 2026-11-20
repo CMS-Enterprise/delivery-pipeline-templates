@@ -2,7 +2,10 @@ version: 1
 type: pipeline-template
 name: credential-rotation
 displayName: Credential Rotation Pipeline
-description: Pulls secrets from AWS Secrets Manager and updates Jenkins credentials. Runs on a schedule.
+description: >-
+  Updates Jenkins credentials on a schedule. Most are pulled from AWS Secrets
+  Manager; the SonarQube token is rotated against SonarQube itself (generate,
+  validate, store, then revoke earlier tokens).
 parameters:
   - name: rotation_scope
     displayName: Rotation Scope
@@ -46,3 +49,19 @@ parameters:
     displayName: Slack Webhook Credential
     type: credentials
     defaultValue: slack-webhook-url
+  - name: sonarqube_url
+    displayName: SonarQube URL
+    type: string
+    defaultValue: https://sonarqube.cloud.cms.gov
+  - name: sonarqube_token_prefix
+    displayName: SonarQube Token Name Prefix
+    description: >-
+      Name prefix of the tokens this job generates; earlier tokens with this
+      prefix are revoked after each rotation. Seed the first token under it.
+    type: string
+    defaultValue: jenkins-ci-sonarqube
+  - name: sonarqube_token_days
+    displayName: SonarQube Token Lifetime (days)
+    description: Expiration set on each generated token. Rotation runs twice a month.
+    type: string
+    defaultValue: "90"

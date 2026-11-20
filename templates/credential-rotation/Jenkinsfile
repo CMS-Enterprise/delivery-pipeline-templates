@@ -20,7 +20,15 @@ pipeline {
                       type: RuntimeDefault
                   containers:
                     - name: aws-cli
-                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:4f1211d7a4539d08384dc1b6f72788ba0c52d8643862fb0ae655f2616392d286
+                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:a302b18401e699d23a83029632b0239144d63e51548f02b2ef670e10c7a7d52c
+                      command: ['cat']
+                      tty: true
+                      securityContext:
+                        allowPrivilegeEscalation: false
+                        capabilities:
+                          drop: ["ALL"]
+                    - name: curl
+                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:fd979c74f05e579fcdccb6ed24b1d73076bc11ede5bdf44ad7f6f654bc9f95b3
                       command: ['cat']
                       tty: true
                       securityContext:
@@ -156,9 +164,9 @@ pipeline {
         stage('Rotate SonarQube Token') {
             when { expression { params.ROTATION_SCOPE in ['all', 'sonarqube'] } }
             steps {
-                container('aws-cli') {
+                container('curl') {
                     script {
-                        rotateStringCredential(credentialStore, 'sonarqube-token', fetchSecret('ci/sonarqube', 'token'), 'SonarQube authentication token')
+                        rotateSonarqubeToken(credentialStore)
                     }
                 }
             }
@@ -322,6 +330,104 @@ def rotateStringCredential(store, String id, String value, String description) {
     } else {
         store.addCredentials(domain, cred)
         echo "Created (new): ${id}"
+    }
+}
+
+// SonarQube is rotated against the service rather than copied from Secrets
+// Manager. The current sonarqube-token generates its successor through
+// api/user_tokens; the successor is validated and stored in Jenkins, and only
+// then are the tokens earlier runs created revoked. A failure before the store
+// revokes the new token and leaves the current one in place.
+//
+// The current token must be a user token: an analysis token can analyse but
+// cannot manage tokens. Revocation only touches names starting with
+// sonarqube_token_prefix, because SonarQube cannot say which name a token value
+// belongs to; seed the first token under that prefix so it is revoked too.
+def rotateSonarqubeToken(store) {
+    def sonarUrl = "${sonarqube_url}".replaceAll('/+$', '')
+    def prefix = "${sonarqube_token_prefix}"
+    def utc = TimeZone.getTimeZone('UTC')
+    def now = new Date()
+    def newName = "${prefix}-${now.format('yyyyMMdd-HHmmss', utc)}-${env.BUILD_NUMBER}"
+    def expiry = (now + "${sonarqube_token_days}".toInteger()).format('yyyy-MM-dd', utc)
+
+    withEnv(["SONAR_URL=${sonarUrl}", "TOKEN_NAME=${newName}", "TOKEN_EXPIRY=${expiry}"]) {
+        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+            if (!sonarTokenValid('SONAR_TOKEN')) {
+                error('sonarqube-token is not valid on SonarQube; re-seed it with credential-bootstrap')
+            }
+            if (params.DRY_RUN) {
+                echo "[DRY RUN] sonarqube-token is valid; would generate ${newName} (expires ${expiry}) and revoke ${prefix}-* tokens"
+                return
+            }
+
+            def generated = readJSON(text: sh(returnStdout: true, script: '''
+                set +x
+                curl -sS --fail-with-body --max-time 30 \
+                    -H "Authorization: Bearer $SONAR_TOKEN" \
+                    --data-urlencode "name=$TOKEN_NAME" \
+                    --data-urlencode "expirationDate=$TOKEN_EXPIRY" \
+                    "$SONAR_URL/api/user_tokens/generate"
+            ''').trim())
+            def newToken = generated.token
+            echo "Generated SonarQube token ${generated.name} for ${generated.login}, expires ${generated.expirationDate ?: expiry}"
+
+            withEnv(["NEW_TOKEN=${newToken}"]) {
+                if (!sonarTokenValid('NEW_TOKEN')) {
+                    sonarRevoke('SONAR_TOKEN', newName)
+                    error("New SonarQube token ${newName} failed validation; revoked it and kept the current token")
+                }
+            }
+
+            rotateStringCredential(store, 'sonarqube-token', newToken, 'SonarQube authentication token')
+            newToken = null
+            generated = null
+        }
+    }
+    if (params.DRY_RUN) {
+        return
+    }
+
+    // Revoke with the token just stored, so the previous one is free to go.
+    withEnv(["SONAR_URL=${sonarUrl}"]) {
+        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+            def search = readJSON(text: sh(returnStdout: true, script: '''
+                set +x
+                curl -sS --fail-with-body --max-time 30 \
+                    -H "Authorization: Bearer $SONAR_TOKEN" \
+                    "$SONAR_URL/api/user_tokens/search"
+            ''').trim())
+            def stale = search.userTokens.collect { it.name }.findAll { it.startsWith("${prefix}-") && it != newName }
+            def failed = stale.findAll { !sonarRevoke('SONAR_TOKEN', it) }
+            echo "Revoked ${stale.size() - failed.size()} earlier SonarQube token(s): ${(stale - failed).join(', ') ?: 'none'}"
+            if (failed) {
+                unstable("Could not revoke SonarQube token(s) ${failed.join(', ')}; revoke them in SonarQube")
+            }
+        }
+    }
+}
+
+// Takes the name of the environment variable holding the token, so the value
+// never passes through Groovy interpolation into a shell script.
+def sonarTokenValid(String tokenVar) {
+    def body = sh(returnStdout: true, script: """
+        set +x
+        curl -sS --fail-with-body --max-time 30 \
+            -H "Authorization: Bearer \$${tokenVar}" \
+            "\$SONAR_URL/api/authentication/validate"
+    """).trim()
+    return readJSON(text: body).valid == true
+}
+
+def sonarRevoke(String tokenVar, String name) {
+    withEnv(["REVOKE_NAME=${name}"]) {
+        return sh(returnStatus: true, script: """
+            set +x
+            curl -sS --fail-with-body --max-time 30 -o /dev/null \
+                -H "Authorization: Bearer \$${tokenVar}" \
+                --data-urlencode "name=\$REVOKE_NAME" \
+                "\$SONAR_URL/api/user_tokens/revoke"
+        """) == 0
     }
 }
 
