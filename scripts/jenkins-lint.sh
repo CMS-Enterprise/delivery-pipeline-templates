@@ -28,7 +28,9 @@ fi
 
 # Trailing slash is load-bearing: every endpoint below is appended directly.
 BASE="${JENKINS_URL%/}/"
-CURL_AUTH="--user ${JENKINS_USER}:${JENKINS_TOKEN}"
+# A user ID may contain spaces (folder-scoped users do), so pass it as one
+# argument rather than word-splitting a flag string.
+CURL_AUTH="${JENKINS_USER}:${JENKINS_TOKEN}"
 
 if [ "$#" -gt 0 ]; then
   FILES="$*"
@@ -44,8 +46,7 @@ fi
 # One crumb is reused for every file. Fetching it also doubles as the
 # reachability probe, so an unreachable controller costs one short timeout
 # rather than one per file.
-# shellcheck disable=SC2086 # CURL_AUTH must word-split into two curl args.
-CRUMB_JSON="$(curl -sS --max-time 10 $CURL_AUTH "${BASE}crumbIssuer/api/json" 2>/dev/null || true)"
+CRUMB_JSON="$(curl -sS --max-time 10 --user "$CURL_AUTH" "${BASE}crumbIssuer/api/json" 2>/dev/null || true)"
 CRUMB="$(printf '%s' "$CRUMB_JSON" | sed -n 's/.*"crumb":"\([^"]*\)".*/\1/p')"
 
 if [ -z "$CRUMB" ]; then
@@ -72,8 +73,7 @@ for f in $FILES; do
     continue
   fi
 
-  # shellcheck disable=SC2086 # CURL_AUTH must word-split into two curl args.
-  RESULT="$(curl -sS --max-time 30 $CURL_AUTH \
+  RESULT="$(curl -sS --max-time 30 --user "$CURL_AUTH" \
     -H "Jenkins-Crumb:${CRUMB}" \
     -F "jenkinsfile=<${f}" \
     "${BASE}pipeline-model-converter/validate" 2>/dev/null || true)"
