@@ -81,13 +81,20 @@ report() {
   esac
 }
 
+# Files that pin images. Jenkinsfile is included because templates carry inline
+# pod specs; leaving it out let those pins drift from resources/pods/.
+PIN_FILES=(-name "*.groovy" -o -name "*.yaml" -o -name "Dockerfile" -o -name "Jenkinsfile")
+
+# Rewrites every pin of an image to the new digest, whatever digest each file
+# currently holds, so pins that have diverged are brought back together.
 apply_sed() {
-  local old="$1"
+  local image="$1"
   local new="$2"
   local dir="$3"
 
   if [[ "$APPLY" == true ]]; then
-    find "$dir" \( -name "*.groovy" -o -name "*.yaml" -o -name "Dockerfile" \) -exec sed -i "s|${old}|${new}|g" {} +
+    find "$dir" -path "$dir/.git" -prune -o -type f \( "${PIN_FILES[@]}" \) -print0 |
+      xargs -0 sed -i -E "s|${image//./\\.}@sha256:[a-f0-9]{64}|${image}@${new}|g"
   fi
 }
 
@@ -155,19 +162,23 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
     continue
   fi
 
-  # Find current digest in pod YAML, groovy files, and Dockerfiles
-  current_digest=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$REPO_ROOT" --include="*.groovy" --include="*.yaml" --include="Dockerfile" 2>/dev/null | head -1 | grep -oP 'sha256:[a-f0-9]{64}' || true)
+  # Every distinct digest the image is pinned at, across pod YAML, groovy,
+  # Dockerfiles and Jenkinsfiles. More than one means the pins have diverged.
+  current_digests=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$REPO_ROOT" --exclude-dir=.git \
+    --include="*.groovy" --include="*.yaml" --include="Dockerfile" --include="Jenkinsfile" 2>/dev/null |
+    grep -oP 'sha256:[a-f0-9]{64}' | sort -u || true)
 
-  if [[ -z "$current_digest" ]]; then
+  if [[ -z "$current_digests" ]]; then
     report skip "$image" "not found pinned in libraries"
     continue
   fi
 
-  if [[ "$current_digest" == "$new_digest" ]]; then
-    report ok "$image" "up-to-date (${current_digest:0:19}...)"
+  if [[ "$current_digests" == "$new_digest" ]]; then
+    report ok "$image" "up-to-date (${new_digest:0:19}...)"
   else
-    report outdated "$image" "${current_digest:0:19}... → ${new_digest:0:19}..."
-    apply_sed "${image}@${current_digest}" "${image}@${new_digest}" "$REPO_ROOT"
+    olds=$(grep -vxF "$new_digest" <<<"$current_digests" | cut -c1-19 | paste -sd, -)
+    report outdated "$image" "${olds}... → ${new_digest:0:19}..."
+    apply_sed "$image" "$new_digest" "$REPO_ROOT"
   fi
 done
 
