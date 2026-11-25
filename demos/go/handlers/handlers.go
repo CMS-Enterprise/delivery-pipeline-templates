@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 )
 
+const contentType = "Content-Type"
+
 type TemplateHandler struct {
 	templates *template.Template
 }
@@ -23,7 +25,7 @@ func Health(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, "application/json")
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }
 
@@ -33,7 +35,7 @@ func (h *TemplateHandler) Home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(contentType, "text/html; charset=utf-8")
 	err := h.templates.ExecuteTemplate(w, "home.html", map[string]string{"PageTitle": "Home"})
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -46,7 +48,7 @@ func (h *TemplateHandler) About(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(contentType, "text/html; charset=utf-8")
 	err := h.templates.ExecuteTemplate(w, "about.html", map[string]string{"PageTitle": "About"})
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

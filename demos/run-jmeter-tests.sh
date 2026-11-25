@@ -9,15 +9,15 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PROJECTS=(nextjs vue sveltekit django maven go)
 PORTS=(3000 3001 3002 3003 3004 3005)
 
-if [ -x "$JMETER_HOME/bin/jmeter" ]; then
+if [[ -x "$JMETER_HOME/bin/jmeter" ]]; then
   JMETER="$JMETER_HOME/bin/jmeter"
 elif command -v jmeter &>/dev/null; then
-  echo "WARNING: Using system JMeter (may have XStream compatibility issues)."
-  echo "Run ./setup-jmeter.sh to install a compatible local version."
+  echo "WARNING: Using system JMeter (may have XStream compatibility issues)." >&2
+  echo "Run ./setup-jmeter.sh to install a compatible local version." >&2
   JMETER="jmeter"
 else
-  echo "ERROR: JMeter not found."
-  echo "Run ./setup-jmeter.sh to install Apache JMeter 5.6.3 locally."
+  echo "ERROR: JMeter not found." >&2
+  echo "Run ./setup-jmeter.sh to install Apache JMeter 5.6.3 locally." >&2
   exit 1
 fi
 
@@ -37,7 +37,7 @@ for i in "${!PROJECTS[@]}"; do
   result_file="$RESULTS_DIR/${project}_${TIMESTAMP}.jtl"
   log_file="$RESULTS_DIR/${project}_${TIMESTAMP}.log"
 
-  if [ ! -f "$test_plan" ]; then
+  if [[ ! -f "$test_plan" ]]; then
     echo "[$project] SKIP - test plan not found at $test_plan"
     continue
   fi
@@ -56,7 +56,7 @@ for i in "${!PROJECTS[@]}"; do
     fail_count=$(grep -c ",false," "$result_file" 2>/dev/null || echo "0")
     total_count=$(wc -l <"$result_file" 2>/dev/null || echo "0")
     total_count=$((total_count - 1)) # subtract header line
-    if [ "$fail_count" -eq 0 ]; then
+    if [[ "$fail_count" -eq 0 ]]; then
       echo "[$project] PASSED ($total_count samples, 0 failures)"
       ((passed++)) || true
     else
@@ -64,7 +64,7 @@ for i in "${!PROJECTS[@]}"; do
       ((failed++)) || true
     fi
   else
-    echo "[$project] ERROR - JMeter execution failed (see $log_file)"
+    echo "[$project] ERROR - JMeter execution failed (see $log_file)" >&2
     ((failed++)) || true
   fi
 done

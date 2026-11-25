@@ -14,7 +14,7 @@ echo
 for project in "${PROJECTS[@]}"; do
   project_dir="$SCRIPT_DIR/$project"
 
-  if [ ! -d "$project_dir" ]; then
+  if [[ ! -d "$project_dir" ]]; then
     echo "[$project] SKIP - directory not found at $project_dir"
     continue
   fi

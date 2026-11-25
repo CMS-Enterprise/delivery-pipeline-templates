@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PIDS_FILE="$SCRIPT_DIR/.pids"
 
-if [ ! -f "$PIDS_FILE" ]; then
+if [[ ! -f "$PIDS_FILE" ]]; then
   echo "No pids file found. Nothing to stop."
   exit 0
 fi
@@ -28,7 +28,7 @@ done <"$PIDS_FILE"
 # Also kill anything still listening on our ports as a fallback
 for port in 3000 3001 3002 3003 3004 3005; do
   pid=$(lsof -ti :"$port" 2>/dev/null) || true
-  if [ -n "$pid" ]; then
+  if [[ -n "$pid" ]]; then
     kill "$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null || true
     echo "[port $port] Killed orphan process (PID $pid)"
   fi

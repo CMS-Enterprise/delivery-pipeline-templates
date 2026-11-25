@@ -8,6 +8,7 @@ class SiteApplicationTests {
 
     @Test
     void contextLoads() {
+        // Passes when the Spring application context starts; nothing to assert.
     }
 
 }
