@@ -16,7 +16,11 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir \
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
 USER 0
 # pip vendors its own msgpack, urllib3 and pkg_resources; the runtime never installs packages.
-RUN dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf && \
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf && \
   rm -rf /home/python/python-env /opt/python/3.15.0/lib/python3.15/site-packages/pip*
 COPY --from=builder --chown=1001:1001 /home/python/python-env /home/python/python-env
 COPY --from=builder --chown=1001:1001 /app /app

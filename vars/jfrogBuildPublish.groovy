@@ -19,6 +19,10 @@ def call(Map config = [:]) {
     def cache_to = config.cache_to ?: null
     // Reproducible builds need a fixed timestamp rather than "now".
     def source_date_epoch = config.source_date_epoch ?: env.GIT_COMMIT_TIMESTAMP
+    // Dockerfiles declare ARG OS_PATCH_DATE ahead of their OS upgrade, so a new
+    // value misses the --cache-from layer and re-runs it. Defaults to the UTC
+    // date: at most a day's staleness, and the rest of the cache still serves.
+    def os_patch_date = config.os_patch_date ?: '$(date -u +%F)'
 
     def cache_flags = ''
     if (cache_from) {
@@ -44,6 +48,7 @@ def call(Map config = [:]) {
 
                             podman build \
                                 ${source_date_epoch ? "--timestamp ${source_date_epoch}" : ''} \
+                                --build-arg OS_PATCH_DATE=${os_patch_date} \
                                 -f ${containerfile} \
                                 -t ${full_image}${cache_flags} \
                                 ${context_dir}

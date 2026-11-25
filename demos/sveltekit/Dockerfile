@@ -13,7 +13,11 @@ USER 0
 # npm is installed from a tarball checked against the static sha512 in
 # npm.sha512 (updated by scripts/update-pins.sh), not trusted by version alone.
 COPY npm.sha512 /tmp/npm-pin/
-RUN apt-get -o APT::Sandbox::User=root update && \
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  apt-get -o APT::Sandbox::User=root update && \
   apt-get -o APT::Sandbox::User=root -y upgrade && \
   rm -rf /var/lib/apt/lists/* && \
   npm pack npm@12.2.2 --pack-destination /tmp/npm-pin \

@@ -10,7 +10,11 @@ RUN npm run build
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:c406814804624c8aa0dffed6cb8f9843d87fa09e83fdfa328f55f461e1a22561
 USER 0
-RUN dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf
 
 WORKDIR /usr/share/nginx/html
 COPY --from=builder /home/node/app/dist .

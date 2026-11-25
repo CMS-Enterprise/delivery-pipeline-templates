@@ -1,7 +1,11 @@
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/maven/maven-openjdk-25@sha256:47a05928a05c7944f7ab7b4706ced8f6e30d685361e3daaf51a67cdcbf43b1d0 AS builder
 # hadolint ignore=DL3002
 USER 0
-RUN dnf upgrade -y --releasever=latest --nodocs && dnf clean all && rm -rf /var/cache/yum
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  dnf upgrade -y --releasever=latest --nodocs && dnf clean all && rm -rf /var/cache/yum
 WORKDIR /build
 COPY settings.xml ./
 COPY pom.xml ./
@@ -11,7 +15,11 @@ RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:fbfeca1428773866d7e64d0d626b8bb4c774a9f4dcec2f69791ad27f936d6d7d
 USER 0
-RUN microdnf -y upgrade && microdnf clean all
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  microdnf -y upgrade && microdnf clean all
 USER 1000
 WORKDIR /app
 COPY --from=builder /build/target/site-1.0.0.jar ./app.jar

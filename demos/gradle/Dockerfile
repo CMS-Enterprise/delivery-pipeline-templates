@@ -11,7 +11,11 @@ RUN gradle --no-daemon --console=plain assemble -x test
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:fbfeca1428773866d7e64d0d626b8bb4c774a9f4dcec2f69791ad27f936d6d7d
 USER 0
-RUN microdnf -y upgrade && microdnf clean all
+# OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
+# never serves an OS upgrade older than a day.
+ARG OS_PATCH_DATE
+RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
+  microdnf -y upgrade && microdnf clean all
 USER 1000
 WORKDIR /app
 COPY --from=builder /build/build/libs/site-1.0.0.jar ./app.jar
