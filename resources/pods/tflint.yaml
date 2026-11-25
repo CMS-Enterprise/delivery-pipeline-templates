@@ -4,7 +4,7 @@ metadata:
   labels:
     jenkins-agent: "true"
 spec:
-  serviceAccountName: jenkins-agents
+  serviceAccountName: jenkins-role
   nodeSelector:
     node-pool: agent
   terminationGracePeriodSeconds: 30

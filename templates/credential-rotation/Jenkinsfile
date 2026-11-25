@@ -12,7 +12,7 @@ pipeline {
         kubernetes {
             yaml """
                 spec:
-                  serviceAccountName: jenkins-agents
+                  serviceAccountName: jenkins-role
                   securityContext:
                     runAsUser: 1000
                     runAsNonRoot: true

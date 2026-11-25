@@ -6,7 +6,7 @@ metadata:
 spec:
   nodeSelector:
     node-pool: agent
-  serviceAccountName: jenkins-agents
+  serviceAccountName: jenkins-role
   terminationGracePeriodSeconds: 30
   securityContext:
     runAsUser: 1000
