@@ -7,3 +7,6 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .jmeter/
+
+# SonarQube token for local use; never commit
+.sonar.token
