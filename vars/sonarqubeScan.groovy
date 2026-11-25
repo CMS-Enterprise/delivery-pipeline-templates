@@ -4,6 +4,9 @@ def call(Map config = [:]) {
     def source_path = config.source_path ?: '.'
     def exclusions = config.exclusions ?: ''
     def quality_gate_wait = config.quality_gate_wait != false
+    // MB for the JS/TS analyzer's Node.js heap. Left unset it scales to ~55% of
+    // the container limit, which with the scanner JVM overruns it (OOMKilled).
+    def node_maxspace = config.node_maxspace ?: 2048
 
     stage("SonarQube Analysis") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/sonar-scanner.yaml')) {
@@ -18,6 +21,7 @@ def call(Map config = [:]) {
                                 -Dsonar.projectKey=${project_key} \
                                 -Dsonar.sources=${source_path} \
                                 ${exclusions ? "-Dsonar.exclusions=${exclusions}" : ''} \
+                                -Dsonar.javascript.node.maxspace=${node_maxspace} \
                                 -Dsonar.qualitygate.wait=${quality_gate_wait}
                         """
                     }

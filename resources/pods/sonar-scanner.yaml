@@ -19,6 +19,11 @@ spec:
       image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/sonarsource/sonar-scanner-cli@sha256:79524d137f0765d142efd09653d1aefcf9a821cd96af8c013e80e6abd220c9ef
       command: ["cat"]
       tty: true
+      env:
+        # Fix the scanner heap so it and the JS/TS analyzer's Node.js process
+        # (sized by sonar.javascript.node.maxspace in sonarqubeScan) fit the limit.
+        - name: SONAR_SCANNER_JAVA_OPTS
+          value: "-Xmx1g"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -26,9 +31,9 @@ spec:
       resources:
         requests:
           cpu: "2"
-          memory: "2Gi"
+          memory: "4Gi"
           ephemeral-storage: "5Gi"
         limits:
           cpu: "2"
-          memory: "2Gi"
+          memory: "4Gi"
           ephemeral-storage: "5Gi"
