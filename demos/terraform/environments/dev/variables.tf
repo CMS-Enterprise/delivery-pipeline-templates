@@ -20,3 +20,9 @@ variable "noncurrent_version_days" {
   type        = number
   default     = 30
 }
+
+variable "access_log_days" {
+  description = "Days to keep S3 server access logs for the artifact bucket."
+  type        = number
+  default     = 90
+}
