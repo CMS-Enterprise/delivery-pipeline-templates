@@ -36,6 +36,11 @@ spec:
       image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:b7d4f00dd6764326bc39106c74c34481e2d9f6931178980cc6db28044ecadd63
       command: ["cat"]
       tty: true
+      env:
+        # IRSA caches its web-identity session under $HOME/.aws; the pod's
+        # UID has no home of its own, so point it at the writable workspace.
+        - name: HOME
+          value: "/home/jenkins/agent"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
