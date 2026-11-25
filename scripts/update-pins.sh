@@ -183,6 +183,70 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
 done
 
 # =============================================================================
+# npm tarballs pinned by sha512
+# =============================================================================
+#
+# Dockerfiles that upgrade npm run `npm pack npm@X.Y.Z` and check the tarball
+# against the npm.sha512 beside them before installing it. Each pin tracks the
+# latest release on its major. The abbreviated packument carries dist.integrity,
+# the same sha512 npm itself verifies, so the hash is taken from the registry the
+# image build fetches from (Artifactory), falling back to the public registry.
+
+NPM_REGISTRY="${NPM_REGISTRY:-https://${ARTIFACTORY}/artifactory/api/npm/npm}"
+
+echo ""
+echo "Checking npm tarball pins..."
+
+npm_meta=""
+for registry in "$NPM_REGISTRY" "https://registry.npmjs.org"; do
+  npm_meta=$(curl -sf --max-time 30 -H "Accept: application/vnd.npm.install-v1+json" \
+    "${registry%/}/npm" 2>/dev/null || true)
+  [[ -n "$npm_meta" ]] && break
+done
+
+while IFS= read -r -d '' sumfile; do
+  dir=$(dirname "$sumfile")
+  name="npm (${dir#"$REPO_ROOT"/})"
+  dockerfile="$dir/Dockerfile"
+  cur_hash=$(awk '{print $1}' "$sumfile")
+  cur_ver=$(grep -oP 'npm-\K[0-9]+\.[0-9]+\.[0-9]+(?=\.tgz)' "$sumfile")
+
+  if [[ -z "$cur_ver" ]] || ! grep -qF "npm@${cur_ver}" "$dockerfile" 2>/dev/null; then
+    report error "$name" "npm.sha512 and Dockerfile disagree on the npm version"
+    continue
+  fi
+  if [[ -z "$npm_meta" ]]; then
+    report error "$name" "failed to fetch npm metadata"
+    continue
+  fi
+
+  read -r new_ver new_hash < <(python3 -c '
+import base64, json, re, sys
+major = sys.argv[1]
+versions = json.load(sys.stdin)["versions"]
+rel = [v for v in versions if re.fullmatch(major + r"\.\d+\.\d+", v)]
+best = max(rel, key=lambda v: tuple(map(int, v.split("."))))
+integrity = versions[best]["dist"]["integrity"]
+assert integrity.startswith("sha512-")
+print(best, base64.b64decode(integrity[7:]).hex())
+' "${cur_ver%%.*}" <<<"$npm_meta" 2>/dev/null)
+
+  if [[ -z "$new_hash" ]]; then
+    report error "$name" "failed to resolve latest ${cur_ver%%.*}.x"
+  elif [[ "$new_ver" == "$cur_ver" && "$new_hash" == "$cur_hash" ]]; then
+    report ok "$name" "up-to-date (${cur_ver}, sha512:${cur_hash:0:12}...)"
+  else
+    report outdated "$name" "${cur_ver} → ${new_ver} (sha512:${new_hash:0:12}...)"
+    if [[ "$APPLY" == true ]]; then
+      printf '%s  npm-%s.tgz\n' "$new_hash" "$new_ver" >"$sumfile"
+      sed -i -e "s|npm@${cur_ver//./\\.}|npm@${new_ver}|g" \
+        -e "s|npm-${cur_ver//./\\.}\\.tgz|npm-${new_ver}.tgz|g" "$dockerfile"
+    fi
+  fi
+done < <(find "$REPO_ROOT" -path "$REPO_ROOT/.git" -prune -o -path "*/node_modules" -prune \
+  -o -type f -name npm.sha512 -print0)
+
+# =============================================================================
 # Summary
 # =============================================================================
 

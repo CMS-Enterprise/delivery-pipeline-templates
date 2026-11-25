@@ -3,7 +3,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/de
 WORKDIR /home/node/app
 
 COPY --chown=node:node package*.json .npmrc ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY --chown=node:node . .
 RUN npm run build
