@@ -20,11 +20,12 @@ def call(Map config = [:]) {
                         """,
                         returnStatus: true
                     )
+                    // Archive first so the findings survive a failing lint.
+                    archiveArtifacts allowEmptyArchive: true, artifacts: "${output_name}-results.json"
                     if (exit_code != 0 && fail_on_error) {
                         error "Hadolint found Dockerfile issues in ${working_dir}/${dockerfile}"
                     }
                 }
-                archiveArtifacts allowEmptyArchive: true, artifacts: "${output_name}-results.json"
             }
         }
     }
