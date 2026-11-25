@@ -8,9 +8,13 @@ def call(Map config = [:], String environment) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/aws-cli.yaml')) {
             node(POD_LABEL) {
                 container('aws-cli') {
-                    def assume = {
+                    // With a base credential, drop any session token a previous
+                    // awsAssumeRole left in env: paired with the base key it makes
+                    // STS reject the call.
+                    def assume = { boolean base_key ->
                         sh(
                             script: """
+                                ${base_key ? 'unset AWS_SESSION_TOKEN' : ''}
                                 aws sts assume-role \
                                     --role-arn ${role_arn} \
                                     --role-session-name jenkins-${env.BUILD_NUMBER} \
@@ -27,10 +31,10 @@ def call(Map config = [:], String environment) {
                         withCredentials([usernamePassword(credentialsId: config.credential,
                                 usernameVariable: 'AWS_ACCESS_KEY_ID',
                                 passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                            creds = assume()
+                            creds = assume(true)
                         }
                     } else {
-                        creds = assume()
+                        creds = assume(false)
                     }
                     def parsed = new groovy.json.JsonSlurperClassic().parseText(creds)
                     env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId

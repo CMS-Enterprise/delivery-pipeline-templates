@@ -4,7 +4,9 @@
 // will pass. Override per-controller rather than committing real values.
 def cosignConfig = [
     kms_key_arn: env.COSIGN_KMS_KEY_ARN,
-    account_id: env.AWS_ACCOUNT_ID,
+    // Same account and role as awsConfig; only used if no AWS_* are set yet.
+    account_id: env.AWS_DEMO_ACCOUNT_ID,
+    role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
 ]
 
 // JFrog configuration for staging and promotion
@@ -74,42 +76,25 @@ def imageTestConfig = [
     image_pull_secret: env.IMAGE_PULL_SECRET ?: '',
 ]
 
-// The Terraform stage runs once AWS_DEMO_ACCOUNT_ID is set on the controller.
-// The credential holds the base access key (username) and secret (password)
-// used to assume role_name in that account.
-def terraformConfig = [
+// One AWS role serves the S3 build cache, cosign and terraform. Set
+// AWS_DEMO_ACCOUNT_ID and AWS_DEMO_ROLE_NAME (the name may include its path,
+// e.g. "delegatedadmin/developer/jenkins-role") on the controller. The
+// credential holds the base access key (username) and secret (password) used
+// to assume it. The role is assumed once at the start of Build and its AWS_*
+// stay set, so the cache and cosign reuse them; terraform re-assumes for a
+// fresh session before it plans.
+def awsConfig = [
     account_ids: [dev: env.AWS_DEMO_ACCOUNT_ID],
     role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
     credential: 'aws-demo-credentials',
+]
+
+def terraformConfig = awsConfig + [
     terraform_dir: 'demos/terraform/environments/dev',
     // Set TF_PROVIDER_MIRROR once Artifactory proxies the Terraform registry;
     // until then providers come from registry.terraform.io behind the lock file.
     provider_mirror: env.TF_PROVIDER_MIRROR ?: '',
 ]
-
-// The S3 build cache is read and written under a role assumed for the Build
-// and Test stages only. Set S3_BUILD_CACHE_ACCOUNT_ID and S3_BUILD_CACHE_ROLE_NAME
-// (the role name may include its path, e.g. "delegatedadmin/developer/x") on the
-// controller beside S3_BUILD_CACHE_BUCKET; with any unset the cache runs as the
-// pod identity, which typically cannot reach the bucket.
-def cacheConfig = [
-    account_ids: [cache: env.S3_BUILD_CACHE_ACCOUNT_ID],
-    role_name: env.S3_BUILD_CACHE_ROLE_NAME,
-    credential: 'aws-demo-credentials',
-]
-
-def cacheRoleConfigured() {
-    return env.S3_BUILD_CACHE_BUCKET && env.S3_BUILD_CACHE_ACCOUNT_ID && env.S3_BUILD_CACHE_ROLE_NAME
-}
-
-// awsAssumeRole exports AWS_* for the rest of the build. Clear them once the
-// cache is done with, so later stages (cosign, terraform) assume their own roles
-// instead of running as the cache role.
-def clearAwsCredentials() {
-    env.AWS_ACCESS_KEY_ID = null
-    env.AWS_SECRET_ACCESS_KEY = null
-    env.AWS_SESSION_TOKEN = null
-}
 
 // Notifications are best effort: a missing credential is logged, never fails
 // the build. The Jira issue comes from JIRA_ISSUE_KEY or the first key found
@@ -393,8 +378,8 @@ pipeline {
             when { expression { has_services } }
             steps {
                 script {
-                    if (cacheRoleConfigured()) {
-                        awsAssumeRole(cacheConfig, 'cache')
+                    if (env.AWS_DEMO_ACCOUNT_ID) {
+                        awsAssumeRole(awsConfig, 'dev')
                     }
                     def branches = selected.collectEntries { svc ->
                         ["Build: ${svc.name}": { buildService(svc) }]
@@ -412,13 +397,7 @@ pipeline {
                     def branches = selected.collectEntries { svc ->
                         ["Test: ${svc.name}": { testService(svc) }]
                     }
-                    try {
-                        parallel branches
-                    } finally {
-                        if (cacheRoleConfigured()) {
-                            clearAwsCredentials()
-                        }
-                    }
+                    parallel branches
                 }
             }
         }
