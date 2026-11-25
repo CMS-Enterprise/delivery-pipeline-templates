@@ -16,12 +16,11 @@ COPY npm.sha512 /tmp/npm-pin/
 RUN apt-get -o APT::Sandbox::User=root update && \
   apt-get -o APT::Sandbox::User=root -y upgrade && \
   rm -rf /var/lib/apt/lists/* && \
-  cd /tmp/npm-pin && \
-  npm pack npm@12.2.2 \
+  npm pack npm@12.2.2 --pack-destination /tmp/npm-pin \
     --registry=https://artifactory.cloud.cms.gov/artifactory/api/npm/npm/ && \
-  sha512sum -c npm.sha512 && \
-  npm install -g --ignore-scripts ./npm-12.2.2.tgz && \
-  cd / && rm -rf /tmp/npm-pin
+  sha512sum -c /tmp/npm-pin/npm.sha512 && \
+  npm install -g --ignore-scripts /tmp/npm-pin/npm-12.2.2.tgz && \
+  rm -rf /tmp/npm-pin
 USER 1000
 
 WORKDIR /home/node/app

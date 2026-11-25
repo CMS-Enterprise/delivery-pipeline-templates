@@ -238,7 +238,8 @@ print(best, base64.b64decode(integrity[7:]).hex())
   else
     report outdated "$name" "${cur_ver} → ${new_ver} (sha512:${new_hash:0:12}...)"
     if [[ "$APPLY" == true ]]; then
-      printf '%s  npm-%s.tgz\n' "$new_hash" "$new_ver" >"$sumfile"
+      # Rewrite in place so the tarball path the Dockerfile checks is kept.
+      sed -i -E "s|^[a-f0-9]{128}  (.*)npm-${cur_ver//./\\.}\\.tgz$|${new_hash}  \\1npm-${new_ver}.tgz|" "$sumfile"
       sed -i -e "s|npm@${cur_ver//./\\.}|npm@${new_ver}|g" \
         -e "s|npm-${cur_ver//./\\.}\\.tgz|npm-${new_ver}.tgz|g" "$dockerfile"
     fi
