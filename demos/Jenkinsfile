@@ -76,17 +76,19 @@ def imageTestConfig = [
     image_pull_secret: env.IMAGE_PULL_SECRET ?: '',
 ]
 
-// One AWS role serves the S3 build cache, cosign and terraform. Set
-// AWS_DEMO_ACCOUNT_ID and AWS_DEMO_ROLE_NAME (the name may include its path,
-// e.g. "delegatedadmin/developer/jenkins-role") on the controller. The
-// credential holds the base access key (username) and secret (password) used
-// to assume it. The role is assumed once at the start of Build and its AWS_*
-// stay set, so the cache and cosign reuse them; terraform re-assumes for a
-// fresh session before it plans.
+// One AWS role serves the S3 build cache, cosign and terraform. Set on the
+// controller:
+//   AWS_DEMO_ACCOUNT_ID     account holding the role (enables the role)
+//   AWS_DEMO_ROLE_NAME      role name, path allowed, e.g.
+//                           "delegatedadmin/developer/jenkins-role"
+//   AWS_DEMO_CREDENTIAL_ID  optional usernamePassword credential with a base
+//                           access key; unset, the pod's own identity calls STS
+// The role is assumed once at the start of Build and its AWS_* stay set, so the
+// cache, cosign and terraform reuse them.
 def awsConfig = [
     account_ids: [dev: env.AWS_DEMO_ACCOUNT_ID],
     role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
-    credential: 'aws-demo-credentials',
+    credential: env.AWS_DEMO_CREDENTIAL_ID ?: '',
 ]
 
 def terraformConfig = awsConfig + [
@@ -609,7 +611,11 @@ pipeline {
             when { expression { env.AWS_DEMO_ACCOUNT_ID } }
             steps {
                 script {
-                    awsAssumeRole(terraformConfig, 'dev')
+                    // Reuse the session assumed at the start of Build; assume
+                    // only if Build did not run (no services changed).
+                    if (!env.AWS_SESSION_TOKEN) {
+                        awsAssumeRole(terraformConfig, 'dev')
+                    }
                     terraformDeploy(terraformConfig + [
                         auto_approve: false,
                         unstash: 'workspace',

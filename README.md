@@ -98,7 +98,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `cosignSign` | Sign image with cosign + AWS KMS | `COSIGN_KMS_KEY_ARN`; a real cosign image pin in `resources/pods/cosign.yaml` | Runs, skips signing |
 | `cosignAttest` | Attach SBOM attestation | Same as `cosignSign` | Runs, skips attestation |
 | `cosignVerify` | Verify image signature | Same as `cosignSign` | Commented |
-| `awsAssumeRole` | AWS STS AssumeRole | `aws-demo-credentials`, `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`) | Build (cache, cosign), Terraform Plan (dev) |
+| `awsAssumeRole` | AWS STS AssumeRole | `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`, `AWS_DEMO_CREDENTIAL_ID`; the pod identity when no credential) | Build (cache, cosign), Terraform Plan (dev) |
 | `terraformDeploy` | Terraform init/plan/apply from the pinned IronBank image | Same as `awsAssumeRole` | Terraform Plan (dev), plan only |
 | `s3CacheSync` | Restore/save build caches in S3 | `S3_BUILD_CACHE_BUCKET`; the `AWS_DEMO_ACCOUNT_ID` role, assumed at the start of Build | Build and Test steps, skipped when the bucket is unset; best effort |
 | `slackNotify` | Slack webhook notification | `slack-webhook-url` | post, best effort |
