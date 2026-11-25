@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:e1e826d5e8476f03c7ffe183051148528087fca42e86f6dbcfa1e5cb579beec8 AS builder
 # hadolint ignore=DL3002
 USER 0
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir \
   mkdir -p /app/data && \
   /home/python/python-env/bin/python -m pip uninstall -y pip
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:ae054478b8ed4574b7a464fe6791cda96551254cb7d070c116f22ff196594273
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:e1e826d5e8476f03c7ffe183051148528087fca42e86f6dbcfa1e5cb579beec8
 USER 0
 # pip vendors its own msgpack, urllib3 and pkg_resources; the runtime never installs packages.
 # OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache

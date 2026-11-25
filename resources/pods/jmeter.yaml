@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: jmeter
-      image: artifactory.cloud.cms.gov/docker/alpine/jmeter@sha256:40ed9a28400cb89555a921942039698beddbf375c61d119f803f1d052a65bde6
+      image: artifactory.cloud.cms.gov/docker/alpine/jmeter@sha256:04aca24007173e0e97ecfe99fe9d16986324aff3d6053f741f9daeda056b4ef6
       command: ["cat"]
       tty: true
       securityContext:

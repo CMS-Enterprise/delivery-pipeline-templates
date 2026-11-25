@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: kubectl
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:fd979c74f05e579fcdccb6ed24b1d73076bc11ede5bdf44ad7f6f654bc9f95b3
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:dfe6802f5d50b5fca53734e136deeb95315da0501ef104c4e52f0f930f7159d3
       command: ["cat"]
       tty: true
       securityContext:

@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: renovate
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/container-hardening-tools/renovate/renovate@sha256:f92dd7ddee245abe3146b5ab02b6d829e6a413fcc237c6d21999f2c22cd1e751
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/container-hardening-tools/renovate/renovate@sha256:4b03dc4aae5863b0d8fbce37763d94db4c2ca1b81f85733d14558690237f4363
       command: ["cat"]
       tty: true
       securityContext:

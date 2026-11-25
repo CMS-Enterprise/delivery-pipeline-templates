@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: grype
-      image: artifactory.cloud.cms.gov/docker/anchore/grype@sha256:09301bc98ed5eba53b9c5f56cb0f7d4637a9cece469c9feae9e64624a6a31e8c
+      image: artifactory.cloud.cms.gov/docker/anchore/grype@sha256:123579d16feeadc9f1a6b28d8bc27edeead34a1ff37d6784070f61af669391ef
       command: ["/busybox/cat"]
       tty: true
       env:

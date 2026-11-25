@@ -20,7 +20,7 @@ pipeline {
                       type: RuntimeDefault
                   containers:
                     - name: aws-cli
-                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:a302b18401e699d23a83029632b0239144d63e51548f02b2ef670e10c7a7d52c
+                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/amazon/aws-cli@sha256:b7d4f00dd6764326bc39106c74c34481e2d9f6931178980cc6db28044ecadd63
                       command: ['cat']
                       tty: true
                       securityContext:
@@ -28,7 +28,7 @@ pipeline {
                         capabilities:
                           drop: ["ALL"]
                     - name: curl
-                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:fd979c74f05e579fcdccb6ed24b1d73076bc11ede5bdf44ad7f6f654bc9f95b3
+                      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/big-bang/base@sha256:dfe6802f5d50b5fca53734e136deeb95315da0501ef104c4e52f0f930f7159d3
                       command: ['cat']
                       tty: true
                       securityContext:

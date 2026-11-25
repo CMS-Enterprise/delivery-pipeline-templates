@@ -16,7 +16,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: python
-      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:99ebca91dab895bf92c51fa999561abc9ce80405abf2b285a236f7d40199d7f2
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:e1e826d5e8476f03c7ffe183051148528087fca42e86f6dbcfa1e5cb579beec8
       command: ["cat"]
       tty: true
       env:

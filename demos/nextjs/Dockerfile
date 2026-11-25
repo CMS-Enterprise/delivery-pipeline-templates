@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:22dbe44d2d557968cc06e491be2546f9dd50ccdc923bc03e97f6862bcc1bbaa0 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:90b09acffe6c620be153311f11d50d72427ab08581de2c7344de9ec7d820a9dc AS builder
 # hadolint ignore=DL3002
 USER 0
 # OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
@@ -16,7 +16,7 @@ RUN npm ci --ignore-scripts
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:22dbe44d2d557968cc06e491be2546f9dd50ccdc923bc03e97f6862bcc1bbaa0
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:90b09acffe6c620be153311f11d50d72427ab08581de2c7344de9ec7d820a9dc
 USER 0
 # npm is installed from a tarball checked against the static sha512 in
 # npm.sha512 (updated by scripts/update-pins.sh), not trusted by version alone.

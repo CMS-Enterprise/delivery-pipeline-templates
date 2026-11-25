@@ -88,14 +88,14 @@ pipeline {
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
         - name: podman
-          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:eba2ce21abb42a0f0d4d9ac557587d9f0f24611873eafdf17e0eda350aec973d
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/containers/podman@sha256:90413cf5c1d5bda7480fe2059ffb147c3b6562052f86aad7efe5ddb8f9c1942a
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           resources:
             limits:
               memory: "${params.build_memory_limit}"
         - name: clamav
-          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:9ec432cd3c0dda4e7f3828c8b3af48678a919d5e4f63068aa982d747a25e723f
+          image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/clamav/clamav@sha256:5679deab3b75aa1d2ce70b0bf474e1b4990fe5e21ed0f0f13e4ee00c80ca2a16
           imagePullPolicy: Always
           command: ['tail', '-f', '/dev/null']
           volumeMounts:

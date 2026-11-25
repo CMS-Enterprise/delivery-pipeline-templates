@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:22dbe44d2d557968cc06e491be2546f9dd50ccdc923bc03e97f6862bcc1bbaa0 AS builder
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:90b09acffe6c620be153311f11d50d72427ab08581de2c7344de9ec7d820a9dc AS builder
 # hadolint ignore=DL3002
 WORKDIR /home/node/app
 
@@ -8,7 +8,7 @@ RUN npm ci --ignore-scripts
 COPY --chown=node:node . .
 RUN npm run build
 
-FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:c406814804624c8aa0dffed6cb8f9843d87fa09e83fdfa328f55f461e1a22561
+FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nginx/nginx@sha256:e853b25bb2d472fd81e4d31c16fd2666588e25874ce35efd56079fc56c2b3d23
 USER 0
 # OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
 # never serves an OS upgrade older than a day.
