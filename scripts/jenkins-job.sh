@@ -42,7 +42,8 @@ done
 command -v jq >/dev/null 2>&1 || die "jq is required but not on PATH."
 
 BASE="${JENKINS_URL%/}/"
-AUTH="--user ${JENKINS_USER}:${JENKINS_TOKEN}"
+# Quoted at each use: user IDs such as "Devops Pipeline/demo/claude" contain spaces.
+CREDS="${JENKINS_USER}:${JENKINS_TOKEN}"
 
 # Refuse anything outside the allowed prefix before any request is made.
 check_prefix() {
@@ -54,19 +55,17 @@ check_prefix() {
 
 # "demos/my-branch" -> "job/demos/job/my-branch", the path form the REST API uses.
 job_url() {
-    printf '%sjob/%s' "$BASE" "$(printf '%s' "$1" | sed 's#/#/job/#g')"
+    printf '%sjob/%s' "$BASE" "$(printf '%s' "$1" | sed -e 's/ /%20/g' -e 's#/#/job/#g')"
 }
 
 crumb() {
-    # shellcheck disable=SC2086 # AUTH must word-split into two curl args.
-    curl -sS --max-time 15 $AUTH "${BASE}crumbIssuer/api/json" | jq -r '.crumb'
+    curl -sS --max-time 15 --user "$CREDS" "${BASE}crumbIssuer/api/json" | jq -r '.crumb'
 }
 
 # -g (globoff) is required: the API's tree=field[a,b] syntax uses brackets, which
 # curl otherwise parses as a glob range and rejects outright.
 api() {
-    # shellcheck disable=SC2086 # AUTH must word-split into two curl args.
-    curl -sS -g --max-time 30 $AUTH "$@"
+    curl -sS -g --max-time 30 --user "$CREDS" "$@"
 }
 
 # Resolves the build number for a job, defaulting to the last build.
@@ -100,8 +99,8 @@ cmd_trigger() {
     # buildWithParameters answers 201 with a Location header pointing at the
     # queue item. The queue item only gains an executable once an executor picks
     # it up, so the build number is not known immediately.
-    # shellcheck disable=SC2086 # AUTH and params must word-split into curl args.
-    location="$(curl -sS --max-time 30 $AUTH -H "Jenkins-Crumb:${C}" -D - -o /dev/null \
+    # shellcheck disable=SC2086 # params must word-split into curl args.
+    location="$(curl -sS --max-time 30 --user "$CREDS" -H "Jenkins-Crumb:${C}" -D - -o /dev/null \
         $params -X POST "$(job_url "$job")/buildWithParameters" \
         | sed -n 's/^[Ll]ocation: *\(.*\)$/\1/p' | tr -d '\r')"
 
