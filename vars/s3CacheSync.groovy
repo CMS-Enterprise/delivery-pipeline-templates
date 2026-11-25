@@ -4,7 +4,11 @@ def restore(Map config) {
     def local_dir = config.local_dir ?: error('s3CacheSync.restore requires local_dir')
 
     container('aws-cli') {
-        sh "aws s3 sync s3://${bucket}/${prefix} ${local_dir} --quiet || true"
+        // Passed through the environment and quoted: the prefix defaults to
+        // JOB_NAME, which can contain spaces (e.g. "Devops Pipeline/demo").
+        withEnv(["CACHE_SRC=s3://${bucket}/${prefix}", "CACHE_DST=${local_dir}"]) {
+            sh 'aws s3 sync "$CACHE_SRC" "$CACHE_DST" --quiet || true'
+        }
     }
 }
 
@@ -14,6 +18,8 @@ def save(Map config) {
     def local_dir = config.local_dir ?: error('s3CacheSync.save requires local_dir')
 
     container('aws-cli') {
-        sh "aws s3 sync ${local_dir} s3://${bucket}/${prefix} --quiet"
+        withEnv(["CACHE_SRC=${local_dir}", "CACHE_DST=s3://${bucket}/${prefix}"]) {
+            sh 'aws s3 sync "$CACHE_SRC" "$CACHE_DST" --quiet'
+        }
     }
 }
