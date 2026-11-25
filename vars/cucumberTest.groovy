@@ -11,10 +11,15 @@ def call(Map config = [:]) {
                 unstash "${myunstash}"
                 def status = 0
                 container('gradle') {
-                    status = sh(returnStatus: true, script: """
-                        cd ${working_dir}
-                        gradle ${task} --no-daemon --console=plain ${tags ? "-Dcucumber.filter.tags='${tags}'" : ''}
-                    """)
+                    // Anonymous Artifactory only serves already-cached artifacts,
+                    // so plugin and dependency resolution needs credentials.
+                    withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials',
+                                                      usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_TOKEN')]) {
+                        status = sh(returnStatus: true, script: """
+                            cd ${working_dir}
+                            gradle ${task} --no-daemon --console=plain ${tags ? "-Dcucumber.filter.tags='${tags}'" : ''}
+                        """)
+                    }
                 }
                 // junit, not the cucumber publisher: the Cucumber Reports plugin
                 // is not installed on the controller.
