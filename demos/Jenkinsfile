@@ -87,6 +87,30 @@ def terraformConfig = [
     provider_mirror: env.TF_PROVIDER_MIRROR ?: '',
 ]
 
+// The S3 build cache is read and written under a role assumed for the Build
+// and Test stages only. Set S3_BUILD_CACHE_ACCOUNT_ID and S3_BUILD_CACHE_ROLE_NAME
+// (the role name may include its path, e.g. "delegatedadmin/developer/x") on the
+// controller beside S3_BUILD_CACHE_BUCKET; with any unset the cache runs as the
+// pod identity, which typically cannot reach the bucket.
+def cacheConfig = [
+    account_ids: [cache: env.S3_BUILD_CACHE_ACCOUNT_ID],
+    role_name: env.S3_BUILD_CACHE_ROLE_NAME,
+    credential: 'aws-demo-credentials',
+]
+
+def cacheRoleConfigured() {
+    return env.S3_BUILD_CACHE_BUCKET && env.S3_BUILD_CACHE_ACCOUNT_ID && env.S3_BUILD_CACHE_ROLE_NAME
+}
+
+// awsAssumeRole exports AWS_* for the rest of the build. Clear them once the
+// cache is done with, so later stages (cosign, terraform) assume their own roles
+// instead of running as the cache role.
+def clearAwsCredentials() {
+    env.AWS_ACCESS_KEY_ID = null
+    env.AWS_SECRET_ACCESS_KEY = null
+    env.AWS_SESSION_TOKEN = null
+}
+
 // Notifications are best effort: a missing credential is logged, never fails
 // the build. The Jira issue comes from JIRA_ISSUE_KEY or the first key found
 // in this build's commit messages.
@@ -369,6 +393,9 @@ pipeline {
             when { expression { has_services } }
             steps {
                 script {
+                    if (cacheRoleConfigured()) {
+                        awsAssumeRole(cacheConfig, 'cache')
+                    }
                     def branches = selected.collectEntries { svc ->
                         ["Build: ${svc.name}": { buildService(svc) }]
                     }
@@ -385,7 +412,13 @@ pipeline {
                     def branches = selected.collectEntries { svc ->
                         ["Test: ${svc.name}": { testService(svc) }]
                     }
-                    parallel branches
+                    try {
+                        parallel branches
+                    } finally {
+                        if (cacheRoleConfigured()) {
+                            clearAwsCredentials()
+                        }
+                    }
                 }
             }
         }

@@ -100,7 +100,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `cosignVerify` | Verify image signature | Same as `cosignSign` | Commented |
 | `awsAssumeRole` | AWS STS AssumeRole | `aws-demo-credentials`, `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`) | Terraform Plan (dev) |
 | `terraformDeploy` | Terraform init/plan/apply from the pinned IronBank image | Same as `awsAssumeRole` | Terraform Plan (dev), plan only |
-| `s3CacheSync` | Restore/save build caches in S3 | `S3_BUILD_CACHE_BUCKET` and AWS access | Build steps, skipped when unset |
+| `s3CacheSync` | Restore/save build caches in S3 | `S3_BUILD_CACHE_BUCKET`; `S3_BUILD_CACHE_ACCOUNT_ID` and `S3_BUILD_CACHE_ROLE_NAME` for the role assumed via `aws-demo-credentials` | Build and Test steps, skipped when the bucket is unset; best effort |
 | `slackNotify` | Slack webhook notification | `slack-webhook-url` | post, best effort |
 | `jiraUpdate` | Comment on / transition a Jira issue | `jira-api-token`; issue key in `JIRA_ISSUE_KEY` or a commit message | post, best effort |
 | `serviceNowUpdate` | Create or comment on a ServiceNow record | ServiceNow token credential | Not yet wired |
