@@ -91,7 +91,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `playwrightTest` | Playwright browser tests | Image pull secret (above) | Image Tests; Dev Verification (commented) |
 | `jmeterTest` | JMeter load/smoke plans | Image pull secret (above) | Image Tests; Dev Verification (commented) |
 | `gitopsPromote` | Update image tags in the GitOps manifest repo | `github-org-token`; `overlays/dev` in the manifests repo | Update Image Tags |
-| `sonarqubeScan` | SonarQube analysis | SonarQube token credential and project key | Source Scans (commented) |
+| `sonarqubeScan` | SonarQube analysis | SonarQube token credential and project key | Source Scans |
 | `snykCodeScan` | Snyk Code SAST scan | `snyk-api-token` | Source Scans (commented) |
 | `snykDependencyScan` | Snyk Open Source SCA scan | `snyk-api-token` | Not yet wired |
 | `snykContainerScan` | Snyk container scan + SBOM | `snyk-api-token` | Image Scans (commented) |

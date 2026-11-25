@@ -47,11 +47,11 @@ CI stages.
 
 - **MUST** pass scans before anything reaches JFrog. Nothing is uploaded ahead of
   its scan results; upload does not overlap with scanning.
-- **MUST** use **trivy** as the vulnerability scanner, not grype.
 - **MUST** lint all code.
 - **DEFAULT**: scan all code with trivy, sonarqube and snyk, and run those scans
   **in parallel**.
-- **DEFAULT**: scan containers with JFrog Xray and snyk.
+- **DEFAULT**: scan containers for vulnerabilities with trivy, grype, JFrog Xray
+  and snyk.
 - **DEFAULT**: scan containers for policy violations with OpenSCAP.
 - **DEFAULT**: create SBOMs with JFrog Xray and with snyk; scan the SBOM and keep
   it as a build artifact.
