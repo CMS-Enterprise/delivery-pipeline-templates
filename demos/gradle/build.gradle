@@ -28,6 +28,13 @@ repositories {
     }
 }
 
+// Every resolved version is pinned in gradle.lockfile; a dependency that is not
+// in it fails resolution. After changing dependencies, regenerate it with
+// `gradle dependencies --write-locks` and commit the result.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

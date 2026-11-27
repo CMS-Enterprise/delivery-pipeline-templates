@@ -3,7 +3,7 @@ FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/gradle/gr
 USER 0
 WORKDIR /build
 
-COPY build.gradle settings.gradle gradle.properties ./
+COPY build.gradle settings.gradle gradle.properties gradle.lockfile ./
 COPY checkstyle.xml ./
 COPY src ./src
 
