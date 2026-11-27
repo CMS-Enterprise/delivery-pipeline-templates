@@ -96,9 +96,9 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `snykCodeScan` | Snyk Code SAST scan | `snyk-api-token` | Source Scans (commented) |
 | `snykDependencyScan` | Snyk Open Source SCA scan | `snyk-api-token` | Not yet wired |
 | `snykContainerScan` | Snyk container scan + SBOM | `snyk-api-token` | Image Scans (commented) |
-| `cosignSign` | Sign image with cosign + AWS KMS | `COSIGN_KMS_KEY_ARN` | Sign and Attest (after promotion); skips signing |
-| `cosignAttest` | Attach SBOM attestation | Same as `cosignSign` | Sign and Attest (after promotion); skips attestation |
-| `cosignVerify` | Verify image signature | Same as `cosignSign` | Image Tests; skips verification |
+| `cosignSign` | Sign image with cosign + AWS KMS | KMS key (demo: `alias/cosign`, override with `COSIGN_KMS_KEY_ARN`); `kms:Sign` for the assumed role; `jfrog-credentials` | Sign and Attest (after promotion) |
+| `cosignAttest` | Attach SBOM attestation | Same as `cosignSign` | Sign and Attest (after promotion) |
+| `cosignVerify` | Verify image signature | `public_key` (demo: `demos/cosign.pub`) or the KMS key; `jfrog-credentials` | Image Tests |
 | `awsAssumeRole` | AWS STS AssumeRole | `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`, `AWS_DEMO_CREDENTIAL_ID`; the pod identity when no credential) | Build (cache, cosign), Terraform Plan (dev) |
 | `terraformDeploy` | Terraform init/plan/apply from the pinned IronBank image | Same as `awsAssumeRole` | Terraform Plan (dev), plan only |
 | `s3CacheSync` | Restore/save build caches in S3 | `S3_BUILD_CACHE_BUCKET`; the `AWS_DEMO_ACCOUNT_ID` role, assumed at the start of Build | Build and Test steps, skipped when the bucket is unset; best effort |

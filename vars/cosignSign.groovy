@@ -25,11 +25,16 @@ def call(Map config = [:]) {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/cosign.yaml')) {
             node(POD_LABEL) {
                 container('cosign') {
-                    sh """
-                        cosign sign --key awskms:///${kms_key_arn} \
-                            --tlog-upload=false \
-                            ${image}
-                    """
+                    // The signature is pushed beside the image, so cosign needs
+                    // registry credentials as well as the KMS key.
+                    registryAuth(config) {
+                        sh """
+                            cosign sign --key awskms:///${kms_key_arn} \
+                                --tlog-upload=false \
+                                --yes \
+                                ${image}
+                        """
+                    }
                 }
             }
         }

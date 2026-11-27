@@ -28,13 +28,16 @@ def call(Map config = [:]) {
             node(POD_LABEL) {
                 unstash config.unstash ?: 'workspace'
                 container('cosign') {
-                    sh """
-                        cosign attest --key awskms:///${kms_key_arn} \
-                            --predicate ${sbom_file} \
-                            --type ${predicate_type} \
-                            --tlog-upload=false \
-                            ${image}
-                    """
+                    registryAuth(config) {
+                        sh """
+                            cosign attest --key awskms:///${kms_key_arn} \
+                                --predicate ${sbom_file} \
+                                --type ${predicate_type} \
+                                --tlog-upload=false \
+                                --yes \
+                                ${image}
+                        """
+                    }
                 }
             }
         }

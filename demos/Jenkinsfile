@@ -1,10 +1,13 @@
 @Library('delivery-pipeline-templates') _
 
-// Signing runs in Sign and Attest, on the promoted image. Without a KMS key the
-// cosign steps skip rather than sign. Override per-controller rather than
-// committing real values.
+// Signing runs in Sign and Attest, on the promoted image. COSIGN_KMS_KEY_ARN on
+// the controller overrides the key.
 def cosignConfig = [
-    kms_key_arn: env.COSIGN_KMS_KEY_ARN,
+    // Created with `cosign generate-key-pair --kms awskms:///alias/cosign`; the
+    // assumed role needs kms:Sign and kms:GetPublicKey on it.
+    kms_key_arn: env.COSIGN_KMS_KEY_ARN ?: 'alias/cosign',
+    // Public half of that key, used to verify without AWS access.
+    public_key: 'demos/cosign.pub',
     // Same account and role as awsConfig; only used if no AWS_* are set yet.
     account_id: env.AWS_DEMO_ACCOUNT_ID,
     role_name: env.AWS_DEMO_ROLE_NAME ?: 'delivery-demos-terraform',
