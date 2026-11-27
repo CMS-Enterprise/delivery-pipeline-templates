@@ -9,7 +9,9 @@ COPY . .
 # Set by podman's --source-date-epoch. With it set, Python writes hash-based
 # .pyc files instead of ones stamped with the source mtime.
 ARG SOURCE_DATE_EPOCH
-RUN /home/python/python-env/bin/pip install --no-cache-dir \
+# requirements.txt is a hash-pinned lock (scripts/lock-python.py); pip refuses
+# any file whose hash does not match.
+RUN /home/python/python-env/bin/pip install --no-cache-dir --require-hashes \
     --index-url https://artifactory.cloud.cms.gov/artifactory/api/pypi/python/simple \
     -r requirements.txt && \
   /home/python/python-env/bin/python manage.py collectstatic --noinput && \

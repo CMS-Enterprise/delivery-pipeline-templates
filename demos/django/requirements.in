@@ -1,3 +1,6 @@
+# Runtime dependencies. requirements.txt is the hash-pinned lock generated from
+# this file by scripts/lock-python.py, for the Python in the Dockerfile's image.
+# lock: python=3.13
 # 4.2 does not support Python 3.14, which resources/pods/python.yaml provides:
 # BaseContext.__copy__ calls copy(super()) and raises AttributeError. Fixed in 5.x.
 django>=5.2,<6.0

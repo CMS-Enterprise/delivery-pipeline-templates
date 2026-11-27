@@ -1,4 +1,10 @@
--r requirements.txt
+# Test dependencies. requirements-dev.txt is the hash-pinned lock generated from
+# this file by scripts/lock-python.py, for the Python in resources/pods/python.yaml
+# (the Dockerfile's image), holding the runtime packages at the versions
+# requirements.txt pins.
+# lock: python=3.13
+# lock: constraint=requirements.txt
+-r requirements.in
 pytest>=8.0
 pytest-cov>=5.0
 pytest-django>=4.8
