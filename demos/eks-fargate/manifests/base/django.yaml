@@ -35,9 +35,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: django
-          # Placeholder name; the overlay's images: entry, maintained by
+          # Placeholder name and tag; the overlay's images: entry, maintained by
           # gitopsPromote, supplies the Artifactory repository and tag.
-          image: django
+          image: django:set-by-pipeline
           ports:
             - name: http
               containerPort: 3003

@@ -217,8 +217,8 @@ paths come from `appTargets` in `demos/Jenkinsfile`:
    `delivery-pipeline-manifests/overlays/dev` it runs
    `kustomize edit set image <service>=artifactory.cloud.cms.gov/itopsplatf-prod/<service>:<short sha>`
    for each promoted service and pushes the commit. This only works because
-   each base container's `image:` is the bare service name, which is what
-   kustomize matches on.
+   each base container's `image:` is the service name (with a placeholder
+   tag), and kustomize matches on the name whatever the tag.
 3. Flux picks up the commit within `interval` (or immediately on
    `fluxcdDeploy`), applies `overlays/dev`, and waits for the rollouts.
 
