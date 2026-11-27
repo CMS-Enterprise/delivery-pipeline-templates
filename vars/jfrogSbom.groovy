@@ -22,16 +22,32 @@ def call(Map config = [:]) {
 
                             jf rt build-collect-env '${build_name}' ${build_number} ${project_flag}
 
+                            # An empty or non-JSON file must not pass as an SBOM:
+                            # cosign attest and the archived artifact depend on it.
+                            sbom=${output_name}.cyclonedx.json
+                            ok=
                             for attempt in 1 2 3; do
-                                jf sbom-export \
+                                rc=0
+                                JFROG_CLI_LOG_LEVEL=DEBUG jf sbom-export \
                                     --server-id=${server_id} \
                                     --build-name='${build_name}' \
                                     --build-number=${build_number} \
                                     --format=cyclonedx ${project_flag} \
-                                    > ${output_name}.cyclonedx.json && break
-                                echo "sbom-export attempt \$attempt failed, retrying in 10s..."
-                                sleep 10
+                                    > "\$sbom" 2> sbom-export.err || rc=\$?
+                                if [ "\$rc" -eq 0 ] && [ "\$(tr -d ' \\t\\r\\n' < "\$sbom" | head -c 1)" = '{' ]; then
+                                    ok=1
+                                    break
+                                fi
+                                echo "sbom-export attempt \$attempt failed (exit \$rc, \$(wc -c < "\$sbom") bytes)"
+                                echo '--- stderr ---'; tail -n 50 sbom-export.err
+                                echo '--- stdout ---'; head -c 2000 "\$sbom"; echo
+                                [ "\$attempt" -lt 3 ] && sleep 10
                             done
+                            if [ -z "\$ok" ]; then
+                                rm -f "\$sbom"
+                                echo 'sbom-export failed after 3 attempts' >&2
+                                exit 1
+                            fi
                         """
                     }
                     archiveArtifacts artifacts: "${output_name}.cyclonedx.json"
