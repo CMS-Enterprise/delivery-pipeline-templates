@@ -24,6 +24,11 @@ def call(Map config = [:]) {
     // date: at most a day's staleness, and the rest of the cache still serves.
     def os_patch_date = config.os_patch_date ?: '$(date -u +%F)'
 
+    // Hand the pushed digest from the podman container to jfrog-cli; both share
+    // the pod's workspace.
+    def digest_file = "image-digest-${image_name}.txt"
+    def image_file = "image-file-${image_name}.txt"
+
     def cache_flags = ''
     if (cache_from) {
         cache_flags += " --cache-from=${cache_from}"
@@ -53,7 +58,7 @@ def call(Map config = [:]) {
                                 -t ${full_image}${cache_flags} \
                                 ${context_dir}
 
-                            podman push ${full_image}
+                            podman push --digestfile '${digest_file}' ${full_image}
                         """
                     }
                 }
@@ -66,6 +71,16 @@ def call(Map config = [:]) {
                                 --access-token=\$JFROG_ACCESS_TOKEN \
                                 --interactive=false \
                                 --overwrite=true
+
+                            # Record the pushed image as build artifacts. Without it the
+                            # build info has no modules, and build-promote marks the build
+                            # Released while moving nothing to the target repo.
+                            printf '%s@%s\\n' '${full_image}' "\$(cat '${digest_file}')" > '${image_file}'
+                            jf rt build-docker-create ${repo} \
+                                --image-file='${image_file}' \
+                                --build-name='${build_name}' \
+                                --build-number=${env.BUILD_NUMBER} \
+                                --server-id=${server_id} ${project_flag}
 
                             jf rt build-collect-env '${build_name}' ${env.BUILD_NUMBER} ${project_flag}
 

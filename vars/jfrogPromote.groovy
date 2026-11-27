@@ -30,6 +30,25 @@ def call(Map config = [:], String target = null) {
                                 --comment="Promoted after passing Xray scan" \
                                 ${copy ? '--copy=true' : ''} ${project_flag}
                         """
+                        // build-promote reports success even when the build info lists
+                        // no artifacts, so confirm the image actually reached the target.
+                        if (config.image) {
+                            def ref = config.image.replace(source_repo, target_repo)
+                            def m = (ref =~ /^[^\/]+\/([^\/]+)\/(.+):([^:@\/]+)$/)
+                            if (!m.matches()) {
+                                error("jfrogPromote: cannot parse image reference '${ref}'")
+                            }
+                            def manifest = "${m.group(1)}/${m.group(2)}/${m.group(3)}/*manifest.json"
+                            m = null
+                            def found = sh(
+                                script: "jf rt search '${manifest}' --server-id=${server_id} --count",
+                                returnStdout: true
+                            ).trim()
+                            if (!(found ==~ /[1-9][0-9]*/)) {
+                                error("jfrogPromote: ${manifest} not found after promotion (count: ${found}); " +
+                                    "the build info for '${build_name}' #${build_number} likely records no image")
+                            }
+                        }
                     }
                     // Callers that fan out pass an explicit image and use the
                     // return value, since a shared env var would race.
