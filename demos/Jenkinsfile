@@ -69,11 +69,12 @@ def appTargets = [
     gradle:    [port: 3006, health: '/health', uid: 1000],
 ]
 
-// Nodes pull the promoted images from the prod repo with this dockerconfigjson
-// Secret in the agent namespace. Leave IMAGE_PULL_SECRET unset if the nodes
-// already have pull access.
+// Image Tests run the promoted image from the prod repo as a sidecar, which the
+// kubelet pulls itself. imagePullSecret syncs this dockerconfigjson Secret from
+// jfrog-credentials at the start of Image Tests, and only those pods reference it.
+// IMAGE_PULL_SECRET on the controller overrides the Secret's name.
 def imageTestConfig = [
-    image_pull_secret: env.IMAGE_PULL_SECRET ?: '',
+    image_pull_secret: env.IMAGE_PULL_SECRET ?: 'jfrog-pull',
 ]
 
 // One AWS role serves the S3 build cache, cosign and terraform. Set on the
@@ -565,6 +566,12 @@ pipeline {
             when { expression { has_services } }
             steps {
                 script {
+                    def pull_secret = imagePullSecret(
+                        name: imageTestConfig.image_pull_secret,
+                        registry: jfrogConfig.registry,
+                        credential: jfrogConfig.credential,
+                        stage: 'Image Tests: pull secret'
+                    )
                     def branches = selected.collectEntries { svc ->
                         def target = appTargets[svc.name]
                         def image = verifiedImages[svc.name]
@@ -575,7 +582,7 @@ pipeline {
                                 port: target.port,
                                 run_as_user: target.uid,
                                 probe_path: target.health,
-                                image_pull_secret: imageTestConfig.image_pull_secret
+                                image_pull_secret: pull_secret
                             ], readTrusted(pod_file))
                         }
                         // A sidecar that cannot be pulled leaves its pod Pending

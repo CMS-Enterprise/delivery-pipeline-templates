@@ -86,7 +86,8 @@ the tables below record what it has exercised. Draft as of demo build 288
 
 | Step | Description | Needs | In demo pipeline |
 | ---- | ----------- | ----- | ---------------- |
-| `appSidecarPod` | Run the built image as a sidecar in a test pod | `IMAGE_PULL_SECRET`: dockerconfigjson Secret for `itopsplatf-prod` in the agent namespace | Image Tests |
+| `appSidecarPod` | Run the built image as a sidecar in a test pod | dockerconfigjson Secret for `itopsplatf-prod` in the agent namespace, synced by `imagePullSecret` | Image Tests |
+| `imagePullSecret` | Sync a dockerconfigjson Secret from a Jenkins credential | `jfrog-credentials`; agent service account may get/create/patch Secrets in its namespace | Image Tests |
 | `smokeTest` | HTTP health check with retries | Image pull secret (above); dev deploy for the dev run | Image Tests; Dev Verification (commented) |
 | `playwrightTest` | Playwright browser tests | Image pull secret (above) | Image Tests; Dev Verification (commented) |
 | `jmeterTest` | JMeter load/smoke plans | Image pull secret (above) | Image Tests; Dev Verification (commented) |
