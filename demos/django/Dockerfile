@@ -16,12 +16,19 @@ RUN /home/python/python-env/bin/pip install --no-cache-dir \
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/python@sha256:e1e826d5e8476f03c7ffe183051148528087fca42e86f6dbcfa1e5cb579beec8
 USER 0
 # pip vendors its own msgpack, urllib3 and pkg_resources; the runtime never installs packages.
+# The glob covers both interpreter layouts the base image has shipped
+# (/opt/python/<ver> and /usr/local); the find fails the build if pip survives
+# anywhere, so a base image change cannot make the removal silently miss again.
 # OS_PATCH_DATE changes daily (jfrogBuildPublish sets it), so a layer cache
 # never serves an OS upgrade older than a day.
 ARG OS_PATCH_DATE
 RUN echo "OS packages as of ${OS_PATCH_DATE:-unset}" && \
   dnf upgrade -y --nodocs && dnf clean all && rm -rf /var/cache/dnf && \
-  rm -rf /home/python/python-env /opt/python/3.15.0/lib/python3.15/site-packages/pip*
+  rm -rf /home/python/python-env \
+    /opt/python/*/lib/python3.*/site-packages/pip* \
+    /usr/local/lib/python3.*/site-packages/pip* && \
+  leftover="$(find / -xdev -type d -path '*/site-packages/pip' -print)" && \
+  if [ -n "$leftover" ]; then echo "pip still present: $leftover" >&2; exit 1; fi
 COPY --from=builder --chown=1001:1001 /home/python/python-env /home/python/python-env
 COPY --from=builder --chown=1001:1001 /app /app
 USER 1001
