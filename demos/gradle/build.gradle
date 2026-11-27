@@ -60,6 +60,13 @@ tasks.named('test') {
     }
 }
 
+// Reproducible builds: archives (including bootJar) get fixed entry timestamps
+// and a stable entry order, so the same sources produce the same jar.
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
 tasks.register('cucumber', Test) {
     description = 'Runs the Cucumber acceptance scenarios.'
     group = 'verification'

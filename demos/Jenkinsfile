@@ -283,6 +283,12 @@ pipeline {
                     // argocdDeploy and gitopsPromote.
                     env.GIT_SHORT_HASH = scmVars.GIT_COMMIT.take(7)
                     env.REPO_NAME = 'delivery-pipeline-templates'
+                    // Commit time for reproducible builds: jfrogBuildPublish
+                    // passes it to podman as --source-date-epoch.
+                    env.GIT_COMMIT_TIMESTAMP = sh(
+                        script: 'git show -s --format=%ct HEAD',
+                        returnStdout: true
+                    ).trim()
                 }
                 stash name: 'workspace', includes: '**', useDefaultExcludes: false
 

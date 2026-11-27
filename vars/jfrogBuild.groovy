@@ -10,6 +10,12 @@ def call(Map config = [:]) {
     def cache_from = config.cache_from ?: null
     def cache_to = config.cache_to ?: null
 
+    // Reproducible builds: the commit time, not "now", becomes the image's
+    // created time and clamps file timestamps in the new layers. podman also
+    // passes it to the build as the SOURCE_DATE_EPOCH build arg.
+    def source_date_epoch = config.source_date_epoch ?: env.GIT_COMMIT_TIMESTAMP
+    def repro_flags = source_date_epoch ? " --source-date-epoch=${source_date_epoch} --rewrite-timestamp" : ''
+
     def cache_flags = ''
     if (cache_from) {
         cache_flags += " --cache-from=${cache_from}"
@@ -29,7 +35,7 @@ def call(Map config = [:]) {
                                 --username=\$JFROG_USER \
                                 --password=\$JFROG_ACCESS_TOKEN
 
-                            podman build -t ${full_image}${cache_flags} .
+                            podman build${repro_flags} -t ${full_image}${cache_flags} .
 
                             podman push ${full_image}
                         """

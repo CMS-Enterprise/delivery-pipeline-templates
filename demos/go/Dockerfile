@@ -9,8 +9,11 @@ COPY go.mod ./
 
 COPY . .
 
-# CGO_ENABLED=0 for fully static binary, works with scratch/alpine
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-site .
+# CGO_ENABLED=0 for fully static binary, works with scratch/alpine.
+# -trimpath and an empty build ID keep build paths and IDs out of the binary,
+# so the same sources produce the same bytes.
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false \
+  -ldflags='-buildid=' -o go-site .
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/alpinelinux/alpine@sha256:74b99970cdf759cf2dab93d40a369e2911eecf176fff14dea1257ec90f3de8f8
 USER 0

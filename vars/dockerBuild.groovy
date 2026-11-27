@@ -12,6 +12,12 @@ def call(Map config = [:]) {
     def cache_to = config.cache_to ?: null
     def image = "${registry}/${image_name}:${tag}"
 
+    // Reproducible builds: the commit time, not "now", becomes the image's
+    // created time and clamps file timestamps in the new layers. podman also
+    // passes it to the build as the SOURCE_DATE_EPOCH build arg.
+    def source_date_epoch = config.source_date_epoch ?: env.GIT_COMMIT_TIMESTAMP
+    def repro_flags = source_date_epoch ? " --source-date-epoch=${source_date_epoch} --rewrite-timestamp" : ''
+
     def cache_flags = ''
     if (cache_from) {
         cache_flags += " --cache-from=${cache_from}"
@@ -32,7 +38,7 @@ def call(Map config = [:]) {
                         aws ecr get-login-password --region ${region} | \
                             podman login --username AWS --password-stdin ${registry}
 
-                        podman build -f ${containerfile} -t ${image}${cache_flags} ${context_dir}
+                        podman build${repro_flags} -f ${containerfile} -t ${image}${cache_flags} ${context_dir}
 
                         podman push ${image}
                     """

@@ -14,6 +14,8 @@ COPY --chown=node:node package*.json .npmrc ./
 RUN npm ci --ignore-scripts
 
 COPY --chown=node:node . .
+# Set by podman's --source-date-epoch; the build derives its version from it.
+ARG SOURCE_DATE_EPOCH
 RUN npm run build
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/opensource/nodejs/debian/nodejs@sha256:90b09acffe6c620be153311f11d50d72427ab08581de2c7344de9ec7d820a9dc

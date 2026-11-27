@@ -24,6 +24,10 @@
              (CVE-2026-116561, CVE-2026-118028 and others, fixed in 11.0.29).
              Drop this override once the Boot parent manages 11.0.29 or later. -->
         <tomcat.version>11.0.29</tomcat.version>
+        <!-- Reproducible builds: a fixed timestamp for every jar entry instead
+             of the build time. The image build overrides it with the commit
+             time (SOURCE_DATE_EPOCH). -->
+        <project.build.outputTimestamp>1980-01-01T00:00:02Z</project.build.outputTimestamp>
     </properties>
 
     <dependencies>

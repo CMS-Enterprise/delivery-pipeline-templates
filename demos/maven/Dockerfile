@@ -11,7 +11,10 @@ COPY settings.xml ./
 COPY pom.xml ./
 COPY src ./src
 
-RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml
+# Set by podman's --source-date-epoch; stamps the jar with the commit time.
+ARG SOURCE_DATE_EPOCH
+RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml \
+  ${SOURCE_DATE_EPOCH:+-Dproject.build.outputTimestamp=$SOURCE_DATE_EPOCH}
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:b4b80a506a46250161592dca3f75fb6609da0aef5a52ea38c5109b905e96e831
 USER 0

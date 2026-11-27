@@ -5,7 +5,12 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit({
-    adapter: adapter()
+    adapter: adapter(),
+    // Reproducible builds: the app version defaults to the build time. Use the
+    // commit time the image build supplies instead.
+    ...(process.env.SOURCE_DATE_EPOCH
+      ? { version: { name: process.env.SOURCE_DATE_EPOCH } }
+      : {})
   })],
   resolve: {
     alias: {

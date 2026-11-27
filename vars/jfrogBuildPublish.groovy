@@ -18,8 +18,11 @@ def call(Map config = [:]) {
     def sign = config.containsKey('sign') ? config.sign : true
     def cache_from = config.cache_from ?: null
     def cache_to = config.cache_to ?: null
-    // Reproducible builds need a fixed timestamp rather than "now".
+    // Reproducible builds: the commit time, not "now", becomes the image's
+    // created time and clamps file timestamps in the new layers. podman also
+    // passes it to the build as the SOURCE_DATE_EPOCH build arg.
     def source_date_epoch = config.source_date_epoch ?: env.GIT_COMMIT_TIMESTAMP
+    def repro_flags = source_date_epoch ? " --source-date-epoch=${source_date_epoch} --rewrite-timestamp" : ''
     // Dockerfiles declare ARG OS_PATCH_DATE ahead of their OS upgrade, so a new
     // value misses the --cache-from layer and re-runs it. Defaults to the UTC
     // date: at most a day's staleness, and the rest of the cache still serves.
@@ -52,8 +55,7 @@ def call(Map config = [:]) {
                                 --username=\$JFROG_USER \
                                 --password=\$JFROG_ACCESS_TOKEN
 
-                            podman build \
-                                ${source_date_epoch ? "--timestamp ${source_date_epoch}" : ''} \
+                            podman build${repro_flags} \
                                 --build-arg OS_PATCH_DATE=${os_patch_date} \
                                 -f ${containerfile} \
                                 -t ${full_image}${cache_flags} \
