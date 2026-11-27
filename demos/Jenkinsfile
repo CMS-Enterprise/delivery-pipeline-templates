@@ -1,7 +1,8 @@
 @Library('delivery-pipeline-templates') _
 
-// Signing fails closed — these must be set before the Build Images stage
-// will pass. Override per-controller rather than committing real values.
+// Signing runs in Sign and Attest, on the promoted image. Without a KMS key the
+// cosign steps skip rather than sign. Override per-controller rather than
+// committing real values.
 def cosignConfig = [
     kms_key_arn: env.COSIGN_KMS_KEY_ARN,
     // Same account and role as awsConfig; only used if no AWS_* are set yet.
@@ -445,6 +446,8 @@ pipeline {
                                 unstash: svc.stash,
                                 cache_from: cache_repo,
                                 cache_to: cache_repo,
+                                // Signed after promotion, in Sign and Attest.
+                                sign: false,
                                 stage: "Build & Publish: ${svc.name}"
                             ])
                             // Store staging image coordinates for later stages
@@ -519,26 +522,6 @@ pipeline {
             }
         }
 
-        // ─── SBOM Attestation ───
-        stage('SBOM Attestation') {
-            when { expression { has_services } }
-            steps {
-                script {
-                    def branches = selected.collectEntries { svc ->
-                        ["Attest SBOM: ${svc.name}": {
-                            cosignAttest(cosignConfig + [
-                                image: stagingImages[svc.name],
-                                sbom_file: "jfrog-sbom-${svc.name}.cyclonedx.json",
-                                unstash: "jfrog-sbom-${svc.name}",
-                                stage: "Attest SBOM: ${svc.name}"
-                            ])
-                        }]
-                    }
-                    parallel branches
-                }
-            }
-        }
-
         // ─── Promote to Verified Repo ───
         stage('Promote to Verified Repo') {
             when { expression { has_services } }
@@ -551,6 +534,33 @@ pipeline {
                                 build_name: buildNames[svc.name],
                                 stage: "Promote: ${svc.name}"
                             ], jfrogConfig.prod_repo)
+                        }]
+                    }
+                    parallel branches
+                }
+            }
+        }
+
+        // ─── Sign and Attest ───
+        // Signs the promoted image and attaches its SBOM attestation in the prod
+        // repo. Promotion moves only the image, so a signature made in staging
+        // would be left behind.
+        stage('Sign and Attest') {
+            when { expression { has_services } }
+            steps {
+                script {
+                    def branches = selected.collectEntries { svc ->
+                        ["Sign and Attest: ${svc.name}": {
+                            cosignSign(cosignConfig + [
+                                image: verifiedImages[svc.name],
+                                stage: "Cosign Sign: ${svc.name}"
+                            ])
+                            cosignAttest(cosignConfig + [
+                                image: verifiedImages[svc.name],
+                                sbom_file: "jfrog-sbom-${svc.name}.cyclonedx.json",
+                                unstash: "jfrog-sbom-${svc.name}",
+                                stage: "Attest SBOM: ${svc.name}"
+                            ])
                         }]
                     }
                     parallel branches
@@ -589,6 +599,11 @@ pipeline {
                         // forever; the plugin's pull-backoff check does not cover
                         // init containers, so bound each service's tests.
                         ["Image Tests: ${svc.name}": { timeout(time: 20, unit: 'MINUTES') {
+                            // Verify the signature before consuming the image.
+                            cosignVerify(cosignConfig + [
+                                image: image,
+                                stage: "Cosign Verify: ${svc.name}"
+                            ])
                             smokeTest(
                                 url: "${local_url}${target.health}",
                                 retries: 3,

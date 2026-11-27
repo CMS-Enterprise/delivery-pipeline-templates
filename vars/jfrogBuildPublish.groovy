@@ -1,4 +1,4 @@
-// Builds, pushes and signs one image in a single pod. Unlike jfrogBuild this
+// Builds, pushes and (unless sign: false) signs one image in a single pod. Unlike jfrogBuild this
 // takes an explicit image_name and context_dir so a monorepo can fan out one
 // invocation per service, and it registers each push under a distinct JFrog
 // build name so the per-service Xray scans and promotions stay separate.
@@ -15,6 +15,7 @@ def call(Map config = [:]) {
     def stagename = config.stage ?: "Build & Publish: ${image_name}"
     def full_image = "${registry}/${repo}/${image_name}:${tag}"
     def project_flag = config.project ? "--project=${config.project}" : ''
+    def sign = config.containsKey('sign') ? config.sign : true
     def cache_from = config.cache_from ?: null
     def cache_to = config.cache_to ?: null
     // Reproducible builds need a fixed timestamp rather than "now".
@@ -91,7 +92,11 @@ def call(Map config = [:]) {
                         """
                     }
                 }
-                cosignSign(config + [image: full_image, stage: "Cosign Sign: ${image_name}"])
+                // sign: false defers signing to the caller, e.g. to sign the promoted
+                // image: build-promote moves only the image, not its signature tags.
+                if (sign) {
+                    cosignSign(config + [image: full_image, stage: "Cosign Sign: ${image_name}"])
+                }
             }
         }
     }
