@@ -1,7 +1,7 @@
-// Produces an enriched CycloneDX SBOM for an image Xray has already indexed:
-// Xray's Export Component Details API supplies the SBOM, and `jf sbom-enrich`
-// adds Xray's vulnerability data to it. The result is archived and stashed for
-// cosignAttest.
+// Exports a CycloneDX SBOM for an image Xray has already indexed, through
+// Xray's Export Component Details API. The SBOM comes from Xray itself, so
+// `jf sbom-enrich` (which adds Xray data to SBOMs from other tools) is not
+// needed. The result is archived and stashed for cosignAttest.
 //
 // Export Component Details supports docker components but not builds, so this
 // takes the image reference rather than a build name.
@@ -84,19 +84,8 @@ def call(Map config = [:]) {
                                 find sbom-export -type f >&2
                                 exit 1
                             fi
-                            echo "Exported SBOM: \$exported (\$(jq '.components | length' "\$exported") components)"
-
-                            # Enrich with Xray's vulnerability data.
-                            rc=0
-                            jf sbom-enrich "\$exported" > sbom-enriched.out 2> sbom-enrich.err || rc=\$?
-                            if [ "\$rc" -ne 0 ] || ! jq -e '.bomFormat == "CycloneDX"' sbom-enriched.out >/dev/null 2>&1; then
-                                echo "jfrogSbom: sbom-enrich failed (exit \$rc)" >&2
-                                echo '--- stderr ---'; tail -n 50 sbom-enrich.err
-                                echo '--- stdout ---'; head -c 2000 sbom-enriched.out; echo
-                                exit 1
-                            fi
-                            mv sbom-enriched.out "\$sbom"
-                            echo "Enriched SBOM: \$(jq '.components | length' "\$sbom") components, \$(jq '.vulnerabilities // [] | length' "\$sbom") vulnerabilities"
+                            mv "\$exported" "\$sbom"
+                            echo "SBOM: \$(jq '.components | length' "\$sbom") components"
                         """
                     }
                     archiveArtifacts artifacts: "${output_name}.cyclonedx.json"
