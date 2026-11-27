@@ -5,11 +5,8 @@
 # caught here, before it leaves the workstation.
 set -eu
 
-if ! command -v gitleaks >/dev/null 2>&1; then
-  echo "gitleaks-range: gitleaks not on PATH, skipping." >&2
-  echo "  install with: go install github.com/zricethezav/gitleaks/v8@v8.30.0" >&2
-  exit 0
-fi
+# gitleaks runs from a pinned image; run-tool.sh skips if no runtime exists.
+RUN_TOOL="$(dirname "$0")/run-tool.sh"
 
 FROM_REF="${PRE_COMMIT_FROM_REF:-}"
 TO_REF="${PRE_COMMIT_TO_REF:-HEAD}"
@@ -27,7 +24,7 @@ if [ -z "$FROM_REF" ]; then
     FROM_REF="$DEFAULT_BRANCH"
   else
     echo "gitleaks-range: no base ref found, scanning working tree only." >&2
-    exec gitleaks dir --redact --no-banner .
+    exec "$RUN_TOOL" gitleaks dir --redact --no-banner .
   fi
 fi
 
@@ -36,4 +33,4 @@ if [ "$(git rev-list --count "$FROM_REF..$TO_REF")" -eq 0 ]; then
   exit 0
 fi
 
-exec gitleaks git --redact --no-banner --log-opts="$FROM_REF..$TO_REF" .
+exec "$RUN_TOOL" gitleaks git --redact --no-banner --log-opts="$FROM_REF..$TO_REF" .

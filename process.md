@@ -24,28 +24,30 @@ implemented work look missing:
 A check belongs at the earliest stage whose time budget it fits. That is a
 judgement about runtime, and it decays as tools and repositories grow, so the
 measurements are recorded here rather than recalled. All figures are from this
-tree.
+tree. Rows marked *container* include the ~0.1s start-up of the pinned image
+(see [Local tool prerequisites](#local-tool-prerequisites)).
 
 | Check                       | Scope                        | Runtime |
 | --------------------------- | ---------------------------- | ------- |
-| `gitleaks --staged`         | staged files                 | 0.30s   |
+| `gitleaks --staged`         | staged files, container      | 0.11s   |
 | `yamllint`                  | 48 yaml files                | 0.13s   |
-| `conftest verify`           | 4 rego files                 | 0.011s  |
-| `conftest test`             | 38 pod manifests, 456 assertions | 0.021s |
+| `conftest verify`           | 4 rego files, container      | 0.10s   |
+| `conftest test`             | 492 assertions, container    | 0.11s   |
 | `validate-templates.py`     | 10 template.yaml files       | 0.07s   |
 | `jenkins-lint`              | 1 Jenkinsfile                | 0.22s   |
 | `jenkins-lint`              | 11 Jenkinsfiles, sequential  | 3.3s    |
-| `gitleaks` range scan       | 5 commits                    | 0.034s  |
+| `gitleaks` range scan       | 5 commits, container         | 0.13s   |
 | `gitleaks` range scan       | 20 commits                   | 0.61s   |
 | `gitleaks` full history     | 631 commits                  | 9.6s    |
-| **full pre-commit stage**   | all files                    | 0.35s   |
-| **full pre-push stage**     | all files, 5-commit range    | 1.9s    |
+| **full pre-commit stage**   | all files                    | 0.65s   |
+| **full pre-push stage**     | all files, 5-commit range    | 2.1s    |
 | **`make lint`**             | all files                    | 0.25s   |
 
 Three consequences worth stating explicitly:
 
-- `conftest` costs 0.03s, not the JVM-scale cost its reputation suggests. It is
-  cheap enough for pre-commit, and that is where it runs.
+- `conftest` costs about 0.1s even from a container, not the JVM-scale cost its
+  reputation suggests. It is cheap enough for pre-commit, and that is where it
+  runs.
 - A full-history secret scan costs 9.6s and is therefore in no hook at all. It
   is available as `make lint-secrets`. The hooks scan a commit range instead.
 - `jenkins-lint` costs 0.22s per file but 3.3s for the tree, because each file is
@@ -97,7 +99,7 @@ executing the templates, not by a local linter.
 Pre-commit exists to protect the commit history, and its overriding constraint
 is speed. A hook that is slow enough to interrupt the developer's train of
 thought will eventually be bypassed with `--no-verify`, at which point it
-protects nothing. The whole stage costs 0.35s.
+protects nothing. The whole stage costs 0.65s.
 
 Currently enforced:
 
@@ -163,7 +165,7 @@ does not conform and has not been rewritten.
 
 Pre-push occupies the space between pre-commit and CI. The budget is larger than
 pre-commit's, because the developer is pausing to publish rather than mid-edit,
-but smaller than CI's. The whole stage costs 1.9s.
+but smaller than CI's. The whole stage costs 2.1s.
 
 The distinguishing property of this stage is **scope**, not just budget. A
 pre-commit hook sees only the files in one commit, which is blind to two
@@ -178,7 +180,7 @@ failure modes:
 
 The range script resolves `PRE_COMMIT_FROM_REF..PRE_COMMIT_TO_REF`, falls back
 to the default branch when the remote branch does not exist yet, and skips with
-a message when `gitleaks` is not installed so that a fresh clone can still push.
+a message when no container runtime is available so that a fresh clone can still push.
 
 ### Declarative Jenkinsfile validation
 
@@ -220,17 +222,21 @@ permission is scoped server-side.
 
 ### Local tool prerequisites
 
-`conftest` and `gitleaks` are Go binaries on the developer's workstation:
+`conftest` and `gitleaks` run from digest-pinned images through
+`scripts/run-tool.sh`, which needs `podman` (or `docker`) logged in to the
+artifactory mirror:
 
 ```
-go install github.com/open-policy-agent/conftest@v0.69.0
-go install github.com/zricethezav/gitleaks/v8@v8.30.0
+podman login artifactory.cloud.cms.gov
 ```
 
-The `gitleaks` version matches the `rev` pinned in `.pre-commit-config.yaml`, so
-both stages apply the same detection rules. See
-[Supply chain](#supply-chain-constraints) for why these are an exception to the
-container-image rule.
+The images are `docker/openpolicyagent/conftest` (v0.69.0) and
+`docker/zricethezav/gitleaks` (v8.30.1), both via the artifactory Docker Hub
+mirror. They are multi-arch; the Ironbank conftest image the pipeline uses is
+amd64-only and does not run on an arm64 workstation. `scripts/update-pins.sh`
+maintains the digests. A warm run costs about 0.11s per invocation, including
+container start-up; the first run also pulls the image. Without a container
+runtime the wrapper skips with a message, so a fresh clone can still commit.
 
 ## 5. Continuous Integration
 
@@ -282,14 +288,9 @@ stage above.
   with `freshclam` pointed at the artifactory mirror.
 - Image digests are maintained by `scripts/update-pins.sh` and Renovate.
 
-**The local hooks are a scoped exception.** `conftest` and `gitleaks` are
-installed with `go install` from upstream module sources, because
-`artifactory.cloud.cms.gov` does not resolve from a developer workstation
-outside the cluster network. This is acceptable only because these binaries
-**gate local commits and never touch a build artifact** — nothing they produce
-is published, signed or promoted. Pipeline tooling has no such exemption. If the
-artifactory mirror becomes reachable from workstations, these should move to
-pinned images like everything else.
+The local hooks follow the same rule: `conftest` and `gitleaks` run from images
+pinned by digest from `artifactory.cloud.cms.gov` (see
+[Local tool prerequisites](#local-tool-prerequisites)).
 
 ## Open items
 

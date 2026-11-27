@@ -24,6 +24,8 @@ NC='\033[0m'
 # from Artifactory — not from upstream registries. This ensures the digest
 # we record actually exists and is pullable from where the pods fetch.
 ARTIFACTORY="${ARTIFACTORY_REGISTRY:-artifactory.cloud.cms.gov}"
+# Pins in the tree always name this host, whatever registry digests come from.
+PIN_HOST="artifactory.cloud.cms.gov"
 
 get_artifactory_digest() {
   local repo="$1"
@@ -83,7 +85,8 @@ report() {
 
 # Files that pin images. Jenkinsfile is included because templates carry inline
 # pod specs; leaving it out let those pins drift from resources/pods/.
-PIN_FILES=(-name "*.groovy" -o -name "*.yaml" -o -name "Dockerfile" -o -name "Jenkinsfile")
+# scripts/run-tool.sh pins the images the local hooks run.
+PIN_FILES=(-name "*.groovy" -o -name "*.yaml" -o -name "Dockerfile" -o -name "Jenkinsfile" -o -name "run-tool.sh")
 
 # Rewrites every pin of an image to the new digest, whatever digest each file
 # currently holds, so pins that have diverged are brought back together.
@@ -118,6 +121,10 @@ IMAGES["alpine/jmeter"]="docker latest"
 IMAGES["snyk/snyk"]="docker node"
 IMAGES["golangci/golangci-lint"]="docker latest"
 IMAGES["anchore/grype"]="docker debug"
+# Local hook tools (scripts/run-tool.sh). Pinned to a version, not latest, so the
+# digest stays on the release the docs name; bump the tag to upgrade.
+IMAGES["openpolicyagent/conftest"]="docker v0.69.0"
+IMAGES["zricethezav/gitleaks"]="docker v8.30.1"
 IMAGES["jfrog/jfrog-cli-v2-jf"]="docker latest"
 # IronBank images (moved from Docker Hub / GHCR)
 IMAGES["ironbank/opensource/tflint/tflint"]="gi-gantuar-ironbank latest"
@@ -164,8 +171,12 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
 
   # Every distinct digest the image is pinned at, across pod YAML, groovy,
   # Dockerfiles and Jenkinsfiles. More than one means the pins have diverged.
-  current_digests=$(grep -rohP "${image}@sha256:[a-f0-9]{64}" "$REPO_ROOT" --exclude-dir=.git \
-    --include="*.groovy" --include="*.yaml" --include="Dockerfile" --include="Jenkinsfile" 2>/dev/null |
+  # Match on the full registry path: a bare image name is a suffix of others
+  # (openpolicyagent/conftest of ironbank/opensource/openpolicyagent/conftest),
+  # and an unanchored match would rewrite one image's pins with another's digest.
+  ref="${PIN_HOST}/${repo}/${image}"
+  current_digests=$(grep -rohP "${ref//./\\.}@sha256:[a-f0-9]{64}" "$REPO_ROOT" --exclude-dir=.git \
+    --include="*.groovy" --include="*.yaml" --include="Dockerfile" --include="Jenkinsfile" --include="run-tool.sh" 2>/dev/null |
     grep -oP 'sha256:[a-f0-9]{64}' | sort -u || true)
 
   if [[ -z "$current_digests" ]]; then
@@ -178,7 +189,7 @@ for image in $(echo "${!IMAGES[@]}" | tr ' ' '\n' | sort); do
   else
     olds=$(grep -vxF "$new_digest" <<<"$current_digests" | cut -c1-19 | paste -sd, -)
     report outdated "$image" "${olds}... → ${new_digest:0:19}..."
-    apply_sed "$image" "$new_digest" "$REPO_ROOT"
+    apply_sed "$ref" "$new_digest" "$REPO_ROOT"
   fi
 done
 

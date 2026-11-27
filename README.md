@@ -160,8 +160,9 @@ This installs the `prek` hook shims for the `pre-commit`, `commit-msg` and
 `pre-push` stages, and sets `commit.template` to `.gitmessage`. Both are local
 git state and cannot be committed, so a fresh clone has neither until you run it.
 
-Prerequisites: `prek`, `gitlint`, `yamllint`, `conftest` and `gitleaks` on
-`PATH`.
+Prerequisites: `prek`, `gitlint` and `yamllint` on `PATH`, plus `podman` (or
+`docker`) logged in to `artifactory.cloud.cms.gov`. `conftest` and `gitleaks` run
+from digest-pinned images via `scripts/run-tool.sh`.
 
 ### Commit Messages
 
