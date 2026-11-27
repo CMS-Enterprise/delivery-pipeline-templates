@@ -1,7 +1,7 @@
 {
   "description": "Image-level browser tests shared by every demo service",
   "devDependencies": {
-    "@playwright/test": "1.65.0"
+    "@playwright/test": "1.65.1"
   },
   "name": "demo-e2e",
   "private": true,
