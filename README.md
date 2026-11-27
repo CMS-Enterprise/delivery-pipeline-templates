@@ -96,7 +96,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `snykCodeScan` | Snyk Code SAST scan | `snyk-api-token` | Source Scans (commented) |
 | `snykDependencyScan` | Snyk Open Source SCA scan | `snyk-api-token` | Not yet wired |
 | `snykContainerScan` | Snyk container scan + SBOM | `snyk-api-token` | Image Scans (commented) |
-| `cosignSign` | Sign image with cosign + AWS KMS | `COSIGN_KMS_KEY_ARN`; a real cosign image pin in `resources/pods/cosign.yaml` | Sign and Attest (after promotion); skips signing |
+| `cosignSign` | Sign image with cosign + AWS KMS | `COSIGN_KMS_KEY_ARN` | Sign and Attest (after promotion); skips signing |
 | `cosignAttest` | Attach SBOM attestation | Same as `cosignSign` | Sign and Attest (after promotion); skips attestation |
 | `cosignVerify` | Verify image signature | Same as `cosignSign` | Image Tests; skips verification |
 | `awsAssumeRole` | AWS STS AssumeRole | `AWS_DEMO_ACCOUNT_ID` (optionally `AWS_DEMO_ROLE_NAME`, `AWS_DEMO_CREDENTIAL_ID`; the pod identity when no credential) | Build (cache, cosign), Terraform Plan (dev) |

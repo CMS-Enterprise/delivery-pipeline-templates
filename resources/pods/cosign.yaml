@@ -15,10 +15,17 @@ spec:
       type: RuntimeDefault
   restartPolicy: Never
   containers:
+    # Ironbank's pipeline runner carries cosign (v2) alongside a shell, which the
+    # sh steps need; the upstream cosign image is distroless.
     - name: cosign
-      image: artifactory.cloud.cms.gov/docker/sigstore/cosign@sha256:c1b2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2
+      image: artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/ironbank-pipelines/pipeline-runner-alpine@sha256:bf304d0b240cf76cf59f29a932c0d89dbf3fcf88911b8e700fe1c3b0e8a4b16e
       command: ["cat"]
       tty: true
+      env:
+        # cosign keeps its sigstore cache and registry config under $HOME; the
+        # pod's UID has no home of its own, so point it at the writable workspace.
+        - name: HOME
+          value: "/home/jenkins/agent"
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
