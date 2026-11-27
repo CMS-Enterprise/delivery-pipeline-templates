@@ -12,9 +12,10 @@ COPY pom.xml ./
 COPY src ./src
 
 # Set by podman's --source-date-epoch; stamps the jar with the commit time.
+# Without it, the fallback is the fixed default pom.xml declares.
 ARG SOURCE_DATE_EPOCH
 RUN mvn --no-transfer-progress clean package -DskipTests -s settings.xml \
-  ${SOURCE_DATE_EPOCH:+-Dproject.build.outputTimestamp=$SOURCE_DATE_EPOCH}
+  "-Dproject.build.outputTimestamp=${SOURCE_DATE_EPOCH:-1980-01-01T00:00:02Z}"
 
 FROM artifactory.cloud.cms.gov/gi-gantuar-ironbank/ironbank/redhat/openjdk/openjdk25-runtime-ubi9-slim@sha256:b4b80a506a46250161592dca3f75fb6609da0aef5a52ea38c5109b905e96e831
 USER 0
