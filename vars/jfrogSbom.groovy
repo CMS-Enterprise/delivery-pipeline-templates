@@ -1,16 +1,45 @@
+// Produces an enriched CycloneDX SBOM for an image Xray has already indexed:
+// Xray's Export Component Details API supplies the SBOM, and `jf sbom-enrich`
+// adds Xray's vulnerability data to it. The result is archived and stashed for
+// cosignAttest.
+//
+// Export Component Details supports docker components but not builds, so this
+// takes the image reference rather than a build name.
 def call(Map config = [:]) {
     def server_id = config.server_id ?: 'jfrog-artifactory'
-    def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/artifactory'
+    def jfrog_url = config.url ?: 'https://artifactory.cloud.cms.gov/'
+    def registry = config.registry ?: 'artifactory.cloud.cms.gov'
+    def image = config.image ?: env.IMAGE_TAG ?: error('jfrogSbom: image is required')
     def output_name = config.output_name ?: 'jfrog-sbom'
-    def build_name = config.build_name ?: env.JFROG_BUILD_NAME ?: env.JOB_NAME
-    def build_number = config.build_number ?: env.JFROG_BUILD_NUMBER ?: env.BUILD_NUMBER
     def stagename = config.stage ?: 'JFrog SBOM Export'
-    def project_flag = config.project ? "--project=${config.project}" : ''
+
+    // registry/repo/path/name:tag -> repo, path/name, tag
+    def ref = image.startsWith("${registry}/") ? image.substring(registry.length() + 1) : image
+    if (ref.contains('@')) {
+        error("jfrogSbom: ${image} is a digest reference; Export Component Details needs a tag")
+    }
+    def colon = ref.lastIndexOf(':')
+    def slash = ref.indexOf('/')
+    if (colon < 0 || slash < 0 || colon < slash) {
+        error("jfrogSbom: cannot parse ${image} as <registry>/<repo>/<name>:<tag>")
+    }
+    def repo = ref.substring(0, slash)
+    def name = ref.substring(slash + 1, colon)
+    def tag = ref.substring(colon + 1)
+
+    def request = groovy.json.JsonOutput.toJson([
+        package_type: 'docker',
+        component_name: "${name}:${tag}",
+        path: "${repo}/${name}/${tag}/manifest.json",
+        cyclonedx: true,
+        cyclonedx_format: 'json',
+    ])
 
     stage("${stagename}") {
         podTemplate(yaml: config.pod_yaml ?: readTrusted('resources/pods/jfrog-cli.yaml')) {
             node(POD_LABEL) {
                 container('jfrog-cli') {
+                    writeFile file: 'sbom-request.json', text: request
                     withCredentials([usernamePassword(credentialsId: config.credential ?: 'jfrog-credentials', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_ACCESS_TOKEN')]) {
                         sh """
                             jf config add ${server_id} \
@@ -20,34 +49,54 @@ def call(Map config = [:]) {
                                 --interactive=false \
                                 --overwrite=true
 
-                            jf rt build-collect-env '${build_name}' ${build_number} ${project_flag}
+                            sbom='${output_name}.cyclonedx.json'
+                            rm -f "\$sbom"
 
-                            # An empty or non-JSON file must not pass as an SBOM:
-                            # cosign attest and the archived artifact depend on it.
-                            sbom=${output_name}.cyclonedx.json
+                            # Xray may still be indexing a freshly pushed image, so
+                            # the export is retried. It answers with a zip.
                             ok=
-                            for attempt in 1 2 3; do
-                                rc=0
-                                JFROG_CLI_LOG_LEVEL=DEBUG jf sbom-export \
-                                    --server-id=${server_id} \
-                                    --build-name='${build_name}' \
-                                    --build-number=${build_number} \
-                                    --format=cyclonedx ${project_flag} \
-                                    > "\$sbom" 2> sbom-export.err || rc=\$?
-                                if [ "\$rc" -eq 0 ] && [ "\$(tr -d ' \\t\\r\\n' < "\$sbom" | head -c 1)" = '{' ]; then
+                            for attempt in 1 2 3 4 5; do
+                                rm -rf sbom-export sbom-export.zip
+                                code=\$(jf xr curl --server-id=${server_id} -sS \
+                                    -XPOST /api/v2/component/exportDetails \
+                                    -H 'Content-Type: application/json' \
+                                    -d @sbom-request.json \
+                                    -o sbom-export.zip -w '%{http_code}') || code=curl-error
+                                if [ "\$code" = 200 ] && mkdir sbom-export && unzip -q sbom-export.zip -d sbom-export; then
                                     ok=1
                                     break
                                 fi
-                                echo "sbom-export attempt \$attempt failed (exit \$rc, \$(wc -c < "\$sbom") bytes)"
-                                echo '--- stderr ---'; tail -n 50 sbom-export.err
-                                echo '--- stdout ---'; head -c 2000 "\$sbom"; echo
-                                [ "\$attempt" -lt 3 ] && sleep 10
+                                echo "exportDetails attempt \$attempt failed (HTTP \$code)"
+                                head -c 2000 sbom-export.zip 2>/dev/null; echo
+                                [ "\$attempt" -lt 5 ] && sleep 15
                             done
-                            if [ -z "\$ok" ]; then
-                                rm -f "\$sbom"
-                                echo 'sbom-export failed after 3 attempts' >&2
+                            [ -n "\$ok" ] || { echo 'jfrogSbom: Xray SBOM export failed' >&2; exit 1; }
+
+                            exported=
+                            for f in \$(find sbom-export -type f -name '*.json' | sort); do
+                                if jq -e '.bomFormat == "CycloneDX"' "\$f" >/dev/null 2>&1; then
+                                    exported="\$f"
+                                    break
+                                fi
+                            done
+                            if [ -z "\$exported" ]; then
+                                echo 'jfrogSbom: the export contains no CycloneDX JSON:' >&2
+                                find sbom-export -type f >&2
                                 exit 1
                             fi
+                            echo "Exported SBOM: \$exported (\$(jq '.components | length' "\$exported") components)"
+
+                            # Enrich with Xray's vulnerability data.
+                            rc=0
+                            jf sbom-enrich "\$exported" > sbom-enriched.out 2> sbom-enrich.err || rc=\$?
+                            if [ "\$rc" -ne 0 ] || ! jq -e '.bomFormat == "CycloneDX"' sbom-enriched.out >/dev/null 2>&1; then
+                                echo "jfrogSbom: sbom-enrich failed (exit \$rc)" >&2
+                                echo '--- stderr ---'; tail -n 50 sbom-enrich.err
+                                echo '--- stdout ---'; head -c 2000 sbom-enriched.out; echo
+                                exit 1
+                            fi
+                            mv sbom-enriched.out "\$sbom"
+                            echo "Enriched SBOM: \$(jq '.components | length' "\$sbom") components, \$(jq '.vulnerabilities // [] | length' "\$sbom") vulnerabilities"
                         """
                     }
                     archiveArtifacts artifacts: "${output_name}.cyclonedx.json"

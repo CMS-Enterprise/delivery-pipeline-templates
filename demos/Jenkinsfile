@@ -514,7 +514,7 @@ pipeline {
                                 ignore: svc.grype_ignore ?: []
                             ])
                             jfrogSbom(jfrogConfig + [
-                                build_name: buildNames[svc.name],
+                                image: image,
                                 output_name: "jfrog-sbom-${svc.name}",
                                 stage: "SBOM: ${svc.name}"
                             ])

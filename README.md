@@ -79,7 +79,7 @@ the tables below record what it has exercised. Draft as of demo build 288
 | `jfrogScan` | JFrog Xray build scan | Image Scans and SBOMs |
 | `trivyScan` | Trivy container vulnerability scan | Image Scans and SBOMs |
 | `grypeScan` | Grype container vulnerability scan | Image Scans and SBOMs |
-| `jfrogSbom` | CycloneDX SBOM from JFrog | Image Scans and SBOMs |
+| `jfrogSbom` | CycloneDX SBOM from Xray, enriched with `jf sbom-enrich` | Image Scans and SBOMs |
 | `jfrogPromote` | Promote image from staging to prod repo | Promote to Verified Repo |
 
 ### Needs credentials or configuration to test
