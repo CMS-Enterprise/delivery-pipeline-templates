@@ -108,7 +108,7 @@ def terraformConfig = awsConfig + [
 // in this build's commit messages.
 def notifyConfig = [
     slack_webhook_credential: 'slack-webhook-url',
-    slack_channel: '#delivery-demos',
+    slack_channel: '#misp-doom-alerts',
     jira_site: 'https://jiraent.cms.gov',
     jira_token_credential: 'jira-api-token',
 ]
@@ -762,11 +762,13 @@ pipeline {
             script {
                 def result = currentBuild.currentResult
                 try {
-                    slackNotify([
+                    slackSend(channel: notifyConfig.slack_channel, message: "build #${env.BUILD_NUMBER} ${result}")
+                /*  slackNotify([
                         webhook_credential: notifyConfig.slack_webhook_credential,
                         channel: notifyConfig.slack_channel,
                         stage: 'Notify: Slack'
                     ], "build #${env.BUILD_NUMBER} ${result}")
+                */
                 } catch (err) {
                     echo "Slack notification skipped: ${err.message}"
                 }
