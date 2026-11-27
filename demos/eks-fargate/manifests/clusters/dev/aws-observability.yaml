@@ -1,0 +1,26 @@
+# Fargate's built-in Fluent Bit log router reads this ConfigMap when a pod
+# starts. The namespace name and label are fixed by EKS. log_group_name and
+# region match the Terraform defaults (output fargate_log_group_name); the group
+# already exists, so the router does not create it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aws-observability
+  labels:
+    aws-observability: enabled
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-logging
+  namespace: aws-observability
+data:
+  flb_log_cw: "false"
+  output.conf: |
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match *
+        region us-east-1
+        log_group_name /aws/eks/robocare-demo-dev/fargate
+        log_stream_prefix fargate-
+        auto_create_group false

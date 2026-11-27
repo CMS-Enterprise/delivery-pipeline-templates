@@ -1,0 +1,8 @@
+# Must match an app_namespaces selector in the apps Fargate profile, or the
+# pods stay Pending: there are no EC2 nodes to fall back to.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: delivery-demos-dev
+  labels:
+    pod-security.kubernetes.io/enforce: restricted

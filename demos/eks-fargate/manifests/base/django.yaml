@@ -1,0 +1,137 @@
+# django: port 3003 and uid 1001 come from demos/django/Dockerfile (EXPOSE,
+# USER); /health is the health path the pipeline's Image Tests use.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+  labels:
+    app.kubernetes.io/name: django
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  # The rollout timeout: past this the Deployment reports
+  # ProgressDeadlineExceeded, which fails the Flux health check.
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: django
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: django
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: jfrog-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: django
+          # Placeholder name; the overlay's images: entry, maintained by
+          # gitopsPromote, supplies the Artifactory repository and tag.
+          image: django
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # Fargate sizes the pod from requests, so limits match them.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: django
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: django
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django
+  labels:
+    app.kubernetes.io/name: django
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: django
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+# Fargate has no nodes for NodePort or instance targets, so the ALB registers
+# pod IPs directly. All seven share one internal ALB through group.name; the
+# certificate is discovered from ACM by the TLS host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: django
+  labels:
+    app.kubernetes.io/name: django
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: delivery-demos
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  ingressClassName: alb
+  tls:
+    - hosts:
+        - django.example.invalid
+  rules:
+    # Host set per environment by the overlay.
+    - host: django.example.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: django
+                port:
+                  name: http

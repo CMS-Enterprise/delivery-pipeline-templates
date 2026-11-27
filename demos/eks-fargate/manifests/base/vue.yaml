@@ -1,0 +1,137 @@
+# vue: port 3001 and uid 101 come from demos/vue/Dockerfile (EXPOSE,
+# USER); / is the health path the pipeline's Image Tests use.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vue
+  labels:
+    app.kubernetes.io/name: vue
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  # The rollout timeout: past this the Deployment reports
+  # ProgressDeadlineExceeded, which fails the Flux health check.
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vue
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vue
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: jfrog-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: vue
+          # Placeholder name; the overlay's images: entry, maintained by
+          # gitopsPromote, supplies the Artifactory repository and tag.
+          image: vue
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # Fargate sizes the pod from requests, so limits match them.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vue
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vue
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vue
+  labels:
+    app.kubernetes.io/name: vue
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vue
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+# Fargate has no nodes for NodePort or instance targets, so the ALB registers
+# pod IPs directly. All seven share one internal ALB through group.name; the
+# certificate is discovered from ACM by the TLS host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vue
+  labels:
+    app.kubernetes.io/name: vue
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: delivery-demos
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  ingressClassName: alb
+  tls:
+    - hosts:
+        - vue.example.invalid
+  rules:
+    # Host set per environment by the overlay.
+    - host: vue.example.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vue
+                port:
+                  name: http

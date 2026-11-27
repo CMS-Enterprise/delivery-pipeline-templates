@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: delivery-demos-dev
+resources:
+  - namespace.yaml
+  - ../../base
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: delivery-demos
+      environment: dev
+# Maintained by the pipeline: gitopsPromote runs
+#   kustomize edit set image <service>=artifactory.cloud.cms.gov/itopsplatf-prod/<service>:<short sha>
+# here for each promoted, signed service. set-by-pipeline is a placeholder
+# until the first full pipeline run; see the README.
+images:
+  - name: nextjs
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/nextjs
+    newTag: set-by-pipeline
+  - name: vue
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/vue
+    newTag: set-by-pipeline
+  - name: sveltekit
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/sveltekit
+    newTag: set-by-pipeline
+  - name: django
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/django
+    newTag: set-by-pipeline
+  - name: maven
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/maven
+    newTag: set-by-pipeline
+  - name: go
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/go
+    newTag: set-by-pipeline
+  - name: gradle
+    newName: artifactory.cloud.cms.gov/itopsplatf-prod/gradle
+    newTag: set-by-pipeline
+# One host per service on the dev domain (DEV_BASE_URL in demos/Jenkinsfile).
+patches:
+  - target:
+      kind: Ingress
+      name: nextjs
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: nextjs.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: nextjs.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: vue
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: vue.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: vue.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: sveltekit
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: sveltekit.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: sveltekit.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: django
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: django.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: django.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: maven
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: maven.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: maven.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: go
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: go.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: go.dev.delivery-demos.example.com
+  - target:
+      kind: Ingress
+      name: gradle
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: gradle.dev.delivery-demos.example.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: gradle.dev.delivery-demos.example.com
