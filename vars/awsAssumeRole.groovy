@@ -15,7 +15,8 @@ def call(Map config = [:], String environment) {
                                     --role-arn ${role_arn} \
                                     --role-session-name jenkins-${env.BUILD_NUMBER} \
                                     --region ${region} \
-                                    --output json
+                                    --query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' \
+                                    --output text
                             """,
                             returnStdout: true
                         ).trim()
@@ -32,10 +33,16 @@ def call(Map config = [:], String environment) {
                     } else {
                         creds = assume()
                     }
-                    def parsed = new groovy.json.JsonSlurperClassic().parseText(creds)
-                    env.AWS_ACCESS_KEY_ID = parsed.Credentials.AccessKeyId
-                    env.AWS_SECRET_ACCESS_KEY = parsed.Credentials.SecretAccessKey
-                    env.AWS_SESSION_TOKEN = parsed.Credentials.SessionToken
+                    // Text output rather than JSON: the library runs in the Groovy
+                    // sandbox, which rejects JsonSlurperClassic. None of the three
+                    // values contain whitespace, so a split is unambiguous.
+                    def parts = creds.split(/\s+/)
+                    if (parts.size() != 3) {
+                        error("Unexpected sts assume-role output: expected 3 fields, got ${parts.size()}")
+                    }
+                    env.AWS_ACCESS_KEY_ID = parts[0]
+                    env.AWS_SECRET_ACCESS_KEY = parts[1]
+                    env.AWS_SESSION_TOKEN = parts[2]
                     env.AWS_REGION = region
                 }
             }
