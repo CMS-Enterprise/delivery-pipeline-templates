@@ -128,6 +128,14 @@ def stagingImages = [:]     // Per-service staging image coords
 def verifiedImages = [:]    // Per-service verified/prod image coords
 def buildNames = [:]        // Per-service JFrog build names
 
+// Time-limited grype exceptions, approved 2026-11-27. Tomcat 11.0.30, which fixes
+// this CVE, is not yet released; bump tomcat.version in the maven and gradle demos
+// when it is, which ends the exception. Past `until` it stops applying regardless.
+def tomcatExceptions = [
+    [vulnerability: 'CVE-2026-133325', package: 'tomcat-embed-core', version: '11.0.29',
+     until: '2026-12-04', reason: 'no fixed Tomcat release available yet (11.0.30 pending)'],
+]
+
 // `stash` is the artifact each service hands to the next stage. Django has no
 // build step yet, so it carries the raw checkout forward instead.
 def services = [
@@ -136,8 +144,8 @@ def services = [
     [name: 'sveltekit', stash: 'sveltekit-build'],
     [name: 'django',    stash: 'workspace'],
     [name: 'go',        stash: 'go-build'],
-    [name: 'maven',     stash: 'maven-build'],
-    [name: 'gradle',    stash: 'gradle-build'],
+    [name: 'maven',     stash: 'maven-build',  grype_ignore: tomcatExceptions],
+    [name: 'gradle',    stash: 'gradle-build', grype_ignore: tomcatExceptions],
 ]
 def lintService(svc) {
     switch (svc.name) {
@@ -495,7 +503,8 @@ pipeline {
                                 fail_on_severity: 'high',
                                 only_fixed: true,
                                 output_name: "grype-${svc.name}",
-                                stage: "Grype: ${svc.name}"
+                                stage: "Grype: ${svc.name}",
+                                ignore: svc.grype_ignore ?: []
                             ])
                             jfrogSbom(jfrogConfig + [
                                 build_name: buildNames[svc.name],
