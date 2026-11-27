@@ -37,7 +37,11 @@ USER 1000
 
 WORKDIR /home/node/app
 
-ENV NODE_ENV=production
+# The standalone server.js binds to $HOSTNAME. Kubernetes sets that to the pod
+# name, which resolves to the pod IP only, so tests on localhost were refused.
+ENV NODE_ENV=production \
+  HOSTNAME=0.0.0.0 \
+  PORT=3000
 COPY --chown=node:node --from=builder /home/node/app/.next/standalone ./
 COPY --chown=node:node --from=builder /home/node/app/.next/static ./.next/static
 
