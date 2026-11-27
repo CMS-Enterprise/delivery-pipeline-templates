@@ -44,8 +44,17 @@ spec:
               protocol: TCP
           securityContext:
             allowPrivilegeEscalation: false
+            # Read-only root; the paths the app writes to are emptyDir mounts.
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-log
+              mountPath: /var/log/nginx
           # Fargate sizes the pod from requests, so limits match them.
           resources:
             requests:
@@ -74,6 +83,16 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 2
             failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-cache
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-log
+          emptyDir:
+            sizeLimit: 256Mi
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

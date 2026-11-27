@@ -179,9 +179,13 @@ paths come from `appTargets` in `demos/Jenkinsfile`:
   readiness and liveness probes hit the health path on the named `http` port.
 - Pods run as non-root with no privilege escalation, all capabilities dropped,
   `RuntimeDefault` seccomp and no service account token. The namespace enforces
-  the `restricted` Pod Security Standard. The root filesystem stays writable:
-  nginx (vue) writes its cache and pid, and django runs `migrate` against a
-  local SQLite file at start-up.
+  the `restricted` Pod Security Standard. The root filesystem is read-only
+  (Trivy KSV-0014); each pod mounts `emptyDir` volumes, capped at 256Mi, only
+  where its app writes: `/tmp` for all of them, plus `/app/data` for django's
+  start-up `migrate` to SQLite, `.next/cache` for nextjs, and
+  `/var/cache/nginx` (pid, temp files) and `/var/log/nginx` for vue. The
+  mounts are unverified against running pods; a write elsewhere fails with
+  "Read-only file system" and needs another mount.
 - Routing is host-based (`<service>.dev.delivery-demos.example.com`) on one
   shared internal ALB (`group.name: delivery-demos`) with IP targets, HTTPS only.
   It is not path-based, because each app serves from `/` and an ALB cannot
